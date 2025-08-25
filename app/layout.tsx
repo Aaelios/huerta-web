@@ -1,5 +1,6 @@
 import "./globals.css";
-import Link from "next/link";
+import SiteHeader from "../components/SiteHeader";
+import SiteFooter from "../components/SiteFooter";
 
 export const metadata = {
   title: "Huerta Consulting",
@@ -10,20 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body>
-        <header className="site-header">
-          <nav className="site-nav container">
-            <Link href="/"><span style={{ fontWeight: 700 }}>Huerta Consulting</span></Link>
-            <Link href="/sobre-mi">Sobre mí</Link>
-            <Link href="/contacto">Contacto</Link>
-            <Link href="/aviso-de-privacidad">Aviso de privacidad</Link>
-          </nav>
-        </header>
+        <SiteHeader />
         <main className="container">{children}</main>
-        <footer className="site-footer">
-          <div className="container">
-            <small>© {new Date().getFullYear()} Huerta Consulting</small>
-          </div>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

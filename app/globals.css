@@ -136,3 +136,132 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
   color: var(--black);
 }
 
+/* ==== Header responsive (NEW) ==== */
+.nav-container{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:16px;
+  min-height:64px;
+}
+
+.brand{ color:#fff; font-weight:700; font-size:20px; }
+
+.nav-center{ display:none; gap:24px; justify-self:center; }
+.nav-right{ display:flex; align-items:center; gap:12px; justify-self:end; }
+
+/* Enlaces: 75% en reposo, blanco en hover/activo */
+.nav-link{ color:rgba(255,255,255,.75); padding:6px 0; font-size:16px; }
+.nav-link:hover{ color:#fff; }
+.nav-link.active{ color:#fff; border-bottom:2px solid var(--primary-2); }
+
+/* Iconos */
+.icon-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px; border-radius:8px;
+  background:rgba(255,255,255,.08); color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+  transition:opacity .2s;
+}
+.icon-btn:hover{ opacity:.85; }
+
+/* CTA pill: texto NEGRO y ancho auto */
+.btn-pill{
+  display:inline-block; padding:10px 16px; border-radius:999px;
+  background:var(--primary-2); color:#0A0A0A !important; font-weight:700;
+  transition:opacity .2s;
+}
+.btn-pill:hover{ opacity:.9; }
+
+/* Móvil: iconos visibles, CTA oculto en topbar; botón del panel no ocupa todo el ancho */
+.nav-right .icon-btn{ display:inline-flex; }
+.nav-right .btn-pill{ display:none; }
+.hamburger{ display:inline-flex; background:transparent; border:0; color:#fff; padding:6px; }
+
+/* Panel móvil */
+.mobile-panel{ display:none; background:var(--bg); border-top:1px solid rgba(255,255,255,.12); }
+.mobile-panel[data-open="true"]{ display:block; }
+.mobile-panel nav{ display:flex; flex-direction:column; gap:12px; padding:12px 20px; }
+.mobile-actions{ display:flex; flex-direction:column; gap:12px; margin-top:8px; align-items:flex-start; } /* evita ancho completo */
+
+/* Desktop */
+@media (min-width:1024px){
+  .hamburger{ display:none; }
+  .mobile-panel{ display:none !important; }
+  .nav-center{ display:flex; }
+  .nav-right .btn-pill{ display:inline-flex; }
+  .brand{ font-size:24px; }
+  .nav-link{ font-size:17px; }
+}
+
+
+/* ==== Footer (UPDATED v2) ==== */
+.footer-grid{
+  display:grid;
+  gap:28px;
+  /* móvil: columna izquierda arriba, luego dos columnas lado a lado */
+  grid-template-columns:1fr 1fr;
+  grid-template-areas:
+    "left left"
+    "right1 right2";
+  padding-top:24px;
+  padding-bottom:24px;
+  text-align:left;
+}
+.footer-col:nth-child(1){ grid-area:left; }
+.footer-col:nth-child(2){ grid-area:right1; }
+.footer-col:nth-child(3){ grid-area:right2; }
+
+.footer-col .brand{ color:#fff; font-weight:700; margin:0 0 8px; }
+.footer-col h5{ color:#fff; margin:12px 0 8px; }
+.footer-col strong{ color:#fff; display:block; margin:0 0 8px; }
+.footer-col p{ color:rgba(255,255,255,.75); }
+
+/* Formulario: botón debajo y ancho correcto en móvil */
+.subscribe-form{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+.subscribe-form .input{ width:100%; }
+.subscribe-form .btn-solid{ align-self:flex-start; }
+
+.input{
+  height:44px; padding:0 14px; border-radius:10px;
+  background:rgba(255,255,255,.08); color:#fff;
+  border:1px solid rgba(255,255,255,.18); outline:none;
+}
+.input::placeholder{ color:rgba(255,255,255,.65); }
+
+.btn-solid{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:44px; padding:0 18px; border-radius:10px; border:0;
+  background:var(--primary-2); color:#0A0A0A; font-weight:700; cursor:pointer;
+}
+.btn-solid:hover{ opacity:.9; }
+
+.footer-list{ list-style:none; padding:0; margin:8px 0 0; display:grid; gap:10px; }
+.footer-list a{ color:rgba(255,255,255,.75); }
+.footer-list a:hover{ color:#fff; }
+
+.footer-divider{ border:0; border-top:1px solid rgba(255,255,255,.12); margin:24px 0; }
+
+.footer-bottom{
+  display:flex; flex-direction:column; gap:8px; padding-bottom:24px;
+  color:rgba(255,255,255,.75); text-align:left;
+}
+
+/* Desktop: dos columnas derechas pegadas al borde derecho */
+@media (min-width:1024px){
+  .footer-grid{
+    grid-template-columns:minmax(0,560px) 220px 220px;
+    grid-template-areas:"left right1 right2";
+    align-items:start;
+    column-gap:48px;
+  }
+  .footer-col:nth-child(2),
+  .footer-col:nth-child(3){ justify-self:end; } /* ancla a la derecha */
+  .footer-bottom{ flex-direction:row; justify-content:space-between; align-items:center; }
+}
+
+/* Accesibilidad */
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
