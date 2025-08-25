@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="site-header">
           <nav className="site-nav container">
-            <Link href="/" style={{ fontWeight: 700 }}>Huerta Consulting</Link>
+            <Link href="/"><span style={{ fontWeight: 700 }}>Huerta Consulting</span></Link>
             <Link href="/sobre-mi">Sobre mí</Link>
             <Link href="/contacto">Contacto</Link>
             <Link href="/aviso-de-privacidad">Aviso de privacidad</Link>
