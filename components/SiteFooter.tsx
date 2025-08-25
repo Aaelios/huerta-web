@@ -34,7 +34,7 @@ export default function SiteFooter() {
         <div className="footer-col">
           <strong>Información</strong>
           <ul className="footer-list">
-            <li><Link href="/#faq">FAQ's</Link></li>
+            <li><Link href="/#faq">FAQs</Link></li>
             <li><Link href="/aviso-de-privacidad">Privacidad</Link></li>
             <li><Link href="/contacto">Contacto</Link></li>
           </ul>
