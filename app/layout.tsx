@@ -2,6 +2,7 @@ import "./globals.css";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import Gtm from "../components/Gtm";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Huerta Consulting",
@@ -27,7 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : null}
 
         {/* GTM script + page_view SPA */}
-        <Gtm />
+          <Suspense fallback={null}>
+            <Gtm />
+          </Suspense>
 
         <SiteHeader />
         <main className="container">{children}</main>
