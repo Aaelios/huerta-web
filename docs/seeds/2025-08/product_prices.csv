@@ -1,0 +1,15 @@
+sku,amount_cents,currency,price_list,interval,valid_from,valid_until,active,stripe_price_id,metadata,created_at,updated_at
+course-rh-fin-basico-v002,149900,MXN,default,one_time,,,true,,"{""markets"":[""MX"",""US""]}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+course-rh-fin-basico-v002,129900,MXN,launch,one_time,,2025-09-30T23:59:59Z,true,,"{""promo"":""launch""}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+course-rh-fin-basico-v002,8900,USD,default,one_time,,,true,,"{""markets"":[""US""]}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+course-rh-fin-basico-v001,119900,MXN,default,one_time,,,false,,"{}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+course-rh-produc-esencial-v001,99900,MXN,default,one_time,,,true,,"{}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+template-rh-mkt-propuesta-v001,29900,MXN,default,one_time,,,true,,"{}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+template-rh-mkt-propuesta-v001,1900,USD,default,one_time,,,true,,"{}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+sub-rh-gen-pro-01m-v001,24900,MXN,default,month,,,true,,"{""interval"":""month""}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+sub-rh-gen-pro-01m-v001,1499,USD,default,month,,,true,,"{""interval"":""month""}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+liveclass-rh-mkt-estrategia-sep2025-v001,59000,MXN,default,one_time,2025-09-01T00:00:00Z,,true,,"{""event_date"":""2025-09-15""}",2025-08-26T16:45:00Z,2025-08-26T16:45:00Z
+bundle-rh-starter-v001,199900,MXN,default,one_time,,,true,,"{}",2025-08-26T17:20:00Z,2025-08-26T17:20:00Z
+bundle-rh-starter-v001,179900,MXN,launch,one_time,,2025-09-30T23:59:59Z,true,,"{""promo"":""launch""}",2025-08-26T17:20:00Z,2025-08-26T17:20:00Z
+bundle-rh-starter-v001,12900,USD,default,one_time,,,true,,"{}",2025-08-26T17:20:00Z,2025-08-26T17:20:00Z
+bundle-rh-starter-v001,10900,USD,launch,one_time,,2025-09-30T23:59:59Z,true,,"{""promo"":""launch""}",2025-08-26T17:20:00Z,2025-08-26T17:20:00Z

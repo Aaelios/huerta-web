@@ -1,0 +1,56 @@
+# Bloque 2 — Funciones para soporte Stripe (Supabase)
+
+## Convención
+- Funciones unitarias: `f_<área>_<verbo>`.
+- Funciones orquestadoras: `f_orch_<área>_<acción>`.
+
+## Objetivo
+Procesar eventos de Stripe (webhooks) para:
+1. Registrar el evento.
+2. Resolver usuario.
+3. Crear o actualizar orden.
+4. Conceder acceso (entitlement).
+5. Marcar evento como procesado.
+
+## Funciones necesarias
+
+### 1. Webhooks
+- **`f_webhooks_log_event(stripe_event_id text, type text, payload jsonb) -> void`**  
+  Inserta evento recibido en `webhook_events` si no existía.
+- **`f_webhooks_mark_processed(stripe_event_id text, order_id uuid) -> void`**  
+  Actualiza `processed_at` (y `order_id`) cuando todo terminó.
+
+### 2. Usuario
+- **`f_orders_resolve_user(obj jsonb) -> uuid`**  
+  Extrae email del objeto de Stripe, valida, y devuelve `user_id`.  
+  Si no existe, lanza `NOT_FOUND_USER`.
+
+### 3. Parsers auxiliares
+- **`f_orders_parse_keys(obj jsonb, event_type text)`**  
+  Retorna `session_id, invoice_id, subscription_id`.
+- **`f_orders_parse_payment(obj jsonb)`**  
+  Retorna `amount_cents, currency`.
+- **`f_orders_parse_metadata(obj jsonb)`**  
+  Retorna `sku, fulfillment_type` validado.
+
+### 4. Orden
+- **`f_order_headers_upsert(user_id uuid, sku text, amount_cents int, currency text, session_id text, invoice_id text, subscription_id text) -> uuid`**  
+  Inserta o actualiza fila en `order_headers`.  
+  Devuelve `order_id`.
+
+### 5. Accesos
+- **`f_entitlements_apply(user_id uuid, order_id uuid, sku text, fulfillment_type text, metadata jsonb) -> uuid`**  
+  Concede acceso usando `f_entitlements_grant` con `source_type='order'` y `source_id=order_id`.
+
+### 6. Orquestadora
+- **`f_orch_orders_upsert(session_payload jsonb) -> uuid`**  
+  Ejecuta todo el flujo: log evento → resolver usuario → parsear claves/pagos/metadata → upsert orden → aplicar entitlement → marcar evento como procesado.  
+  Devuelve `order_id`.
+
+## Orden recomendado de creación
+1. Webhooks (log + mark)  
+2. Resolver usuario  
+3. Parsers auxiliares  
+4. Upsert de order_headers  
+5. Apply entitlements  
+6. Orquestadora

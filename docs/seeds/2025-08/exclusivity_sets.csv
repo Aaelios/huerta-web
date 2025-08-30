@@ -1,0 +1,3 @@
+set_key,name,rule
+membership_tiers,Membership tiers,single_selection
+bundle_vs_children,Bundle vs. children,mutually_exclusive

@@ -1,0 +1,31 @@
+{
+  "fixtures": [
+    {
+      "name": "pm_card",
+      "path": "/v1/payment_methods",
+      "method": "post",
+      "params": {
+        "type": "card",
+        "card[number]": "4242424242424242",
+        "card[exp_month]": 12,
+        "card[exp_year]": 2030,
+        "card[cvc]": "123"
+      }
+    },
+    {
+      "name": "session",
+      "path": "/v1/checkout/sessions",
+      "method": "post",
+      "params": {
+        "mode": "payment",
+        "customer_email": "rhuerta.consulting@gmail.com",
+        "line_items[0][price]": "price_1S1u5JQ8dpmAG0o2hPMnMy7l",
+        "line_items[0][quantity]": 1,
+        "metadata[sku]": "sku-webhook-e2e-v001",
+        "payment_method": "${pm_card:id}",
+        "success_url": "https://example.com/success",
+        "cancel_url": "https://example.com/cancel"
+      }
+    }
+  ]
+}

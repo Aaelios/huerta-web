@@ -1,0 +1,42 @@
+{
+  "fixtures": [
+    {
+      "name": "product_sku_webhook_e2e",
+      "path": "/v1/products",
+      "method": "post",
+      "params": {
+        "name": "Test Product Webhook E2E",
+        "metadata": {
+          "sku": "sku-webhook-e2e-v001"
+        }
+      }
+    },
+    {
+      "name": "price_sku_webhook_e2e",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "currency": "mxn",
+        "unit_amount": 19900,
+        "product": "${product_sku_webhook_e2e:id}",
+        "metadata": {
+          "sku": "sku-webhook-e2e-v001",
+          "fulfillment_type": "course"
+        }
+      }
+    },
+    {
+      "name": "session_sku_webhook_e2e",
+      "path": "/v1/checkout/sessions",
+      "method": "post",
+      "params": {
+        "mode": "payment",
+        "customer_email": "rhuerta.consulting@gmail.com",
+        "line_items[0][price]": "${price_sku_webhook_e2e:id}",
+        "line_items[0][quantity]": 1,
+        "success_url": "https://example.com/success",
+        "cancel_url": "https://example.com/cancel"
+      }
+    }
+  ]
+}
