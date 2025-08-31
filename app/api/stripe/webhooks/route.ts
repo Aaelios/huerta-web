@@ -90,13 +90,12 @@ export async function POST(req: Request) {
         const orderId = (result as any)?.details?.orderId ?? null;
         await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId });
       } else if (result?.outcome === 'ignored') {
-        const reason = (result as any)?.reason ?? 'no_op';
-        await f_webhookEvents_markIgnored({ stripeEventId: event.id, reason });
+        await f_webhookEvents_markIgnored({ stripeEventId: event.id });
       } else {
         console.log('[orchestrate] unknown result shape', result);
       }
     } else {
-      await f_webhookEvents_markIgnored({ stripeEventId: event.id, reason: 'MISSING_REFETCH_PAYLOAD' });
+      await f_webhookEvents_markIgnored({ stripeEventId: event.id });
     }
   } catch (e) {
     console.error('[orchestrate] error:', (e as any)?.message ?? e);

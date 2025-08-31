@@ -1,6 +1,6 @@
 // lib/checkout/f_createStripeEmbeddedSession.ts
 import type Stripe from 'stripe';
-import { m_getStripeClient } from '../stripe/m_getStripeClient.ts';
+import { m_getStripeClient } from '../stripe/m_getStripeClient';
 
 export type CreateEmbeddedSessionInput = {
   priceId: string;

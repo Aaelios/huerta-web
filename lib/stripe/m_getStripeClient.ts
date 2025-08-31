@@ -25,8 +25,6 @@ export function m_getStripeClient(): Stripe {
   }
 
   _stripe = new Stripe(key, {
-    // Fija versión estable; ajusta si Stripe indica una más reciente en tu cuenta
-    apiVersion: '2024-06-20',
     httpClient: Stripe.createNodeHttpClient(),
   });
 

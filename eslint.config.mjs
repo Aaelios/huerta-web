@@ -18,14 +18,14 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "scripts/**",
+      "playground*.ts"
     ],
   },
   {
     files: [
       "app/api/**/*.ts",
-      "lib/**/*.ts",
-      "scripts/**/*.ts",
-      "playground*.ts"
+      "lib/**/*.ts"
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",

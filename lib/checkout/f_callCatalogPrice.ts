@@ -1,5 +1,5 @@
 // lib/checkout/f_callCatalogPrice.ts
-import { m_getSupabaseService } from '../supabase/m_getSupabaseService.ts';
+import { m_getSupabaseService } from '../supabase/m_getSupabaseService';
 
 export type CatalogPriceRow = {
   stripe_price_id: string;
