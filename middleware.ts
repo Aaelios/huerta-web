@@ -4,16 +4,44 @@ import type { NextRequest } from 'next/server';
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname.toLowerCase();
 
-  // Bloqueo 404 para probes comunes (WordPress, Joomla, archivos sensibles)
+  // Bloqueo 404 para probes comunes (WordPress, Joomla, Drupal, archivos sensibles, backups)
   if (
-    p === '/xmlrpc.php' ||
+    // WordPress
     /^\/wp(\/|$)/.test(p) ||
     /^\/wordpress(\/|$)/.test(p) ||
     /^\/wp-includes(\/|$)/.test(p) ||
+    /^\/wp-content(\/|$)/.test(p) ||
+    /^\/wp-admin(\/|$)/.test(p) ||
+    /^\/wp-json(\/|$)/.test(p) ||
+    p === '/xmlrpc.php' ||
+    p === '/wp-login.php' ||
+
+    // Joomla
+    /^\/administrator(\/|$)/.test(p) ||
     /^\/media\/system(\/|$)/.test(p) ||
+    /^\/templates(\/|$)/.test(p) ||
+
+    // Drupal
+    /^\/sites\/default(\/|$)/.test(p) ||
+    p === '/user/login' ||
+    /^\/misc\//.test(p) ||
+
+    // Archivos sensibles
     /^\/\.env/.test(p) ||
     /^\/\.git/.test(p) ||
-    p === '/.ds_store'
+    /^\/\.svn/.test(p) ||
+    /^\/\.hg/.test(p) ||
+    p === '/.ds_store' ||
+    p === '/phpinfo.php' ||
+    /^\/vendor\/phpunit(\/|$)/.test(p) ||
+    /^\/config(\.php)?$/.test(p) ||
+
+    // Backups comunes
+    /^\/[^/]+\.(zip|tar|gz|tgz|sql|bak|7z)$/.test(p) ||
+
+    // CGI y status
+    /^\/cgi-bin(\/|$)/.test(p) ||
+    p === '/server-status'
   ) {
     return new NextResponse('Not Found', { status: 404 });
   }
