@@ -4,11 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname.toLowerCase();
 
-  // Bloqueo 404 para probes de WordPress y archivos sensibles
+  // Bloqueo 404 para probes comunes (WordPress, Joomla, archivos sensibles)
   if (
     p === '/xmlrpc.php' ||
     /^\/wp(\/|$)/.test(p) ||
     /^\/wordpress(\/|$)/.test(p) ||
+    /^\/wp-includes(\/|$)/.test(p) ||
+    /^\/media\/system(\/|$)/.test(p) ||
     /^\/\.env/.test(p) ||
     /^\/\.git/.test(p) ||
     p === '/.ds_store'
