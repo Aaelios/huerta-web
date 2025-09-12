@@ -3,12 +3,9 @@ import Stripe from 'stripe';
 import { m_getStripeClient } from './m_getStripeClient';
 
 /**
- * Reobtiene una Invoice con campos expandidos para orquestar sin llamadas extra.
- * Estable en API 2024-06-20:
- * - Expande lines.data.price y price.product
- * - Incluye customer y subscription
- * @param invoiceId ID de la invoice (in_...)
- * @returns Stripe.Invoice con price/product expandidos, más customer y subscription
+ * Reobtiene una Invoice con campos expandidos para orquestación.
+ * Canon: priorizar price.metadata; fallback vía product.metadata.
+ * Compatible con estructuras antiguas (price) y nuevas (pricing.price).
  */
 export default async function f_refetchInvoice(invoiceId: string): Promise<Stripe.Invoice> {
   if (!invoiceId) throw new Error('INVOICE_ID_REQUIRED');
@@ -17,8 +14,13 @@ export default async function f_refetchInvoice(invoiceId: string): Promise<Strip
 
   const invoice = await stripe.invoices.retrieve(invoiceId, {
     expand: [
+      // Antiguo
       'lines.data.price',
       'lines.data.price.product',
+      // Nuevo (2025-07-30.basil)
+      'lines.data.pricing.price',
+      'lines.data.pricing.price.product',
+      // Contexto
       'customer',
       'subscription',
     ],
