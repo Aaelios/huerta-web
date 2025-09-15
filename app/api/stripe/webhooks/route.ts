@@ -3,13 +3,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import Stripe from 'stripe';
-import crypto from 'crypto';
 
 // Idempotencia y log en DB
 import { f_webhookEvents_getByStripeId } from '@/lib/webhooks/f_webhookEvents_getByStripeId';
 import { f_webhookEvents_markReceived } from '@/lib/webhooks/f_webhookEvents_markReceived';
 import { f_webhookEvents_markProcessed } from '@/lib/webhooks/f_webhookEvents_markProcessed';
-import { f_webhookEvents_markIgnored } from '@/lib/webhooks/f_webhooks_markIgnored';
+import { f_webhookEvents_markIgnored } from '@/lib/webhooks/f_webhookEvents_markIgnored';
 
 // Refetch fuentes canónicas
 import f_refetchSession from '@/lib/stripe/f_refetchSession';
@@ -36,7 +35,6 @@ export async function POST(req: Request) {
 
   // 1) Leer raw body y verificar firma
   const raw = await req.text();
-  const rawSha256 = crypto.createHash('sha256').update(raw).digest('hex');
 
   let event: Stripe.Event;
   try {
@@ -56,8 +54,7 @@ export async function POST(req: Request) {
     await f_webhookEvents_markReceived({
       stripeEventId: event.id,
       type: event.type,
-      payload: raw,          // guarda raw para hashing exacto
-      rawSha256,             // útil para auditoría
+      payload: raw
     });
   } catch (e) {
     console.error('[webhook]', version, 'markReceived error', (e as any)?.message ?? e);
@@ -68,7 +65,7 @@ export async function POST(req: Request) {
   let session: Stripe.Checkout.Session | null = null;
   let invoice: Stripe.Invoice | null = null;
 
-  let flags: Record<string, any> = {
+  const flags: Record<string, any> = {
     hasServiceRole,
     has_price_expanded: false,
     has_compact_price: false,
