@@ -1,126 +1,123 @@
 // app/api/stripe/webhooks/route.ts
-
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import Stripe from 'stripe';
 import crypto from 'crypto';
 
-// Idempotencia
+// Idempotencia y log en DB
 import { f_webhookEvents_getByStripeId } from '@/lib/webhooks/f_webhookEvents_getByStripeId';
 import { f_webhookEvents_markReceived } from '@/lib/webhooks/f_webhookEvents_markReceived';
 import { f_webhookEvents_markProcessed } from '@/lib/webhooks/f_webhookEvents_markProcessed';
-import { f_webhookEvents_markIgnored } from '@/lib/webhooks/f_webhookEvents_markIgnored';
+import { f_webhookEvents_markIgnored } from '@/lib/webhooks/f_webhooks_markIgnored';
 
-// Refetch
+// Refetch fuentes canónicas
 import f_refetchSession from '@/lib/stripe/f_refetchSession';
 import f_refetchInvoice from '@/lib/stripe/f_refetchInvoice';
 
-// Orquestación
+// Orquestador DB (usa SECURITY DEFINER en Supabase)
 import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-function sha256(input: string) {
-  return crypto.createHash('sha256').update(input).digest('hex');
-}
-
-function deriveFlags(event: Stripe.Event) {
-  const obj: any = (event as any)?.data?.object ?? {};
-  const line = obj?.lines?.data?.[0] ?? obj?.line_items?.data?.[0] ?? {};
-  const priceObj = line?.price ?? {};
-  const compact = line?.pricing?.price_details ?? {};
-  const priceMeta = priceObj?.metadata ?? {};
-  const productMeta = priceObj?.product?.metadata ?? {};
-
-  return {
-    has_price_id: typeof priceObj?.id === 'string' && priceObj.id.length > 0,
-    has_compact_price: typeof compact?.price === 'string' && compact.price.length > 0,
-    has_price_meta_sku: typeof priceMeta?.sku === 'string' && priceMeta.sku.length > 0,
-    has_product_meta_sku: typeof productMeta?.sku === 'string' && productMeta.sku.length > 0,
-    currency: obj?.currency ?? null,
-    amount_total: obj?.amount_total ?? obj?.total ?? null,
-  };
-}
-
 export async function POST(req: Request) {
-  // 1) Firma
-  const sig = req.headers.get('stripe-signature');
-  if (!sig) return new Response('missing signature', { status: 400 });
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) return new Response('missing webhook secret', { status: 500 });
+  const version = 'route.v3';
 
+  // 0) Pre-flight config
+  const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const sig = req.headers.get('stripe-signature');
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!secret) {
+    console.error('[webhook]', version, 'missing STRIPE_WEBHOOK_SECRET');
+    return new Response('missing webhook secret', { status: 500 });
+  }
+  if (!sig) return new Response('missing signature', { status: 400 });
+
+  // 1) Leer raw body y verificar firma
   const raw = await req.text();
-  const rawHash = sha256(raw);
+  const rawSha256 = crypto.createHash('sha256').update(raw).digest('hex');
 
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(raw, sig, secret);
   } catch (err: any) {
-    console.error('constructEvent error', err?.message || err);
+    console.error('[webhook]', version, 'constructEvent error', err?.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
-
-  // Flags de estructura para comparar con DB
-  const flags = deriveFlags(event);
-  console.log('[stripe:webhook] recv', {
-    id: event.id,
-    type: event.type,
-    raw_sha256: rawHash,
-    ...flags,
-  });
 
   // 2) Idempotencia mínima
   try {
     const existing = await f_webhookEvents_getByStripeId(event.id);
     if (existing) {
-      return Response.json(
-        { ok: true, replay: true, id: event.id, type: event.type },
-        { status: 200 }
-      );
+      console.log('[webhook]', version, 'replay', event.type, event.id);
+      return Response.json({ ok: true, replay: true, id: event.id, type: event.type }, { status: 200 });
     }
-    // Guardar el RAW sin alterar
     await f_webhookEvents_markReceived({
       stripeEventId: event.id,
       type: event.type,
-      payload: raw,
+      payload: raw,          // guarda raw para hashing exacto
+      rawSha256,             // útil para auditoría
     });
   } catch (e) {
-    console.error('idempotency/received error:', e);
+    console.error('[webhook]', version, 'markReceived error', (e as any)?.message ?? e);
+    // continuamos
   }
 
-  // 3) Refetch del objeto principal
+  // 3) Refetch objeto canónico desde Stripe
   let session: Stripe.Checkout.Session | null = null;
   let invoice: Stripe.Invoice | null = null;
+
+  let flags: Record<string, any> = {
+    hasServiceRole,
+    has_price_expanded: false,
+    has_compact_price: false,
+    currency: null,
+    amount_total: null,
+  };
+
   try {
     const obj: any = (event as any).data?.object;
 
     if (event.type === 'invoice.payment_succeeded') {
-      const invoiceId = obj?.id; // in_...
-      if (typeof invoiceId === 'string') {
+      const invoiceId = obj?.id as string | undefined; // in_...
+      if (invoiceId) {
         invoice = await f_refetchInvoice(invoiceId);
-        console.log('[refetch] invoice', invoice.id);
+        // Flags de estructura (post-refetch)
+        try {
+          const li: any = (invoice as any)?.lines?.data?.[0] ?? null;
+          flags.has_price_expanded = Boolean(li?.price?.id);
+          flags.has_compact_price = Boolean(li?.pricing?.price_details?.price);
+          flags.currency = (invoice as any)?.currency ?? null;
+          flags.amount_total = (invoice as any)?.total ?? null;
+        } catch {}
+        console.log('[webhook]', version, 'refetch invoice', invoice.id, flags);
       } else {
-        console.log('[refetch] invoice: missing id on event object');
+        console.warn('[webhook]', version, 'invoice missing id on event object');
       }
     } else if (event.type === 'checkout.session.completed') {
-      const sessionId = obj?.id; // cs_...
-      if (typeof sessionId === 'string') {
+      const sessionId = obj?.id as string | undefined; // cs_...
+      if (sessionId) {
         session = await f_refetchSession(sessionId);
-        console.log('[refetch] session', session.id);
+        console.log('[webhook]', version, 'refetch session', session.id, { hasServiceRole });
       } else {
-        console.log('[refetch] session: missing id on event object');
+        console.warn('[webhook]', version, 'session missing id on event object');
       }
     } else {
-      console.log('[refetch] ignored type', event.type);
+      console.log('[webhook]', version, 'ignored type', event.type);
     }
   } catch (e) {
-    console.error('[refetch] error:', (e as any)?.message ?? e);
+    console.error('[webhook]', version, 'refetch error', (e as any)?.message ?? e);
   }
 
-  // 4) Orquestación + marks finales
+  // 4) Orquestación en DB
   try {
     if (session || invoice) {
+      console.log('[webhook]', version, 'orchestrate start', event.type, event.id, {
+        refetch_invoice: invoice?.id ?? null,
+        refetch_session: session?.id ?? null,
+      });
+
       const result = await h_stripe_webhook_process({
         type: event.type,
         stripeEventId: event.id,
@@ -128,23 +125,39 @@ export async function POST(req: Request) {
         invoice: invoice ?? undefined,
       });
 
+      console.log('[webhook]', version, 'orchestrate result', {
+        outcome: result?.outcome ?? null,
+        orderId: (result as any)?.details?.orderId ?? null,
+      });
+
       if (result?.outcome === 'processed') {
         const orderId = (result as any)?.details?.orderId ?? null;
-        await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId });
+        try {
+          await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId });
+        } catch (e) {
+          console.error('[webhook]', version, 'markProcessed error', (e as any)?.message ?? e);
+        }
       } else if (result?.outcome === 'ignored') {
-        await f_webhookEvents_markIgnored({ stripeEventId: event.id });
-      } else {
-        console.log('[orchestrate] unknown result shape', result);
+        try {
+          await f_webhookEvents_markIgnored({ stripeEventId: event.id });
+        } catch (e) {
+          console.error('[webhook]', version, 'markIgnored error', (e as any)?.message ?? e);
+        }
       }
     } else {
-      await f_webhookEvents_markIgnored({ stripeEventId: event.id });
+      // Sin refetch válido → ignorado
+      try {
+        await f_webhookEvents_markIgnored({ stripeEventId: event.id });
+      } catch (e) {
+        console.error('[webhook]', version, 'markIgnored error', (e as any)?.message ?? e);
+      }
     }
   } catch (e) {
-    console.error('[orchestrate] error:', (e as any)?.message ?? e);
-    // Tolerancia a fallos: mantenemos 200
+    console.error('[webhook]', version, 'orchestrate error', (e as any)?.message ?? e);
+    // tolerante a fallos
   }
 
-  // 5) Respuesta 200
-  console.log('stripe event done:', event.type, event.id);
+  // 5) Fin
+  console.log('[webhook]', version, 'done', event.type, event.id);
   return new Response('ok', { status: 200 });
 }

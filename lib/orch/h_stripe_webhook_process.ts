@@ -4,7 +4,7 @@ import { m_getSupabaseService } from '../supabase/m_getSupabaseService';
 import f_ensureUserByEmail from '../supabase/f_ensureUserByEmail';
 
 type TStripeWebhookInput = {
-  type: string; // 'checkout.session.completed' | 'invoice.payment_succeeded' | ...
+  type: string; // 'checkout.session.completed' | 'invoice.payment_succeeded'
   stripeEventId: string;
   session?: Stripe.Checkout.Session;
   invoice?: Stripe.Invoice;
@@ -36,25 +36,37 @@ function extractPriceIds(input: TStripeWebhookInput): string[] {
   const ids: string[] = [];
   const { session, invoice } = input;
 
+  // Checkout Session: price.id OR pricing.price_details.price
   if (session) {
-    const li = (session as any).line_items;
-    const data = li?.data ?? [];
+    const data: any[] = ((session as any).line_items?.data ?? []) as any[];
     for (const it of data) {
-      const pid = it?.price?.id;
-      if (typeof pid === 'string' && pid.length > 0) ids.push(pid);
+      const idA = it?.price?.id;
+      const idB = it?.pricing?.price_details?.price;
+      const pid = typeof idA === 'string' && idA ? idA : (typeof idB === 'string' && idB ? idB : null);
+      if (pid) ids.push(pid);
     }
   }
 
+  // Invoice: price.id OR pricing.price_details.price
   if (invoice) {
-    const lines = (invoice as any).lines;
-    const data = lines?.data ?? [];
+    const data: any[] = ((invoice as any).lines?.data ?? []) as any[];
     for (const ln of data) {
-      const pid = ln?.price?.id;
-      if (typeof pid === 'string' && pid.length > 0) ids.push(pid);
+      const idA = ln?.price?.id;
+      const idB = ln?.pricing?.price_details?.price;
+      const pid = typeof idA === 'string' && idA ? idA : (typeof idB === 'string' && idB ? idB : null);
+      if (pid) ids.push(pid);
     }
   }
 
   return ids;
+}
+
+function hasPricePath(obj: any): { expanded: boolean; compact: boolean } {
+  const li = obj?.line_items?.data?.[0] ?? obj?.lines?.data?.[0] ?? null;
+  return {
+    expanded: Boolean(li?.price?.id),
+    compact: Boolean(li?.pricing?.price_details?.price),
+  };
 }
 
 export default async function h_stripe_webhook_process(
@@ -67,35 +79,29 @@ export default async function h_stripe_webhook_process(
 
   const email = getEmail(input);
   if (!email) return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
-
-  // Sanidad del objeto enriquecido
   if (!session && !invoice) return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
 
-  // Validar expansiones mínimas por tipo
+  // Validaciones: aceptar expanded o compact
   if (type === 'checkout.session.completed') {
-    const ok =
-      !!(session as any)?.line_items &&
-      Array.isArray((session as any)?.line_items?.data) &&
-      ((session as any)?.line_items?.data?.[0]?.price?.id ?? null);
-    if (!ok) {
+    const ok = Array.isArray((session as any)?.line_items?.data);
+    const flags = hasPricePath(session);
+    if (!ok || !(flags.expanded || flags.compact)) {
       return {
         outcome: 'ignored',
         reason: 'MISSING_EXPANSIONS',
-        details: { need: ['line_items', 'line_items.data.price'] },
+        details: { need: ['line_items.data.price OR line_items.data.pricing.price_details.price'] },
       };
     }
   }
 
   if (type === 'invoice.payment_succeeded') {
-    const ok =
-      !!(invoice as any)?.lines &&
-      Array.isArray((invoice as any)?.lines?.data) &&
-      ((invoice as any)?.lines?.data?.[0]?.price?.id ?? null);
-    if (!ok) {
+    const ok = Array.isArray((invoice as any)?.lines?.data);
+    const flags = hasPricePath(invoice);
+    if (!ok || !(flags.expanded || flags.compact)) {
       return {
         outcome: 'ignored',
         reason: 'MISSING_EXPANSIONS',
-        details: { need: ['lines', 'lines.data.price'] },
+        details: { need: ['lines.data.price OR lines.data.pricing.price_details.price'] },
       };
     }
   }
@@ -112,13 +118,22 @@ export default async function h_stripe_webhook_process(
       debug: {
         email,
         price_ids: priceIds,
+        flags:
+          type === 'checkout.session.completed'
+            ? hasPricePath(session)
+            : hasPricePath(invoice),
       },
     },
   };
 
-  console.log('[orch] event', { type, stripeEventId, email, priceIdsCount: priceIds.length });
+  console.log('[orch]', 'h_stripe_webhook_process', {
+    type,
+    stripeEventId,
+    email,
+    priceIdsCount: priceIds.length,
+  });
 
-  const supabase = m_getSupabaseService();
+  const supabase = m_getSupabaseService(); // debe usar SERVICE ROLE
   const { data: orderId, error } = await supabase.rpc('f_orch_orders_upsert', { session_payload });
 
   if (error) {
