@@ -1,10 +1,10 @@
 // app/api/stripe/webhooks/route.ts
 
-// Configuración base
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import Stripe from 'stripe';
+import crypto from 'crypto';
 
 // Idempotencia
 import { f_webhookEvents_getByStripeId } from '@/lib/webhooks/f_webhookEvents_getByStripeId';
@@ -16,10 +16,32 @@ import { f_webhookEvents_markIgnored } from '@/lib/webhooks/f_webhookEvents_mark
 import f_refetchSession from '@/lib/stripe/f_refetchSession';
 import f_refetchInvoice from '@/lib/stripe/f_refetchInvoice';
 
-// Orquestación (versión “estable” que recibe session/invoice)
+// Orquestación
 import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+function sha256(input: string) {
+  return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function deriveFlags(event: Stripe.Event) {
+  const obj: any = (event as any)?.data?.object ?? {};
+  const line = obj?.lines?.data?.[0] ?? obj?.line_items?.data?.[0] ?? {};
+  const priceObj = line?.price ?? {};
+  const compact = line?.pricing?.price_details ?? {};
+  const priceMeta = priceObj?.metadata ?? {};
+  const productMeta = priceObj?.product?.metadata ?? {};
+
+  return {
+    has_price_id: typeof priceObj?.id === 'string' && priceObj.id.length > 0,
+    has_compact_price: typeof compact?.price === 'string' && compact.price.length > 0,
+    has_price_meta_sku: typeof priceMeta?.sku === 'string' && priceMeta.sku.length > 0,
+    has_product_meta_sku: typeof productMeta?.sku === 'string' && productMeta.sku.length > 0,
+    currency: obj?.currency ?? null,
+    amount_total: obj?.amount_total ?? obj?.total ?? null,
+  };
+}
 
 export async function POST(req: Request) {
   // 1) Firma
@@ -29,20 +51,40 @@ export async function POST(req: Request) {
   if (!secret) return new Response('missing webhook secret', { status: 500 });
 
   const raw = await req.text();
+  const rawHash = sha256(raw);
+
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(raw, sig, secret);
   } catch (err: any) {
+    console.error('constructEvent error', err?.message || err);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
+
+  // Flags de estructura para comparar con DB
+  const flags = deriveFlags(event);
+  console.log('[stripe:webhook] recv', {
+    id: event.id,
+    type: event.type,
+    raw_sha256: rawHash,
+    ...flags,
+  });
 
   // 2) Idempotencia mínima
   try {
     const existing = await f_webhookEvents_getByStripeId(event.id);
     if (existing) {
-      return Response.json({ ok: true, replay: true, id: event.id, type: event.type }, { status: 200 });
+      return Response.json(
+        { ok: true, replay: true, id: event.id, type: event.type },
+        { status: 200 }
+      );
     }
-    await f_webhookEvents_markReceived({ stripeEventId: event.id, type: event.type, payload: raw });
+    // Guardar el RAW sin alterar
+    await f_webhookEvents_markReceived({
+      stripeEventId: event.id,
+      type: event.type,
+      payload: raw,
+    });
   } catch (e) {
     console.error('idempotency/received error:', e);
   }
@@ -99,10 +141,10 @@ export async function POST(req: Request) {
     }
   } catch (e) {
     console.error('[orchestrate] error:', (e as any)?.message ?? e);
-    // No rompemos el 200 para tolerancia a fallos
+    // Tolerancia a fallos: mantenemos 200
   }
 
   // 5) Respuesta 200
-  console.log('stripe event:', event.type, event.id);
+  console.log('stripe event done:', event.type, event.id);
   return new Response('ok', { status: 200 });
 }
