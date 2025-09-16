@@ -24,36 +24,94 @@ export async function POST(req: NextRequest) {
     if (!req.headers.get('content-type')?.includes('application/json')) {
       return json({ code: 'BAD_REQUEST', message: 'invalid_content_type' }, 400);
     }
+    if (!process.env.APP_URL) {
+      return json({ code: 'SERVER_MISCONFIG', message: 'Missing APP_URL' }, 500);
+    }
 
-    // 1) Inputs
-    const raw = await req.json().catch(() => ({}));
-    const { sku, currency } = f_parseInput(raw);
+    // ---- 1) Inputs ---------------------------------------------------------
+    const raw = await req.json().catch(() => ({} as any));
+    const priceIdInput: string | undefined = raw.price_id ?? raw.priceId ?? undefined;
+    const modeInput: 'payment' | 'subscription' | undefined =
+      raw.mode && (raw.mode === 'subscription' || raw.mode === 'payment') ? raw.mode : undefined;
 
-    // 2) Catálogo → price_id y metadatos auxiliares
-    const tRpc0 = Date.now();
-    const row = await f_callCatalogPrice({ sku, currency }); // -> { stripe_price_id, amount_cents, currency, metadata? }
-    const rpc_ms = Date.now() - tRpc0;
+    // Para compatibilidad con tu flujo previo basado en catálogo:
+    // si NO viene price_id, usamos f_parseInput (sku + currency) y resolvemos price en BD.
+    let sku: string | undefined;
+    let currency: string | undefined;
+    let priceId: string;
+    let mode: 'payment' | 'subscription';
+    let price_list = '';
+    let interval = '';
+    let pmeta: Record<string, string> = {};
 
-    const priceId = String(row.stripe_price_id);
+    if (priceIdInput) {
+      // ---- 2A) Camino con price_id directo ---------------------------------
+      const tStripePrice0 = Date.now();
+      const price = await stripe.prices.retrieve(priceIdInput, { expand: ['product'] });
+      const stripe_ms_price = Date.now() - tStripePrice0;
 
-    // 3) Stripe Price canónico → tipo y metadata
-    const tStripePrice0 = Date.now();
-    const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
-    const stripe_ms_price = Date.now() - tStripePrice0;
+      priceId = price.id;
+      mode = modeInput ?? (price.type === 'recurring' ? 'subscription' : 'payment');
+      currency = price.currency?.toUpperCase();
+      pmeta = price.metadata || {};
+      interval =
+        (price.type === 'recurring' ? price.recurring?.interval : null) ?? '' as string;
 
-    const mode: 'payment' | 'subscription' =
-      price.type === 'recurring' ? 'subscription' : 'payment';
+      console.log(
+        JSON.stringify({
+          event: 'checkout.price_refetch',
+          reqId,
+          stripe_ms_price,
+          price_id_suffix: priceId.slice(-8),
+          mode,
+          currency,
+        })
+      );
+    } else {
+      // ---- 2B) Camino con catálogo (sku + currency) ------------------------
+      const parsed = f_parseInput(raw); // puede lanzar BAD_REQUEST si faltan campos
+      sku = parsed.sku;
+      currency = parsed.currency;
 
-    const pmeta = price.metadata || {};
-    const price_list = (row?.metadata as any)?.price_list ?? '';
-    const interval =
-      (price.type === 'recurring' ? price.recurring?.interval : null) ??
-      ((row?.metadata as any)?.interval ?? '');
+      const tRpc0 = Date.now();
+      const row = await f_callCatalogPrice({ 
+        sku, 
+        currency: currency?.toUpperCase() as 'MXN' | 'USD' 
+      });
+      const rpc_ms = Date.now() - tRpc0;
 
-    // 4) Crear sesión Embedded con metadata requerida
-    const returnUrl = f_buildReturnUrl(); // usa NEXT_PUBLIC_SITE_URL o equivalente interno si así lo definiste
+      priceId = String(row.stripe_price_id);
+
+      const tStripePrice0 = Date.now();
+      const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+      const stripe_ms_price = Date.now() - tStripePrice0;
+
+      mode = price.type === 'recurring' ? 'subscription' : 'payment';
+      pmeta = price.metadata || {};
+      const rowMeta = (row?.metadata as any) ?? {};
+      price_list = rowMeta.price_list ?? '';
+      interval =
+        (price.type === 'recurring' ? price.recurring?.interval : null) ??
+        (rowMeta.interval ?? '');
+
+      console.log(
+        JSON.stringify({
+          event: 'checkout.catalog_price',
+          reqId,
+          rpc_ms,
+          stripe_ms_price,
+          price_id_suffix: priceId.slice(-8),
+          mode,
+          sku,
+          currency,
+        })
+      );
+    }
+
+    // ---- 3) Crear sesión Embedded -----------------------------------------
+    const returnUrl = f_buildReturnUrl(); // construye usando APP_URL
     const idempotencyKey =
-      req.headers.get('idempotency-key') || `chk_${reqId}_${sku}_${Date.now()}`;
+      req.headers.get('idempotency-key') || `chk_${reqId}_${priceId}_${Date.now()}`;
 
     const tStripe0 = Date.now();
     const session = await f_createStripeEmbeddedSession({
@@ -63,7 +121,7 @@ export async function POST(req: NextRequest) {
       quantity: 1,
       idempotencyKey,
       metadata: {
-        sku: String(pmeta.sku ?? sku),
+        sku: String(pmeta.sku ?? sku ?? ''),
         fulfillment_type: pmeta.fulfillment_type ?? '',
         success_slug: pmeta.success_slug ?? '',
         price_list: price_list ?? '',
@@ -73,31 +131,28 @@ export async function POST(req: NextRequest) {
     });
     const stripe_ms = Date.now() - tStripe0;
 
-    // 5) Respuesta
+    // ---- 4) Respuesta ------------------------------------------------------
     console.log(
       JSON.stringify({
         event: 'checkout.create',
         reqId,
-        sku,
-        currency,
-        rpc_ms,
-        stripe_ms_price,
-        stripe_ms,
         mode,
+        currency,
         price_id_suffix: priceId.slice(-8),
+        stripe_ms,
         outcome: 'ok',
         sessionId: session.sessionId,
       })
     );
 
-    return json({ client_secret: session.client_secret, sessionId: session.sessionId }, 200);
+    return json({ client_secret: session.client_secret, session_id: session.sessionId }, 200);
   } catch (e: any) {
     // Validación propia
     if (e?.code === 'BAD_REQUEST') {
       return json({ code: 'BAD_REQUEST' }, 400);
     }
 
-    // Errores SQL mapeados
+    // Errores SQL mapeados (catálogo)
     if (
       e?.code === 'P0002' ||
       e?.code === '22023' ||
