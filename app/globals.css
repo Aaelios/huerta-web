@@ -1,3 +1,5 @@
+/* app/globals.css */
+
 /* =====================
    Tipografía Satoshi
    ===================== */
@@ -39,17 +41,18 @@
   --primary-2: #50C878;
   --primary-3: #33824D;
 
-  /* Negro base */
+  /* Base */
   --black: #0A0A0A;
-
-  /* Blanco base */
   --white: #FFFFFF;
-
   --gray: #F5F5F5;
 
-  /* Fondo y texto */
-  --bg: #002329;
-  --fg: #03151A;
+  /* Fondo y texto con alto contraste */
+  --bg: #0B1D22;           /* fondo principal oscuro */
+  --surface: #0F262C;      /* bloques/cards */
+  --fg: #E6F1F3;           /* texto primario */
+  --fg-80: rgba(230,241,243,0.8);
+  --fg-70: rgba(230,241,243,0.7);
+  --fg-60: rgba(230,241,243,0.6);
 
   /* Layout */
   --maxw: 960px;
@@ -72,9 +75,7 @@ a {
   color: var(--primary-2);
   text-decoration: none;
 }
-a:hover {
-  text-decoration: underline;
-}
+a:hover { text-decoration: underline; }
 
 /* Utilidades de color */
 .text-black-100 { color: var(--black); }
@@ -90,22 +91,22 @@ a:hover {
 /* =====================
    Escala tipográfica
    ===================== */
-h1 { font-size: 60px; line-height: 1.1; font-weight: 500; color: var(--fg); margin: 0 0 12px; }
-h2 { font-size: 44px; line-height: 1.2; font-weight: 700; color: var(--fg); margin: 0 0 12px; }
-h3 { font-size: 36px; line-height: 1.4; font-weight: 700; color: var(--fg); margin: 0 0 12px; }
-h4 { font-size: 32px; line-height: 1.3; font-weight: 500; color: var(--black); margin: 0 0 12px; }
-h5 { font-size: 22px; line-height: 1.4; font-weight: 500; color: var(--black); margin: 0 0 12px; }
-h6 { font-size: 18px; line-height: 1.4; font-weight: 400; color: var(--black); margin: 0 0 12px; }
+h1 { font-size: 60px; line-height: 1.1; font-weight: 700; color: var(--fg);    margin: 0 0 12px; }
+h2 { font-size: 44px; line-height: 1.2; font-weight: 700; color: var(--fg);    margin: 0 0 12px; }
+h3 { font-size: 36px; line-height: 1.3; font-weight: 700; color: var(--fg);    margin: 0 0 12px; }
+h4 { font-size: 28px; line-height: 1.35; font-weight: 600; color: var(--fg-80); margin: 0 0 12px; }
+h5 { font-size: 22px; line-height: 1.4; font-weight: 500; color: var(--fg-80);  margin: 0 0 12px; }
+h6 { font-size: 18px; line-height: 1.4; font-weight: 400; color: var(--fg-70);  margin: 0 0 12px; }
 
 p {
   font-size: 16px;
   line-height: 1.6;
   font-weight: 400;
-  color: var(--black);
+  color: var(--fg-80);
   margin: 0 0 12px;
 }
-p.medium { font-weight: 500; line-height: 1.4; }
-p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--white); }
+p.medium { font-weight: 500; line-height: 1.5; color: var(--fg); }
+p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--fg-70); }
 
 /* =====================
    Layout base
@@ -118,7 +119,7 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 
 .site-header {
   padding: 12px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
   background: var(--bg);
 }
 
@@ -130,10 +131,11 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 
 .site-footer {
   padding: 24px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid rgba(255,255,255,0.12);
   margin-top: 40px;
   text-align: center;
-  color: var(--black);
+  color: var(--fg-70);
+  background: var(--bg);
 }
 
 /* ==== Header responsive (NEW) ==== */
@@ -151,7 +153,7 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 .nav-right{ display:flex; align-items:center; gap:12px; justify-self:end; }
 
 /* Enlaces: 75% en reposo, blanco en hover/activo */
-.nav-link{ color:rgba(255,255,255,.75); padding:6px 0; font-size:16px; }
+.nav-link{ color:rgba(255,255,255,.85); padding:6px 0; font-size:16px; }
 .nav-link:hover{ color:#fff; }
 .nav-link.active{ color:#fff; border-bottom:2px solid var(--primary-2); }
 
@@ -182,7 +184,7 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 .mobile-panel{ display:none; background:var(--bg); border-top:1px solid rgba(255,255,255,.12); }
 .mobile-panel[data-open="true"]{ display:block; }
 .mobile-panel nav{ display:flex; flex-direction:column; gap:12px; padding:12px 20px; }
-.mobile-actions{ display:flex; flex-direction:column; gap:12px; margin-top:8px; align-items:flex-start; } /* evita ancho completo */
+.mobile-actions{ display:flex; flex-direction:column; gap:12px; margin-top:8px; align-items:flex-start; }
 
 /* Desktop */
 @media (min-width:1024px){
@@ -194,12 +196,10 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
   .nav-link{ font-size:17px; }
 }
 
-
 /* ==== Footer (UPDATED v2) ==== */
 .footer-grid{
   display:grid;
   gap:28px;
-  /* móvil: columna izquierda arriba, luego dos columnas lado a lado */
   grid-template-columns:1fr 1fr;
   grid-template-areas:
     "left left"
@@ -215,9 +215,8 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 .footer-col .brand{ color:#fff; font-weight:700; margin:0 0 8px; }
 .footer-col h5{ color:#fff; margin:12px 0 8px; }
 .footer-col strong{ color:#fff; display:block; margin:0 0 8px; }
-.footer-col p{ color:rgba(255,255,255,.75); }
+.footer-col p{ color:var(--fg-70); }
 
-/* Formulario: botón debajo y ancho correcto en móvil */
 .subscribe-form{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
 .subscribe-form .input{ width:100%; }
 .subscribe-form .btn-solid{ align-self:flex-start; }
@@ -227,7 +226,7 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
   background:rgba(255,255,255,.08); color:#fff;
   border:1px solid rgba(255,255,255,.18); outline:none;
 }
-.input::placeholder{ color:rgba(255,255,255,.65); }
+.input::placeholder{ color:rgba(255,255,255,.75); }
 
 .btn-solid{
   display:inline-flex; align-items:center; justify-content:center;
@@ -237,17 +236,17 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
 .btn-solid:hover{ opacity:.9; }
 
 .footer-list{ list-style:none; padding:0; margin:8px 0 0; display:grid; gap:10px; }
-.footer-list a{ color:rgba(255,255,255,.75); }
+.footer-list a{ color:var(--fg-70); }
 .footer-list a:hover{ color:#fff; }
 
 .footer-divider{ border:0; border-top:1px solid rgba(255,255,255,.12); margin:24px 0; }
 
 .footer-bottom{
   display:flex; flex-direction:column; gap:8px; padding-bottom:24px;
-  color:rgba(255,255,255,.75); text-align:left;
+  color:var(--fg-70); text-align:left;
 }
 
-/* Desktop: dos columnas derechas pegadas al borde derecho */
+/* Desktop footer layout */
 @media (min-width:1024px){
   .footer-grid{
     grid-template-columns:minmax(0,560px) 220px 220px;
@@ -256,7 +255,7 @@ p.small  { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--whi
     column-gap:48px;
   }
   .footer-col:nth-child(2),
-  .footer-col:nth-child(3){ justify-self:end; } /* ancla a la derecha */
+  .footer-col:nth-child(3){ justify-self:end; }
   .footer-bottom{ flex-direction:row; justify-content:space-between; align-items:center; }
 }
 

@@ -2,21 +2,19 @@
 import Stripe from 'stripe';
 import Link from 'next/link';
 
-export const runtime = 'nodejs'; // Stripe SDK requiere Node
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type SearchParams = Record<string, string | string[] | undefined>;
 type PageProps = {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<SearchParams>;
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2024-06-20',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 function isString(x: unknown): x is string {
   return typeof x === 'string' && x.length > 0;
 }
-
 function safeSlug(x: unknown): string | null {
   if (!isString(x)) return null;
   return x.replace(/[^a-z0-9\-_/]/gi, '');
@@ -26,13 +24,19 @@ async function getSession(sessionId: string) {
   try {
     const s = await stripe.checkout.sessions.retrieve(sessionId);
     return { ok: true as const, s };
-  } catch (e: any) {
-    return { ok: false as const, error: e?.message || 'SESSION_FETCH_ERROR' };
+  } catch (e: unknown) {
+    let msg = 'SESSION_FETCH_ERROR';
+    if (typeof e === 'object' && e !== null && 'message' in e) {
+      msg = String((e as { message?: string }).message);
+    }
+    return { ok: false as const, error: msg };
   }
 }
 
 export default async function Page({ searchParams }: PageProps) {
-  const session_id = isString(searchParams?.session_id) ? searchParams!.session_id : '';
+  const sp = searchParams ? await searchParams : undefined;
+  const session_id = isString(sp?.session_id) ? sp!.session_id : '';
+
   if (!session_id) {
     return (
       <main className="mx-auto max-w-xl p-6">
@@ -54,16 +58,18 @@ export default async function Page({ searchParams }: PageProps) {
     );
   }
 
-  const status = s.status; // open | complete | expired
-  const payment_status = s.payment_status; // paid | unpaid | no_payment_required
+  const status = s.status;
+  const payment_status = s.payment_status;
   const md = (s.metadata || {}) as Record<string, string | undefined>;
   const success_slug = safeSlug(md.success_slug) || 'mis-compras';
   const sku = md.sku || '';
   const mode = s.mode || '';
 
-  const paid = status === 'complete' || payment_status === 'paid' || payment_status === 'no_payment_required';
+  const paid =
+    status === 'complete' ||
+    payment_status === 'paid' ||
+    payment_status === 'no_payment_required';
 
-  // Datos para GTM
   const dl = {
     event: 'purchase',
     stripe_session_id: s.id,
@@ -88,7 +94,7 @@ export default async function Page({ searchParams }: PageProps) {
       ) : status === 'open' ? (
         <>
           <h1 className="text-2xl font-semibold mb-2">Tu pago está en proceso</h1>
-          <p className="mb-4">Aún no recibimos la confirmación. Si pagaste con OXXO o SPEI puede tardar.</p>
+          <p className="mb-4">Si pagaste con OXXO o SPEI puede tardar.</p>
           <div className="mt-4">
             <Link href="/mis-compras" className="underline">Ver mis compras</Link>
           </div>
@@ -103,7 +109,6 @@ export default async function Page({ searchParams }: PageProps) {
         </>
       )}
 
-      {/* DataLayer para GTM cuando hay pago confirmado */}
       {paid ? (
         <script
           dangerouslySetInnerHTML={{
@@ -115,7 +120,6 @@ export default async function Page({ searchParams }: PageProps) {
         />
       ) : null}
 
-      {/* Info mínima para soporte */}
       <div className="mt-8 text-xs text-neutral-500">
         <div>Ref: {s.id}</div>
         <div>Estado: {String(status)} / {String(payment_status)}</div>

@@ -17,9 +17,7 @@ export type CreateEmbeddedSessionResult = {
   stripe_request_id?: string;
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2024-06-20',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 /**
  * Crea una Checkout Session en modo Embedded.
@@ -63,7 +61,7 @@ export async function f_createStripeEmbeddedSession(
     }
 
     const stripe_request_id =
-      (session?.last_response as any)?.headers?.['request-id'] ||
+     // (session?.last_response as any)?.headers?.['request-id'] ||
       (session?.lastResponse as any)?.headers?.['request-id']; // compat
 
     return {
