@@ -1,67 +1,93 @@
 // lib/checkout/f_createStripeEmbeddedSession.ts
-import type Stripe from 'stripe';
-import { m_getStripeClient } from '../stripe/m_getStripeClient';
+import Stripe from 'stripe';
 
 export type CreateEmbeddedSessionInput = {
   priceId: string;
-  returnUrl: string;
   mode: 'payment' | 'subscription';
+  returnUrl: string;
   quantity?: number;
   customerEmail?: string | null;
   idempotencyKey?: string;
+  metadata?: Record<string, string | number | boolean | null | undefined>;
 };
 
-export type CreateEmbeddedSessionOK = {
+export type CreateEmbeddedSessionResult = {
   client_secret: string;
   sessionId: string;
   stripe_request_id?: string;
 };
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2024-06-20',
+});
+
 /**
- * f_createStripeEmbeddedSession
- * Crea una sesión de Stripe Checkout en modo embebido.
- * Devuelve { client_secret, sessionId } para montar el embed en /checkout.
+ * Crea una Checkout Session en modo Embedded.
+ * No realiza validaciones de SKU/precios; asume que priceId ya es válido.
+ * Propaga metadata al objeto session según contrato del proyecto.
  */
 export async function f_createStripeEmbeddedSession(
-  args: CreateEmbeddedSessionInput
-): Promise<CreateEmbeddedSessionOK> {
-  const stripe = m_getStripeClient();
-
-  const params: Stripe.Checkout.SessionCreateParams = {
-    ui_mode: 'embedded',
-    mode: args.mode,
-    line_items: [
-      {
-        price: args.priceId,
-        quantity: args.quantity ?? 1,
-      },
-    ],
-    // Embedded: solo return_url. cancel_url no aplica.
-    return_url: args.returnUrl,
-    // Recomendado por Stripe para embedded
-    redirect_on_completion: 'if_required',
-  };
-
-  if (args.customerEmail) {
-    (params as any).customer_email = args.customerEmail;
+  input: CreateEmbeddedSessionInput
+): Promise<CreateEmbeddedSessionResult> {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw Object.assign(new Error('STRIPE_SECRET_KEY not configured'), { code: 'ENV_MISSING' });
   }
+  const {
+    priceId,
+    mode,
+    returnUrl,
+    quantity = 1,
+    customerEmail,
+    idempotencyKey,
+    metadata,
+  } = input;
 
-  const requestOpts: Stripe.RequestOptions = {};
-  if (args.idempotencyKey) {
-    requestOpts.idempotencyKey = args.idempotencyKey;
+  try {
+    const params: Stripe.Checkout.SessionCreateParams = {
+      mode,
+      ui_mode: 'embedded',
+      return_url: returnUrl,
+      line_items: [{ price: priceId, quantity }],
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
+      ...(metadata ? { metadata: sanitizeMetadata(metadata) } : {}),
+    };
+
+    const session = await stripe.checkout.sessions.create(params, {
+      idempotencyKey,
+    });
+
+    if (!session?.client_secret || !session?.id) {
+      throw Object.assign(new Error('Missing client_secret or id from Stripe'), {
+        code: 'STRIPE_RESPONSE_INCOMPLETE',
+      });
+    }
+
+    const stripe_request_id =
+      (session?.last_response as any)?.headers?.['request-id'] ||
+      (session?.lastResponse as any)?.headers?.['request-id']; // compat
+
+    return {
+      client_secret: session.client_secret,
+      sessionId: session.id,
+      stripe_request_id,
+    };
+  } catch (e: any) {
+    // Re-emitir error para que el caller lo clasifique (STRIPE_ERROR, etc.)
+    throw e;
   }
+}
 
-  const session = await stripe.checkout.sessions.create(params, requestOpts);
-
-  if (!session.client_secret) {
-    const err: any = new Error('Missing client_secret from Stripe');
-    err.code = 'STRIPE_ERROR';
-    throw err;
+/**
+ * Convierte valores no string a string y descarta undefined para cumplir
+ * con el esquema de metadata de Stripe (clave/valor string).
+ */
+function sanitizeMetadata(
+  md: Record<string, string | number | boolean | null | undefined>
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(md || {})) {
+    if (v === undefined) continue;
+    out[k] = v === null ? '' : String(v);
   }
-
-  return {
-    client_secret: session.client_secret,
-    sessionId: session.id,
-    stripe_request_id: (session.lastResponse as any)?.requestId,
-  };
+  return out;
 }

@@ -1,17 +1,22 @@
 // app/api/stripe/create-checkout-session/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { f_parseInput } from '@/lib/checkout/f_parseInput';
 import { f_callCatalogPrice } from '@/lib/checkout/f_callCatalogPrice';
 import { f_mapSqlError } from '@/lib/checkout/f_mapSqlError';
 import { f_createStripeEmbeddedSession } from '@/lib/checkout/f_createStripeEmbeddedSession';
 import { f_buildReturnUrl } from '@/lib/checkout/f_buildReturnUrls';
 
-export const runtime = 'nodejs'; // Stripe SDK requiere Node.js (no Edge)
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
 }
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2024-06-20',
+});
 
 export async function POST(req: NextRequest) {
   const t0 = Date.now();
@@ -26,28 +31,51 @@ export async function POST(req: NextRequest) {
     const raw = await req.json().catch(() => ({}));
     const { sku, currency } = f_parseInput(raw);
 
-    // 2) RPC catálogo → resolver price_id
+    // 2) Catálogo → price_id y metadatos auxiliares
     const tRpc0 = Date.now();
-    const row = await f_callCatalogPrice({ sku, currency });
+    const row = await f_callCatalogPrice({ sku, currency }); // -> { stripe_price_id, amount_cents, currency, metadata? }
     const rpc_ms = Date.now() - tRpc0;
 
-    // 3) Stripe Embedded
-    const returnUrl = f_buildReturnUrl();
+    const priceId = String(row.stripe_price_id);
+
+    // 3) Stripe Price canónico → tipo y metadata
+    const tStripePrice0 = Date.now();
+    const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+    const stripe_ms_price = Date.now() - tStripePrice0;
+
+    const mode: 'payment' | 'subscription' =
+      price.type === 'recurring' ? 'subscription' : 'payment';
+
+    const pmeta = price.metadata || {};
+    const price_list = (row?.metadata as any)?.price_list ?? '';
+    const interval =
+      (price.type === 'recurring' ? price.recurring?.interval : null) ??
+      ((row?.metadata as any)?.interval ?? '');
+
+    // 4) Crear sesión Embedded con metadata requerida
+    const returnUrl = f_buildReturnUrl(); // usa NEXT_PUBLIC_SITE_URL o equivalente interno si así lo definiste
     const idempotencyKey =
       req.headers.get('idempotency-key') || `chk_${reqId}_${sku}_${Date.now()}`;
 
     const tStripe0 = Date.now();
     const session = await f_createStripeEmbeddedSession({
-      priceId: row.stripe_price_id,
-      mode: 'payment', // si ese price es de subscripción: 'subscription'
+      priceId,
+      mode,
       returnUrl,
       quantity: 1,
       idempotencyKey,
+      metadata: {
+        sku: String(pmeta.sku ?? sku),
+        fulfillment_type: pmeta.fulfillment_type ?? '',
+        success_slug: pmeta.success_slug ?? '',
+        price_list: price_list ?? '',
+        interval: interval ?? '',
+        price_id: priceId,
+      },
     });
     const stripe_ms = Date.now() - tStripe0;
 
-    // 4) Respuesta
-    // Opcional: log estructurado mínimo
+    // 5) Respuesta
     console.log(
       JSON.stringify({
         event: 'checkout.create',
@@ -55,7 +83,10 @@ export async function POST(req: NextRequest) {
         sku,
         currency,
         rpc_ms,
+        stripe_ms_price,
         stripe_ms,
+        mode,
+        price_id_suffix: priceId.slice(-8),
         outcome: 'ok',
         sessionId: session.sessionId,
       })
@@ -63,13 +94,18 @@ export async function POST(req: NextRequest) {
 
     return json({ client_secret: session.client_secret, sessionId: session.sessionId }, 200);
   } catch (e: any) {
-    // Errores de validación propia
+    // Validación propia
     if (e?.code === 'BAD_REQUEST') {
       return json({ code: 'BAD_REQUEST' }, 400);
     }
 
     // Errores SQL mapeados
-    if (e?.code === 'P0002' || e?.code === '22023' || e?.code === 'P0001' || /^NOT_FOUND|INVALID_CURRENCY|AMBIGUOUS_PRICE/i.test(e?.message || '')) {
+    if (
+      e?.code === 'P0002' ||
+      e?.code === '22023' ||
+      e?.code === 'P0001' ||
+      /^NOT_FOUND|INVALID_CURRENCY|AMBIGUOUS_PRICE/i.test(e?.message || '')
+    ) {
       const mapped = f_mapSqlError(e);
       console.warn(
         JSON.stringify({
@@ -109,12 +145,10 @@ export async function POST(req: NextRequest) {
     return json({ code: 'INTERNAL_ERROR' }, 500);
   } finally {
     const took_ms = Date.now() - t0;
-    // Trace simple
     console.log(JSON.stringify({ event: 'checkout.create.done', reqId, took_ms }));
   }
 }
 
-// Bloquea otros métodos
 export async function GET() {
   return NextResponse.json({ code: 'METHOD_NOT_ALLOWED' }, { status: 405 });
 }
