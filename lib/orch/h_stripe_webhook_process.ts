@@ -15,7 +15,6 @@ type TStripeWebhookResult =
   | { outcome: 'processed'; details?: Record<string, any> }
   | { outcome: 'ignored'; reason: string; details?: Record<string, any> };
 
-// Extrae email desde session, invoice o payment_intent sin PII innecesaria
 function getEmail(input: TStripeWebhookInput): string | null {
   const { session, invoice, payment_intent } = input;
 
@@ -35,7 +34,6 @@ function getEmail(input: TStripeWebhookInput): string | null {
   }
 
   if (payment_intent) {
-    // Stripe TS puede no tipar charges como propiedad; usar any para lectura segura
     const piAny = payment_intent as any;
     if (piAny?.receipt_email) return piAny.receipt_email as string;
     const ch = piAny?.charges?.data?.[0];
@@ -50,7 +48,6 @@ function extractPriceIds(input: TStripeWebhookInput): string[] {
   const ids: string[] = [];
   const { session, invoice } = input;
 
-  // Checkout Session: price.id OR pricing.price_details.price
   if (session) {
     const data: any[] = ((session as any).line_items?.data ?? []) as any[];
     for (const it of data) {
@@ -61,7 +58,6 @@ function extractPriceIds(input: TStripeWebhookInput): string[] {
     }
   }
 
-  // Invoice: price.id OR pricing.price_details.price
   if (invoice) {
     const data: any[] = ((invoice as any).lines?.data ?? []) as any[];
     for (const ln of data) {
@@ -95,13 +91,16 @@ export default async function h_stripe_webhook_process(
   ]);
   if (!supported.has(type)) return { outcome: 'ignored', reason: 'UNHANDLED_EVENT_TYPE' };
 
-  // Para payment_intent.succeeded no exigimos session/invoice
-  if (type !== 'payment_intent.succeeded' && !session && !invoice) {
-    return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
-  }
-
+  // En todos los casos garantizamos existencia de usuario por email
   const email = getEmail(input);
-  if (!email) return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
+  if (!email) {
+    // Para PI necesitamos la session vinculada para obtener email
+    if (type === 'payment_intent.succeeded') {
+      return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
+    }
+  } else {
+    await f_ensureUserByEmail(email);
+  }
 
   // Validaciones de expansiones solo donde aplican
   if (type === 'checkout.session.completed') {
@@ -128,33 +127,34 @@ export default async function h_stripe_webhook_process(
     }
   }
 
-  // Garantiza usuario y obtiene su id
-  const userId: string = (await f_ensureUserByEmail(email)) as unknown as string;
-
-  // Rama nueva: inserción en payments para one-time
+  // Rama: registrar pagos usando wrapper SQL que resuelve identidad en BD
   if (type === 'payment_intent.succeeded') {
-    const supabase = m_getSupabaseService(); // SERVICE ROLE
-    const p_obj = payment_intent as unknown as Record<string, any>;
+    if (!session || !payment_intent) {
+      return { outcome: 'ignored', reason: 'MISSING_SESSION_OR_PI' };
+    }
 
-    // p_order_id: opcional. MVP -> null. Se puede conciliar después por PI o metadata.
-    const { data: paymentId, error: payErr } = await supabase.rpc('f_payments_upsert', {
-      p_user_id: userId,
-      p_obj,
-      p_order_id: null,
-    });
+    const supabase = m_getSupabaseService(); // SERVICE ROLE
+
+    const { data: paymentId, error: payErr } = await supabase.rpc(
+      'f_payments_upsert_by_session',
+      {
+        p_session: session as unknown as Record<string, any>,
+        p_source: payment_intent as unknown as Record<string, any>,
+        p_order_id: null,
+      }
+    );
 
     if (payErr) {
-      console.error('[orch] f_payments_upsert error:', payErr);
-      throw new Error(payErr.message || 'PAYMENTS_UPSERT_FAILED');
+      console.error('[orch] f_payments_upsert_by_session error:', payErr);
+      throw new Error(payErr.message || 'PAYMENTS_UPSERT_BY_SESSION_FAILED');
     }
 
     console.log('[orch]', 'h_stripe_webhook_process', {
       type,
       stripeEventId,
-      email,
+      email: email ?? null,
       paymentId: paymentId ?? null,
-      amount_received: (payment_intent as any)?.amount_received ?? null,
-      currency: (payment_intent as any)?.currency ?? null,
+      pi_id: payment_intent.id,
     });
 
     return {
@@ -162,12 +162,14 @@ export default async function h_stripe_webhook_process(
       details: {
         type,
         paymentId: paymentId ?? null,
-        pi_id: payment_intent?.id ?? null,
+        pi_id: payment_intent.id,
       },
     };
   }
 
-  // Ramas existentes: orders + entitlements via orquestador SQL
+  // Ramas de orquestación existentes: orders + entitlements
+  if (!session && !invoice) return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
+
   const priceIds = extractPriceIds(input);
 
   const session_payload = {
