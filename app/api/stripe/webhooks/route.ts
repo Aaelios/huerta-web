@@ -20,7 +20,7 @@ import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  const version = 'route.v4+pi';
+  const version = 'route.v4+pi+sref';
 
   // 0) Pre-flight config
   const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
         console.warn('[webhook]', version, 'session missing id on event object');
       }
     } else if (event.type === 'payment_intent.succeeded') {
-      // Refetch directo desde Stripe (objeto canónico)
+      // Refetch del PaymentIntent
       const piId =
         (typeof obj?.id === 'string' && obj.id.startsWith('pi_')) ? obj.id :
         (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null);
@@ -111,6 +111,19 @@ export async function POST(req: Request) {
           amount_received: payment_intent.amount_received,
           currency: payment_intent.currency,
         });
+
+        // Buscar la Checkout Session asociada para obtener email si el PI no lo trae
+        try {
+          const sessList = await stripe.checkout.sessions.list({ payment_intent: piId, limit: 1, expand: ['data.line_items'] });
+          const sess = sessList?.data?.[0] ?? null;
+          if (sess?.id) {
+            // Reutiliza tu refetch canónico para asegurar estructura consistente
+            session = await f_refetchSession(sess.id);
+            console.log('[webhook]', version, 'linked session via payment_intent', { session_id: session.id });
+          }
+        } catch (e) {
+          console.warn('[webhook]', version, 'session lookup by payment_intent failed', (e as any)?.message ?? e);
+        }
       } else {
         console.warn('[webhook]', version, 'payment_intent id not found on event object');
       }
