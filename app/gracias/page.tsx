@@ -1,6 +1,8 @@
 // app/gracias/page.tsx
 import Stripe from 'stripe';
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,12 +14,33 @@ type PageProps = {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
+// Supabase (solo lectura; SELECT público habilitado por RLS)
+const supabase = createClient(
+  process.env.SUPABASE_URL as string,
+  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY) as string,
+  { auth: { persistSession: false } }
+)
+
 function isString(x: unknown): x is string {
   return typeof x === 'string' && x.length > 0;
 }
 function safeSlug(x: unknown): string | null {
   if (!isString(x)) return null;
   return x.replace(/[^a-z0-9\-_/]/gi, '');
+}
+
+async function detectLocaleCountry(): Promise<{ locale: string; country: string | null }> {
+  const h = await headers();
+  const al = h.get('accept-language') || '';
+  // toma primer tag, ej: "es-MX,es;q=0.9,en-US;q=0.8"
+  const first = al.split(',')[0]?.trim() || '';
+  if (/^[a-z]{2}-[A-Z]{2}$/.test(first)) {
+    const [lang, region] = first.split('-');
+    return { locale: `${lang}-${region}`, country: region };
+  }
+  if (first.startsWith('es')) return { locale: 'es-MX', country: 'MX' };
+  if (first.startsWith('en')) return { locale: 'en-US', country: 'US' };
+  return { locale: 'es-MX', country: 'MX' };
 }
 
 async function getSession(sessionId: string) {
@@ -30,6 +53,43 @@ async function getSession(sessionId: string) {
       msg = String((e as { message?: string }).message);
     }
     return { ok: false as const, error: msg };
+  }
+}
+
+type TYCopy = {
+  title: string;
+  body_md: string;
+  cta_label: string;
+  cta_slug: string;
+};
+
+async function fetchThankYouCopy(sku: string, locale: string, country: string | null): Promise<TYCopy | null> {
+  try {
+    // 1) sku + locale + country
+    if (country) {
+      const { data } = await supabase
+        .from('thankyou_copy')
+        .select('title,body_md,cta_label,cta_slug')
+        .eq('sku', sku)
+        .eq('locale', locale)
+        .eq('country', country)
+        .maybeSingle();
+      if (data) return data as TYCopy;
+    }
+    // 2) sku + locale (country null)
+    const { data: data2 } = await supabase
+      .from('thankyou_copy')
+      .select('title,body_md,cta_label,cta_slug')
+      .eq('sku', sku)
+      .eq('locale', locale)
+      .is('country', null)
+      .maybeSingle();
+    if (data2) return data2 as TYCopy;
+
+    // 3) sin coincidencia
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -61,7 +121,7 @@ export default async function Page({ searchParams }: PageProps) {
   const status = s.status;
   const payment_status = s.payment_status;
   const md = (s.metadata || {}) as Record<string, string | undefined>;
-  const success_slug = safeSlug(md.success_slug) || 'mis-compras';
+  const success_slug_md = safeSlug(md.success_slug) || 'mis-compras';
   const sku = md.sku || '';
   const mode = s.mode || '';
 
@@ -69,6 +129,15 @@ export default async function Page({ searchParams }: PageProps) {
     status === 'complete' ||
     payment_status === 'paid' ||
     payment_status === 'no_payment_required';
+
+  // Copy dinámico por SKU/locale/country
+  const { locale, country } = await detectLocaleCountry();
+  const copy = sku ? await fetchThankYouCopy(sku, locale, country) : null;
+
+  const title = copy?.title || 'Pago confirmado';
+  const body = copy?.body_md || 'Gracias por tu compra.';
+  const cta_label = copy?.cta_label || 'Continuar';
+  const cta_slug = safeSlug(copy?.cta_slug) || success_slug_md;
 
   const dl = {
     event: 'purchase',
@@ -83,11 +152,11 @@ export default async function Page({ searchParams }: PageProps) {
     <main className="mx-auto max-w-xl p-6">
       {paid ? (
         <>
-          <h1 className="text-2xl font-semibold mb-2">Pago confirmado</h1>
-          <p className="mb-4">Gracias por tu compra.</p>
+          <h1 className="text-2xl font-semibold mb-2">{title}</h1>
+          <p className="mb-4">{body}</p>
           <div className="mt-4">
-            <Link href={`/${success_slug}`} className="inline-block rounded bg-black px-4 py-2 text-white">
-              Continuar
+            <Link href={`/${cta_slug}`} className="inline-block rounded bg-black px-4 py-2 text-white">
+              {cta_label}
             </Link>
           </div>
         </>
