@@ -91,18 +91,50 @@ export default async function h_stripe_webhook_process(
   ]);
   if (!supported.has(type)) return { outcome: 'ignored', reason: 'UNHANDLED_EVENT_TYPE' };
 
-  // En todos los casos garantizamos existencia de usuario por email
   const email = getEmail(input);
-  if (!email) {
-    // Para PI necesitamos la session vinculada para obtener email
-    if (type === 'payment_intent.succeeded') {
-      return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
+  if (!email && type !== 'payment_intent.succeeded') {
+    return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
+  }
+  if (email) await f_ensureUserByEmail(email);
+
+  if (type === 'payment_intent.succeeded') {
+    if (!session || !payment_intent) return { outcome: 'ignored', reason: 'MISSING_SESSION_OR_PI' };
+
+    const supabase = m_getSupabaseService(); // SERVICE ROLE
+
+    // Nota: RETURNS TABLE → supabase-js puede devolver array o fila única
+    const { data, error } = await supabase.rpc('f_payments_upsert_by_session', {
+      p_payment_intent: payment_intent as unknown as Record<string, any>,
+      p_session: session as unknown as Record<string, any>,
+      p_order_id: null,
+    });
+
+    if (error) {
+      console.error('[orch] f_payments_upsert_by_session error:', error);
+      throw new Error(error.message || 'PAYMENTS_UPSERT_BY_SESSION_FAILED');
     }
-  } else {
-    await f_ensureUserByEmail(email);
+
+    const row = Array.isArray(data) ? data[0] : data;
+    const paymentId = row?.payment_id ?? row?.paymentId ?? null;
+    const orderId = row?.order_id ?? row?.orderId ?? null;
+
+    console.log('[orch]', 'h_stripe_webhook_process', {
+      type,
+      stripeEventId,
+      email: email ?? null,
+      paymentId,
+      orderId,
+      pi_id: payment_intent.id,
+    });
+
+    return {
+      outcome: 'processed',
+      details: { type, paymentId, orderId, pi_id: payment_intent.id },
+    };
   }
 
-  // Validaciones de expansiones solo donde aplican
+  if (!session && !invoice) return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
+
   if (type === 'checkout.session.completed') {
     const ok = Array.isArray((session as any)?.line_items?.data);
     const flags = hasPricePath(session);
@@ -126,49 +158,6 @@ export default async function h_stripe_webhook_process(
       };
     }
   }
-
-  // Rama: registrar pagos usando wrapper SQL que resuelve identidad en BD
-  if (type === 'payment_intent.succeeded') {
-    if (!session || !payment_intent) {
-      return { outcome: 'ignored', reason: 'MISSING_SESSION_OR_PI' };
-    }
-
-    const supabase = m_getSupabaseService(); // SERVICE ROLE
-
-    const { data: paymentId, error: payErr } = await supabase.rpc(
-      'f_payments_upsert_by_session',
-      {
-        p_session: session as unknown as Record<string, any>,
-        p_source: payment_intent as unknown as Record<string, any>,
-        p_order_id: null,
-      }
-    );
-
-    if (payErr) {
-      console.error('[orch] f_payments_upsert_by_session error:', payErr);
-      throw new Error(payErr.message || 'PAYMENTS_UPSERT_BY_SESSION_FAILED');
-    }
-
-    console.log('[orch]', 'h_stripe_webhook_process', {
-      type,
-      stripeEventId,
-      email: email ?? null,
-      paymentId: paymentId ?? null,
-      pi_id: payment_intent.id,
-    });
-
-    return {
-      outcome: 'processed',
-      details: {
-        type,
-        paymentId: paymentId ?? null,
-        pi_id: payment_intent.id,
-      },
-    };
-  }
-
-  // Ramas de orquestación existentes: orders + entitlements
-  if (!session && !invoice) return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
 
   const priceIds = extractPriceIds(input);
 
