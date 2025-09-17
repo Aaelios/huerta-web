@@ -3,6 +3,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import Stripe from 'stripe';
+import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 // Idempotencia y log en DB
 import { f_webhookEvents_getByStripeId } from '@/lib/webhooks/f_webhookEvents_getByStripeId';
@@ -17,115 +19,74 @@ import f_refetchInvoice from '@/lib/stripe/f_refetchInvoice';
 // Orquestador DB (usa SECURITY DEFINER en Supabase)
 import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 
+// --- env ---
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY || '');
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+// dominio base para el CTA del correo (producción)
+const BASE_URL = 'https://huerta.consulting';
 
 export async function POST(req: Request) {
-  const version = 'route.v4+pi+sref';
-
-  // 0) Pre-flight config
-  const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const version = 'route.v5+receipt';
   const sig = req.headers.get('stripe-signature');
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!secret) {
-    console.error('[webhook]', version, 'missing STRIPE_WEBHOOK_SECRET');
-    return new Response('missing webhook secret', { status: 500 });
-  }
+  if (!secret) return new Response('missing webhook secret', { status: 500 });
   if (!sig) return new Response('missing signature', { status: 400 });
 
-  // 1) Leer raw body y verificar firma
+  // 1) raw y verificación
   const raw = await req.text();
-
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(raw, sig, secret);
   } catch (err: any) {
-    console.error('[webhook]', version, 'constructEvent error', err?.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // 2) Idempotencia mínima
+  // 2) idempotencia evento
   try {
     const existing = await f_webhookEvents_getByStripeId(event.id);
     if (existing) {
-      console.log('[webhook]', version, 'replay', event.type, event.id);
       return Response.json({ ok: true, replay: true, id: event.id, type: event.type }, { status: 200 });
     }
-    await f_webhookEvents_markReceived({
-      stripeEventId: event.id,
-      type: event.type,
-      payload: raw
-    });
-  } catch (e) {
-    console.error('[webhook]', version, 'markReceived error', (e as any)?.message ?? e);
-    // continuamos
-  }
+    await f_webhookEvents_markReceived({ stripeEventId: event.id, type: event.type, payload: raw });
+  } catch {}
 
-  // 3) Refetch objeto canónico desde Stripe
+  // 3) refetch canónico
   let session: Stripe.Checkout.Session | null = null;
   let invoice: Stripe.Invoice | null = null;
   let payment_intent: Stripe.PaymentIntent | null = null;
-
-  const flags: Record<string, any> = {
-    hasServiceRole,
-    has_price_expanded: false,
-    has_compact_price: false,
-    currency: null,
-    amount_total: null,
-  };
 
   try {
     const obj: any = (event as any).data?.object;
 
     if (event.type === 'invoice.payment_succeeded') {
-      const invoiceId = obj?.id as string | undefined; // in_...
+      const invoiceId = obj?.id as string | undefined;
       if (invoiceId) {
         invoice = await f_refetchInvoice(invoiceId);
-        try {
-          const li: any = (invoice as any)?.lines?.data?.[0] ?? null;
-          flags.has_price_expanded = Boolean(li?.price?.id);
-          flags.has_compact_price = Boolean(li?.pricing?.price_details?.price);
-          flags.currency = (invoice as any)?.currency ?? null;
-          flags.amount_total = (invoice as any)?.total ?? null;
-        } catch {}
-        console.log('[webhook]', version, 'refetch invoice', invoice.id, flags);
-      } else {
-        console.warn('[webhook]', version, 'invoice missing id on event object');
+        console.log('[webhook]', version, 'refetch invoice', invoice.id);
       }
     } else if (event.type === 'checkout.session.completed') {
-      const sessionId = obj?.id as string | undefined; // cs_...
+      const sessionId = obj?.id as string | undefined;
       if (sessionId) {
         session = await f_refetchSession(sessionId);
-        console.log('[webhook]', version, 'refetch session', session.id, { hasServiceRole });
-      } else {
-        console.warn('[webhook]', version, 'session missing id on event object');
+        console.log('[webhook]', version, 'refetch session', session.id);
       }
     } else if (event.type === 'payment_intent.succeeded') {
-      // Refetch del PaymentIntent
       const piId =
         (typeof obj?.id === 'string' && obj.id.startsWith('pi_')) ? obj.id :
         (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null);
       if (piId) {
         payment_intent = await stripe.paymentIntents.retrieve(piId, { expand: ['charges.data.balance_transaction'] });
-        console.log('[webhook]', version, 'refetch payment_intent', payment_intent.id, {
-          amount_received: payment_intent.amount_received,
-          currency: payment_intent.currency,
-        });
-
-        // Buscar la Checkout Session asociada para obtener email si el PI no lo trae
         try {
           const sessList = await stripe.checkout.sessions.list({ payment_intent: piId, limit: 1, expand: ['data.line_items'] });
           const sess = sessList?.data?.[0] ?? null;
-          if (sess?.id) {
-            // Reutiliza tu refetch canónico para asegurar estructura consistente
-            session = await f_refetchSession(sess.id);
-            console.log('[webhook]', version, 'linked session via payment_intent', { session_id: session.id });
-          }
-        } catch (e) {
-          console.warn('[webhook]', version, 'session lookup by payment_intent failed', (e as any)?.message ?? e);
-        }
-      } else {
-        console.warn('[webhook]', version, 'payment_intent id not found on event object');
+          if (sess?.id) session = await f_refetchSession(sess.id);
+        } catch {}
+        console.log('[webhook]', version, 'refetch payment_intent', payment_intent.id);
       }
     } else {
       console.log('[webhook]', version, 'ignored type', event.type);
@@ -134,103 +95,25 @@ export async function POST(req: Request) {
     console.error('[webhook]', version, 'refetch error', (e as any)?.message ?? e);
   }
 
-  // 3.1) Observabilidad L1 (post-refetch o sin refetch)
+  // 3.1) observabilidad mínima
   try {
     const obj: any = (event as any).data?.object;
-
-    const objectHint =
-      (obj?.object as string) ||
-      (session ? 'checkout.session' : null) ||
-      (invoice ? 'invoice' : null) ||
-      (payment_intent ? 'payment_intent' : null);
-
-    const payment_intent_id =
-      (session?.payment_intent as string) ||
-      (payment_intent?.id as string) ||
-      (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null) ||
-      ((obj?.id?.startsWith?.('pi_') ? obj.id : null));
-
-    const invoice_id =
-      invoice?.id ||
-      (obj?.id?.startsWith?.('in_') ? obj.id : null) ||
-      (typeof obj?.invoice === 'string' ? obj.invoice : null);
-
-    const session_mode = (session?.mode as string) || (obj?.mode as string) || null;
-    const session_payment_status =
-      (session?.payment_status as string) || (obj?.payment_status as string) || null;
-
-    const amount_cents =
-      (session?.amount_total as number | null) ??
-      (invoice?.total as number | null) ??
-      (payment_intent?.amount_received as number | null) ??
-      (obj?.amount_received as number | null) ??
-      (obj?.amount as number | null) ??
-      null;
-
-    const currency =
-      (session?.currency as string) ||
-      (invoice?.currency as string) ||
-      (payment_intent?.currency as string) ||
-      (obj?.currency as string) ||
-      null;
-
-    const customer_id =
-      (session?.customer as string) ||
-      (invoice?.customer as string) ||
-      (payment_intent?.customer as string) ||
-      (obj?.customer as string) ||
-      null;
-
-    const sku =
-      (session?.metadata as any)?.sku ??
-      (invoice?.metadata as any)?.sku ??
-      (payment_intent?.metadata as any)?.sku ??
-      (obj?.metadata as any)?.sku ??
-      null;
-
-    let price_id: string | null =
-      (session?.metadata as any)?.price_id ??
-      (invoice?.metadata as any)?.price_id ??
-      (payment_intent?.metadata as any)?.price_id ??
-      (obj?.metadata as any)?.price_id ??
-      null;
-
-    if (!price_id && invoice?.lines?.data?.length) {
-      const li: any = invoice.lines.data[0];
-      price_id = li?.price?.id ?? null;
-    }
-
     const l1 = {
-      event_type: event.type,
-      event_id: event.id,
-      created_ts: event.created ? new Date(event.created * 1000).toISOString() : null,
-      object: objectHint ?? null,
-      session_mode,
-      session_payment_status,
-      payment_intent_id,
-      invoice_id,
-      amount_cents,
-      currency,
-      customer_id,
-      sku,
-      price_id,
-      refetch: Boolean(session || invoice || payment_intent),
+      type: event.type,
+      id: event.id,
+      session: session?.id ?? null,
+      invoice: invoice?.id ?? null,
+      payment_intent: payment_intent?.id ?? null
     };
+    console.log('[webhook]', version, 'L1', l1);
+  } catch {}
 
-    console.log('[webhook]', version, 'L1_OBS', l1);
-  } catch (e) {
-    console.error('[webhook]', version, 'L1_OBS error', (e as any)?.message ?? e);
-  }
+  // 4) orquestación core
+  let processed = false;
+  let linkedOrderId: string | null = null;
 
-  // 4) Orquestación en DB
   try {
     if (session || invoice || payment_intent) {
-      console.log('[webhook]', version, 'orchestrate start', event.type, event.id, {
-        refetch_invoice: invoice?.id ?? null,
-        refetch_session: session?.id ?? null,
-        refetch_payment_intent: payment_intent?.id ?? null,
-      });
-
       const result = await h_stripe_webhook_process({
         type: event.type,
         stripeEventId: event.id,
@@ -239,37 +122,95 @@ export async function POST(req: Request) {
         payment_intent: payment_intent ?? undefined,
       } as any);
 
-      console.log('[webhook]', version, 'orchestrate result', {
-        outcome: result?.outcome ?? null,
-        orderId: (result as any)?.details?.orderId ?? null,
-      });
+      processed = result?.outcome === 'processed';
+      linkedOrderId = (result as any)?.details?.orderId ?? null;
 
-      if (result?.outcome === 'processed') {
-        const orderId = (result as any)?.details?.orderId ?? null;
-        try {
-          await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId });
-        } catch (e) {
-          console.error('[webhook]', version, 'markProcessed error', (e as any)?.message ?? e);
-        }
-      } else if (result?.outcome === 'ignored') {
-        try {
-          await f_webhookEvents_markIgnored({ stripeEventId: event.id });
-        } catch (e) {
-          console.error('[webhook]', version, 'markIgnored error', (e as any)?.message ?? e);
-        }
-      }
-    } else {
       try {
-        await f_webhookEvents_markIgnored({ stripeEventId: event.id });
-      } catch (e) {
-        console.error('[webhook]', version, 'markIgnored error', (e as any)?.message ?? e);
-      }
+        if (result?.outcome === 'processed') {
+          await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId: linkedOrderId ?? undefined });
+        } else if (result?.outcome === 'ignored') {
+          await f_webhookEvents_markIgnored({ stripeEventId: event.id });
+        }
+      } catch {}
+    } else {
+      try { await f_webhookEvents_markIgnored({ stripeEventId: event.id }); } catch {}
     }
   } catch (e) {
     console.error('[webhook]', version, 'orchestrate error', (e as any)?.message ?? e);
   }
 
-  // 5) Fin
-  console.log('[webhook]', version, 'done', event.type, event.id);
+  // 5) correo post-compra (idempotencia simple en DB)
+  try {
+    // Regla: enviar SOLO en checkout.session.completed y cuando está pagado
+    const paid =
+      Boolean(session) &&
+      (session!.payment_status === 'paid' || session!.payment_status === 'no_payment_required');
+
+    if (event.type === 'checkout.session.completed' && session && paid) {
+      const sessionId = session.id;
+      const email =
+        session.customer_details?.email ||
+        (typeof session.customer_email === 'string' ? session.customer_email : null);
+
+      const md = (session.metadata || {}) as Record<string, string | undefined>;
+      const success_slug = (md.success_slug || 'mi-cuenta')!.replace(/[^a-z0-9\-_/]/gi, '');
+      const sku = md.sku || '';
+      const price_id = md.price_id || '';
+
+      if (email) {
+        // Claim atómico: solo 1 proceso puede "tomar" el envío
+        const { data: claimed, error: claimErr } = await supabase
+          .from('order_headers')
+          .update({ receipt_sent_at: new Date().toISOString() })
+          .eq('stripe_session_id', sessionId)
+          .is('receipt_sent_at', null)
+          .select('id,user_id')
+          .single();
+
+        if (claimErr && claimErr.code !== 'PGRST116') {
+          // PGRST116 suele ser "Results contain 0 rows" en .single()
+          console.error('[webhook]', version, 'receipt claim error', claimErr);
+        }
+
+        if (claimed?.id) {
+          // Enviar correo
+          const subject = 'Tu compra está confirmada';
+          const href = `${BASE_URL}/${success_slug}`;
+          const html = `
+            <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
+              <h1>Pago confirmado</h1>
+              <p>Gracias por tu compra${sku ? ` (${sku})` : ''}.</p>
+              <p>Tu acceso está listo.</p>
+              <p><a href="${href}" style="display:inline-block;padding:12px 16px;background:#000;color:#fff;text-decoration:none;border-radius:8px">Continuar</a></p>
+              <p style="color:#666;font-size:12px;margin-top:24px">Si el botón no funciona, copia y pega: ${href}</p>
+            </div>
+          `;
+
+          const from = 'Huerta Consulting <no-reply@huerta.consulting>';
+          const send = await resend.emails.send({ from, to: email, subject, html });
+
+        if (send.data?.id) {
+          await supabase
+            .from('order_headers')
+            .update({ receipt_provider_id: send.data.id })
+            .eq('id', claimed.id);
+        } else if (send.error) {
+            console.error('[webhook]', version, 'resend error', send.error);
+        }
+        
+        } else {
+          // Ya enviado previamente o no hay fila que actualizar
+          console.log('[webhook]', version, 'receipt already sent or no matching order for session', sessionId);
+        }
+      } else {
+        console.warn('[webhook]', version, 'no customer email on session', sessionId);
+      }
+    }
+  } catch (e) {
+    console.error('[webhook]', version, 'receipt block error', (e as any)?.message ?? e);
+  }
+
+  // 6) fin
+  console.log('[webhook]', version, 'done', event.type, event.id, { processed, linkedOrderId });
   return new Response('ok', { status: 200 });
 }
