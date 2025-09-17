@@ -20,7 +20,7 @@ import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  const version = 'route.v3';
+  const version = 'route.v3+obs1';
 
   // 0) Pre-flight config
   const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -101,10 +101,98 @@ export async function POST(req: Request) {
         console.warn('[webhook]', version, 'session missing id on event object');
       }
     } else {
-      console.log('[webhook]', version, 'ignored type', event.type);
+      // Otras señales (p. ej. payment_intent.succeeded) no se refetchean aquí en Paso 1
+      console.log('[webhook]', version, 'ignored type (no refetch on step1)', event.type);
     }
   } catch (e) {
     console.error('[webhook]', version, 'refetch error', (e as any)?.message ?? e);
+  }
+
+  // 3.1) Observabilidad L1 (post-refetch o sin refetch)
+  try {
+    const obj: any = (event as any).data?.object;
+
+    // Detección de tipo de objeto
+    const objectHint =
+      (obj?.object as string) ||
+      (session ? 'checkout.session' : null) ||
+      (invoice ? 'invoice' : null);
+
+    // IDs útiles
+    const payment_intent_id =
+      (session?.payment_intent as string) ||
+      (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null) ||
+      ((obj?.id?.startsWith?.('pi_') ? obj.id : null));
+
+    const invoice_id =
+      invoice?.id ||
+      (obj?.id?.startsWith?.('in_') ? obj.id : null) ||
+      (typeof obj?.invoice === 'string' ? obj.invoice : null);
+
+    // Modo y estado de pago
+    const session_mode = (session?.mode as string) || (obj?.mode as string) || null;
+    const session_payment_status =
+      (session?.payment_status as string) || (obj?.payment_status as string) || null;
+
+    // Montos y moneda
+    const amount_cents =
+      (session?.amount_total as number | null) ??
+      (invoice?.total as number | null) ??
+      (obj?.amount_received as number | null) ??
+      (obj?.amount as number | null) ??
+      null;
+
+    const currency =
+      (session?.currency as string) ||
+      (invoice?.currency as string) ||
+      (obj?.currency as string) ||
+      null;
+
+    const customer_id =
+      (session?.customer as string) ||
+      (invoice?.customer as string) ||
+      (obj?.customer as string) ||
+      null;
+
+    // Metadata no sensible
+    const sku =
+      (session?.metadata as any)?.sku ??
+      (invoice?.metadata as any)?.sku ??
+      (obj?.metadata as any)?.sku ??
+      null;
+
+    // price_id desde invoice (línea 0) o metadata
+    let price_id: string | null =
+      (session?.metadata as any)?.price_id ??
+      (invoice?.metadata as any)?.price_id ??
+      (obj?.metadata as any)?.price_id ??
+      null;
+
+    if (!price_id && invoice?.lines?.data?.length) {
+      const li: any = invoice.lines.data[0];
+      price_id = li?.price?.id ?? null;
+    }
+
+    const l1 = {
+      event_type: event.type,
+      event_id: event.id,
+      created_ts: event.created ? new Date(event.created * 1000).toISOString() : null,
+      object: objectHint ?? null,
+      session_mode,
+      session_payment_status,
+      payment_intent_id,
+      invoice_id,
+      amount_cents,
+      currency,
+      customer_id,
+      sku,
+      price_id,
+      refetch: Boolean(session || invoice),
+    };
+
+    console.log('[webhook]', version, 'L1_OBS', l1);
+  } catch (e) {
+    console.error('[webhook]', version, 'L1_OBS error', (e as any)?.message ?? e);
   }
 
   // 4) Orquestación en DB
