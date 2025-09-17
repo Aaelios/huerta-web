@@ -4,18 +4,21 @@ import { m_getSupabaseService } from '../supabase/m_getSupabaseService';
 import f_ensureUserByEmail from '../supabase/f_ensureUserByEmail';
 
 type TStripeWebhookInput = {
-  type: string; // 'checkout.session.completed' | 'invoice.payment_succeeded'
+  type: string; // 'checkout.session.completed' | 'invoice.payment_succeeded' | 'payment_intent.succeeded'
   stripeEventId: string;
   session?: Stripe.Checkout.Session;
   invoice?: Stripe.Invoice;
+  payment_intent?: Stripe.PaymentIntent;
 };
 
 type TStripeWebhookResult =
   | { outcome: 'processed'; details?: Record<string, any> }
   | { outcome: 'ignored'; reason: string; details?: Record<string, any> };
 
+// Extrae email desde session, invoice o payment_intent sin PII innecesaria
 function getEmail(input: TStripeWebhookInput): string | null {
-  const { session, invoice } = input;
+  const { session, invoice, payment_intent } = input;
+
   if (session) {
     if (typeof session.customer === 'object' && (session.customer as any)?.email) {
       return (session.customer as any).email as string;
@@ -23,12 +26,23 @@ function getEmail(input: TStripeWebhookInput): string | null {
     const cd = (session as any).customer_details;
     if (cd?.email) return cd.email as string;
   }
+
   if (invoice) {
     if (typeof invoice.customer === 'object' && (invoice.customer as any)?.email) {
       return (invoice.customer as any).email as string;
     }
     if (invoice.customer_email) return invoice.customer_email;
   }
+
+  if (payment_intent) {
+    // Stripe TS puede no tipar charges como propiedad; usar any para lectura segura
+    const piAny = payment_intent as any;
+    if (piAny?.receipt_email) return piAny.receipt_email as string;
+    const ch = piAny?.charges?.data?.[0];
+    const be = ch?.billing_details?.email as string | undefined;
+    if (be) return be;
+  }
+
   return null;
 }
 
@@ -72,16 +86,24 @@ function hasPricePath(obj: any): { expanded: boolean; compact: boolean } {
 export default async function h_stripe_webhook_process(
   input: TStripeWebhookInput
 ): Promise<TStripeWebhookResult> {
-  const { type, stripeEventId, session, invoice } = input;
+  const { type, stripeEventId, session, invoice, payment_intent } = input;
 
-  const supported = new Set(['checkout.session.completed', 'invoice.payment_succeeded']);
+  const supported = new Set([
+    'checkout.session.completed',
+    'invoice.payment_succeeded',
+    'payment_intent.succeeded',
+  ]);
   if (!supported.has(type)) return { outcome: 'ignored', reason: 'UNHANDLED_EVENT_TYPE' };
+
+  // Para payment_intent.succeeded no exigimos session/invoice
+  if (type !== 'payment_intent.succeeded' && !session && !invoice) {
+    return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
+  }
 
   const email = getEmail(input);
   if (!email) return { outcome: 'ignored', reason: 'MISSING_EMAIL' };
-  if (!session && !invoice) return { outcome: 'ignored', reason: 'MISSING_OBJECT' };
 
-  // Validaciones: aceptar expanded o compact
+  // Validaciones de expansiones solo donde aplican
   if (type === 'checkout.session.completed') {
     const ok = Array.isArray((session as any)?.line_items?.data);
     const flags = hasPricePath(session);
@@ -106,8 +128,46 @@ export default async function h_stripe_webhook_process(
     }
   }
 
-  await f_ensureUserByEmail(email);
+  // Garantiza usuario y obtiene su id
+  const userId: string = (await f_ensureUserByEmail(email)) as unknown as string;
 
+  // Rama nueva: inserción en payments para one-time
+  if (type === 'payment_intent.succeeded') {
+    const supabase = m_getSupabaseService(); // SERVICE ROLE
+    const p_obj = payment_intent as unknown as Record<string, any>;
+
+    // p_order_id: opcional. MVP -> null. Se puede conciliar después por PI o metadata.
+    const { data: paymentId, error: payErr } = await supabase.rpc('f_payments_upsert', {
+      p_user_id: userId,
+      p_obj,
+      p_order_id: null,
+    });
+
+    if (payErr) {
+      console.error('[orch] f_payments_upsert error:', payErr);
+      throw new Error(payErr.message || 'PAYMENTS_UPSERT_FAILED');
+    }
+
+    console.log('[orch]', 'h_stripe_webhook_process', {
+      type,
+      stripeEventId,
+      email,
+      paymentId: paymentId ?? null,
+      amount_received: (payment_intent as any)?.amount_received ?? null,
+      currency: (payment_intent as any)?.currency ?? null,
+    });
+
+    return {
+      outcome: 'processed',
+      details: {
+        type,
+        paymentId: paymentId ?? null,
+        pi_id: payment_intent?.id ?? null,
+      },
+    };
+  }
+
+  // Ramas existentes: orders + entitlements via orquestador SQL
   const priceIds = extractPriceIds(input);
 
   const session_payload = {
@@ -133,7 +193,7 @@ export default async function h_stripe_webhook_process(
     priceIdsCount: priceIds.length,
   });
 
-  const supabase = m_getSupabaseService(); // debe usar SERVICE ROLE
+  const supabase = m_getSupabaseService(); // SERVICE ROLE
   const { data: orderId, error } = await supabase.rpc('f_orch_orders_upsert', { session_payload });
 
   if (error) {

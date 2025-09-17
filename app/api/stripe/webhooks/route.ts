@@ -20,7 +20,7 @@ import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  const version = 'route.v3+obs1';
+  const version = 'route.v4+pi';
 
   // 0) Pre-flight config
   const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
   // 3) Refetch objeto canónico desde Stripe
   let session: Stripe.Checkout.Session | null = null;
   let invoice: Stripe.Invoice | null = null;
+  let payment_intent: Stripe.PaymentIntent | null = null;
 
   const flags: Record<string, any> = {
     hasServiceRole,
@@ -80,7 +81,6 @@ export async function POST(req: Request) {
       const invoiceId = obj?.id as string | undefined; // in_...
       if (invoiceId) {
         invoice = await f_refetchInvoice(invoiceId);
-        // Flags de estructura (post-refetch)
         try {
           const li: any = (invoice as any)?.lines?.data?.[0] ?? null;
           flags.has_price_expanded = Boolean(li?.price?.id);
@@ -100,9 +100,22 @@ export async function POST(req: Request) {
       } else {
         console.warn('[webhook]', version, 'session missing id on event object');
       }
+    } else if (event.type === 'payment_intent.succeeded') {
+      // Refetch directo desde Stripe (objeto canónico)
+      const piId =
+        (typeof obj?.id === 'string' && obj.id.startsWith('pi_')) ? obj.id :
+        (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null);
+      if (piId) {
+        payment_intent = await stripe.paymentIntents.retrieve(piId, { expand: ['charges.data.balance_transaction'] });
+        console.log('[webhook]', version, 'refetch payment_intent', payment_intent.id, {
+          amount_received: payment_intent.amount_received,
+          currency: payment_intent.currency,
+        });
+      } else {
+        console.warn('[webhook]', version, 'payment_intent id not found on event object');
+      }
     } else {
-      // Otras señales (p. ej. payment_intent.succeeded) no se refetchean aquí en Paso 1
-      console.log('[webhook]', version, 'ignored type (no refetch on step1)', event.type);
+      console.log('[webhook]', version, 'ignored type', event.type);
     }
   } catch (e) {
     console.error('[webhook]', version, 'refetch error', (e as any)?.message ?? e);
@@ -112,15 +125,15 @@ export async function POST(req: Request) {
   try {
     const obj: any = (event as any).data?.object;
 
-    // Detección de tipo de objeto
     const objectHint =
       (obj?.object as string) ||
       (session ? 'checkout.session' : null) ||
-      (invoice ? 'invoice' : null);
+      (invoice ? 'invoice' : null) ||
+      (payment_intent ? 'payment_intent' : null);
 
-    // IDs útiles
     const payment_intent_id =
       (session?.payment_intent as string) ||
+      (payment_intent?.id as string) ||
       (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null) ||
       ((obj?.id?.startsWith?.('pi_') ? obj.id : null));
 
@@ -129,15 +142,14 @@ export async function POST(req: Request) {
       (obj?.id?.startsWith?.('in_') ? obj.id : null) ||
       (typeof obj?.invoice === 'string' ? obj.invoice : null);
 
-    // Modo y estado de pago
     const session_mode = (session?.mode as string) || (obj?.mode as string) || null;
     const session_payment_status =
       (session?.payment_status as string) || (obj?.payment_status as string) || null;
 
-    // Montos y moneda
     const amount_cents =
       (session?.amount_total as number | null) ??
       (invoice?.total as number | null) ??
+      (payment_intent?.amount_received as number | null) ??
       (obj?.amount_received as number | null) ??
       (obj?.amount as number | null) ??
       null;
@@ -145,26 +157,28 @@ export async function POST(req: Request) {
     const currency =
       (session?.currency as string) ||
       (invoice?.currency as string) ||
+      (payment_intent?.currency as string) ||
       (obj?.currency as string) ||
       null;
 
     const customer_id =
       (session?.customer as string) ||
       (invoice?.customer as string) ||
+      (payment_intent?.customer as string) ||
       (obj?.customer as string) ||
       null;
 
-    // Metadata no sensible
     const sku =
       (session?.metadata as any)?.sku ??
       (invoice?.metadata as any)?.sku ??
+      (payment_intent?.metadata as any)?.sku ??
       (obj?.metadata as any)?.sku ??
       null;
 
-    // price_id desde invoice (línea 0) o metadata
     let price_id: string | null =
       (session?.metadata as any)?.price_id ??
       (invoice?.metadata as any)?.price_id ??
+      (payment_intent?.metadata as any)?.price_id ??
       (obj?.metadata as any)?.price_id ??
       null;
 
@@ -187,7 +201,7 @@ export async function POST(req: Request) {
       customer_id,
       sku,
       price_id,
-      refetch: Boolean(session || invoice),
+      refetch: Boolean(session || invoice || payment_intent),
     };
 
     console.log('[webhook]', version, 'L1_OBS', l1);
@@ -197,10 +211,11 @@ export async function POST(req: Request) {
 
   // 4) Orquestación en DB
   try {
-    if (session || invoice) {
+    if (session || invoice || payment_intent) {
       console.log('[webhook]', version, 'orchestrate start', event.type, event.id, {
         refetch_invoice: invoice?.id ?? null,
         refetch_session: session?.id ?? null,
+        refetch_payment_intent: payment_intent?.id ?? null,
       });
 
       const result = await h_stripe_webhook_process({
@@ -208,7 +223,8 @@ export async function POST(req: Request) {
         stripeEventId: event.id,
         session: session ?? undefined,
         invoice: invoice ?? undefined,
-      });
+        payment_intent: payment_intent ?? undefined,
+      } as any);
 
       console.log('[webhook]', version, 'orchestrate result', {
         outcome: result?.outcome ?? null,
@@ -230,7 +246,6 @@ export async function POST(req: Request) {
         }
       }
     } else {
-      // Sin refetch válido → ignorado
       try {
         await f_webhookEvents_markIgnored({ stripeEventId: event.id });
       } catch (e) {
@@ -239,7 +254,6 @@ export async function POST(req: Request) {
     }
   } catch (e) {
     console.error('[webhook]', version, 'orchestrate error', (e as any)?.message ?? e);
-    // tolerante a fallos
   }
 
   // 5) Fin
