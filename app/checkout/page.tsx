@@ -198,6 +198,21 @@ function CheckoutPageInner() {
         )}
       </div>
 
+      {/* Aviso de privacidad propio */}
+      <p className="mt-4 text-xs text-gray-500">
+        Al continuar aceptas los Términos de Stripe y el{' '}
+        <a
+          href="https://www.huerta.consulting/aviso-de-privacidad"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+          aria-label="Abrir Aviso de Privacidad de Huerta Consulting en una nueva pestaña"
+        >
+          Aviso de Privacidad de Huerta Consulting
+        </a>
+        .
+      </p>
+
       {mounted && (
         <div className="mt-8 text-xs text-gray-400 space-y-1">
           <p>

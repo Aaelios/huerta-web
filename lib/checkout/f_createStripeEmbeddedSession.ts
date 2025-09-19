@@ -51,12 +51,12 @@ export async function f_createStripeEmbeddedSession(
   // Campo custom por defecto: opt-in de marketing
   const defaultOptInField: Stripe.Checkout.SessionCreateParams.CustomField = {
     key: 'opt_in_marketing',
-    label: { type: 'custom', custom: 'Quiero recibir consejos y promociones' },
+    label: { type: 'custom', custom: '¿Quieres recibir tips y ofertas útiles por email?' },
     type: 'dropdown',
     dropdown: {
       options: [
-        { label: 'No', value: 'no' },
-        { label: 'Sí', value: 'si' },
+        { label: 'No, gracias', value: 'no' },
+        { label: 'Sí, acepto', value: 'si' },
       ],
     },
   };
