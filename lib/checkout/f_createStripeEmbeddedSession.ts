@@ -9,6 +9,10 @@ export type CreateEmbeddedSessionInput = {
   customerEmail?: string | null;
   idempotencyKey?: string;
   metadata?: Record<string, string | number | boolean | null | undefined>;
+  // Nuevos flags MVP (parametrizables a futuro)
+  allowPromotionCodes?: boolean; // default: true
+  phoneEnabled?: boolean;        // default: true
+  customFields?: Stripe.Checkout.SessionCreateParams.CustomField[]; // default: opt-in dropdown
 };
 
 export type CreateEmbeddedSessionResult = {
@@ -30,6 +34,7 @@ export async function f_createStripeEmbeddedSession(
   if (!process.env.STRIPE_SECRET_KEY) {
     throw Object.assign(new Error('STRIPE_SECRET_KEY not configured'), { code: 'ENV_MISSING' });
   }
+
   const {
     priceId,
     mode,
@@ -38,7 +43,23 @@ export async function f_createStripeEmbeddedSession(
     customerEmail,
     idempotencyKey,
     metadata,
+    allowPromotionCodes = true,
+    phoneEnabled = true,
+    customFields,
   } = input;
+
+  // Campo custom por defecto: opt-in de marketing
+  const defaultOptInField: Stripe.Checkout.SessionCreateParams.CustomField = {
+    key: 'opt_in_marketing',
+    label: { type: 'custom', custom: 'Quiero recibir consejos y promociones' },
+    type: 'dropdown',
+    dropdown: {
+      options: [
+        { label: 'No', value: 'no' },
+        { label: 'Sí', value: 'si' },
+      ],
+    },
+  };
 
   try {
     const params: Stripe.Checkout.SessionCreateParams = {
@@ -46,13 +67,16 @@ export async function f_createStripeEmbeddedSession(
       ui_mode: 'embedded',
       return_url: returnUrl,
       line_items: [{ price: priceId, quantity }],
+      allow_promotion_codes: allowPromotionCodes,
+      phone_number_collection: { enabled: phoneEnabled },
       ...(customerEmail ? { customer_email: customerEmail } : {}),
       ...(metadata ? { metadata: sanitizeMetadata(metadata) } : {}),
+      ...(Array.isArray(customFields) && customFields.length > 0
+        ? { custom_fields: customFields }
+        : { custom_fields: [defaultOptInField] }),
     };
 
-    const session = await stripe.checkout.sessions.create(params, {
-      idempotencyKey,
-    });
+    const session = await stripe.checkout.sessions.create(params, { idempotencyKey });
 
     if (!session?.client_secret || !session?.id) {
       throw Object.assign(new Error('Missing client_secret or id from Stripe'), {
@@ -61,7 +85,7 @@ export async function f_createStripeEmbeddedSession(
     }
 
     const stripe_request_id =
-     // (session?.last_response as any)?.headers?.['request-id'] ||
+      // (session?.last_response as any)?.headers?.['request-id'] ||
       (session?.lastResponse as any)?.headers?.['request-id']; // compat
 
     return {

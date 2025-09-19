@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const modeInput: 'payment' | 'subscription' | undefined =
       raw.mode && (raw.mode === 'subscription' || raw.mode === 'payment') ? raw.mode : undefined;
 
-    // Para compatibilidad con tu flujo previo basado en catálogo:
+    // Para compatibilidad con catálogo:
     // si NO viene price_id, usamos f_parseInput (sku + currency) y resolvemos price en BD.
     let sku: string | undefined;
     let currency: string | undefined;
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     let price_list = '';
     let interval = '';
     let pmeta: Record<string, string> = {};
+    let prodId: string = '';
 
     if (priceIdInput) {
       // ---- 2A) Camino con price_id directo ---------------------------------
@@ -54,8 +55,8 @@ export async function POST(req: NextRequest) {
       mode = modeInput ?? (price.type === 'recurring' ? 'subscription' : 'payment');
       currency = price.currency?.toUpperCase();
       pmeta = price.metadata || {};
-      interval =
-        (price.type === 'recurring' ? price.recurring?.interval : null) ?? '' as string;
+      interval = (price.type === 'recurring' ? price.recurring?.interval : null) ?? ('' as string);
+      prodId = typeof price.product === 'string' ? price.product : price.product.id;
 
       console.log(
         JSON.stringify({
@@ -74,9 +75,9 @@ export async function POST(req: NextRequest) {
       currency = parsed.currency;
 
       const tRpc0 = Date.now();
-      const row = await f_callCatalogPrice({ 
-        sku, 
-        currency: currency?.toUpperCase() as 'MXN' | 'USD' 
+      const row = await f_callCatalogPrice({
+        sku,
+        currency: (currency?.toUpperCase() as 'MXN' | 'USD') || 'MXN',
       });
       const rpc_ms = Date.now() - tRpc0;
 
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
       interval =
         (price.type === 'recurring' ? price.recurring?.interval : null) ??
         (rowMeta.interval ?? '');
+      prodId = typeof price.product === 'string' ? price.product : price.product.id;
 
       console.log(
         JSON.stringify({
@@ -120,6 +122,10 @@ export async function POST(req: NextRequest) {
       returnUrl,
       quantity: 1,
       idempotencyKey,
+      // Flags MVP
+      allowPromotionCodes: true,
+      phoneEnabled: true,
+      // Dejar customFields undefined para usar el dropdown de opt-in por defecto en el helper
       metadata: {
         sku: String(pmeta.sku ?? sku ?? ''),
         fulfillment_type: pmeta.fulfillment_type ?? '',
@@ -127,6 +133,7 @@ export async function POST(req: NextRequest) {
         price_list: price_list ?? '',
         interval: interval ?? '',
         price_id: priceId,
+        product_id: prodId,
       },
     });
     const stripe_ms = Date.now() - tStripe0;
