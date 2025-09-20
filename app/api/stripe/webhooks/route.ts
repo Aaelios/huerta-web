@@ -97,7 +97,6 @@ export async function POST(req: Request) {
 
   // 3.1) observabilidad mínima
   try {
-    const obj: any = (event as any).data?.object;
     const l1 = {
       type: event.type,
       id: event.id,
@@ -155,7 +154,6 @@ export async function POST(req: Request) {
       const md = (session.metadata || {}) as Record<string, string | undefined>;
       const success_slug = (md.success_slug || 'mi-cuenta')!.replace(/[^a-z0-9\-_/]/gi, '');
       const sku = md.sku || '';
-      const price_id = md.price_id || '';
 
       if (email) {
         // Claim atómico: solo 1 proceso puede "tomar" el envío
@@ -167,8 +165,7 @@ export async function POST(req: Request) {
           .select('id,user_id')
           .single();
 
-        if (claimErr && claimErr.code !== 'PGRST116') {
-          // PGRST116 suele ser "Results contain 0 rows" en .single()
+        if (claimErr && (claimErr as any).code !== 'PGRST116') {
           console.error('[webhook]', version, 'receipt claim error', claimErr);
         }
 
@@ -189,17 +186,15 @@ export async function POST(req: Request) {
           const from = 'Huerta Consulting <no-reply@huerta.consulting>';
           const send = await resend.emails.send({ from, to: email, subject, html });
 
-        if (send.data?.id) {
-          await supabase
-            .from('order_headers')
-            .update({ receipt_provider_id: send.data.id })
-            .eq('id', claimed.id);
-        } else if (send.error) {
+          if (send.data?.id) {
+            await supabase
+              .from('order_headers')
+              .update({ receipt_provider_id: send.data.id })
+              .eq('id', claimed.id);
+          } else if (send.error) {
             console.error('[webhook]', version, 'resend error', send.error);
-        }
-        
+          }
         } else {
-          // Ya enviado previamente o no hay fila que actualizar
           console.log('[webhook]', version, 'receipt already sent or no matching order for session', sessionId);
         }
       } else {

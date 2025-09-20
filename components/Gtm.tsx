@@ -1,3 +1,4 @@
+// components/Gtm.tsx
 "use client";
 
 import Script from "next/script";
@@ -6,23 +7,13 @@ import { useEffect } from "react";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 
-type DataLayerEvent = { event: string; [key: string]: unknown };
-type DataLayer = DataLayerEvent[];
-
-declare global {
-  interface Window {
-    dataLayer: DataLayer;
-  }
-}
-
 export default function Gtm() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!GTM_ID) return;
-    const url =
-      pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: "page_view",
