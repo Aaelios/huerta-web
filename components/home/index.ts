@@ -9,3 +9,4 @@ export { default as Testimonios } from "./Testimonios";
 export { default as FAQ } from "./FAQ";
 export { default as WebinarDestacado } from "./WebinarDestacado";
 export { default as CTACierre } from "./CTACierre";
+

@@ -1,118 +1,200 @@
-"use client";
+// app/components/SiteHeader.tsx
+'use client';
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-const NAV = [
-  { href: "/", label: "Inicio" },
-  { href: "/sobre-mi", label: "Sobre mí" },
-  { href: "/blog", label: "Blog" }, // ajusta si usas subdominio
-];
-
-export default function SiteHeader() {
+export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // Cierra el menú al cambiar de ruta y con Escape
-  useEffect(() => setOpen(false), [pathname]);
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname?.startsWith(href);
+  };
+
+  // Cierra panel al cambiar de ruta o con Escape y bloquea scroll del body
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   return (
     <header className="site-header" role="banner">
-      <div className="container nav-container">
-        {/* Marca a la izquierda */}
-        <Link href="/" className="brand" aria-label="Ir al inicio">
-          <span>Roberto Huerta</span>
-        </Link>
+      <div className="container">
+        <div className="nav-container">
+          {/* Brand */}
+          <Link href="/" className="brand" aria-label="Inicio">
+            Roberto Huerta
+          </Link>
 
-        {/* Nav centrado en desktop */}
-        <nav className="nav-center" aria-label="Navegación principal">
-          {NAV.map((item) => (
+          {/* Nav desktop */}
+          <nav className="nav-center" aria-label="Principal">
             <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-link${pathname === item.href ? " active" : ""}`}
+              href="/"
+              className={`c-link--nav ${isActive('/') ? 'is-active' : ''}`}
             >
-              {item.label}
+              Inicio
             </Link>
-          ))}
-        </nav>
+            <Link
+              href="/sobre-mi"
+              className={`c-link--nav ${isActive('/sobre-mi') ? 'is-active' : ''}`}
+            >
+              Sobre mí
+            </Link>
+            <Link
+              href="/blog"
+              className={`c-link--nav ${isActive('/blog') ? 'is-active' : ''}`}
+            >
+              Blog
+            </Link>
+          </nav>
 
-        {/* Iconos + CTA + Hamburguesa a la derecha */}
-        <div className="nav-right">
-          <a
-            className="icon-btn"
-            aria-label="YouTube"
-            href="https://www.youtube.com/@RHUniversity"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {/* YouTube */}
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M23.5 6.2a4 4 0 0 0-2.8-2.8C18.7 3 12 3 12 3s-6.7 0-8.7.4A4 4 0 0 0 .5 6.2 41 41 0 0 0 0 12a41 41 0 0 0 .5 5.8 4 4 0 0 0 2.8 2.8C5.3 21 12 21 12 21s6.7 0 8.7-.4a4 4 0 0 0 2.8-2.8A41 41 0 0 0 24 12a41 41 0 0 0-.5-5.8ZM9.8 15.5V8.5L16 12l-6.2 3.5Z" fill="currentColor"/>
-            </svg>
-          </a>
-          <a
-            className="icon-btn"
-            aria-label="Instagram"
-            href="https://www.instagram.com/rh.university"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {/* Instagram */}
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 7a5 5 0 1 0 .001 10.001A5 5 0 0 0 12 7Zm0 8a3 3 0 1 1 .001-6.001A3 3 0 0 1 12 15Zm6.5-8.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5ZM21 7.5v9a4.5 4.5 0 0 1-4.5 4.5h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3h9A4.5 4.5 0 0 1 21 7.5Zm-2 0A2.5 2.5 0 0 0 16.5 5h-9A2.5 2.5 0 0 0 5 7.5v9A2.5 2.5 0 0 0 7.5 19h9a2.5 2.5 0 0 0 2.5-2.5v-9Z" fill="currentColor"/>
-            </svg>
-          </a>
+          {/* Right actions */}
+          <div className="nav-right">
+            <a
+              className="c-btn c-btn--icon"
+              href="https://www.instagram.com/rh.university"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              title="Instagram"
+            >
+              <SvgInstagram />
+            </a>
+            <a
+              className="c-btn c-btn--icon"
+              href="https://www.youtube.com/@RHUniversity"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+              title="YouTube"
+            >
+              <SvgYouTube />
+            </a>
 
-          <Link href="/contacto" className="btn-pill">Contáctame</Link>
+            <Link href="/contacto" className="c-btn c-btn--solid c-btn--pill">
+              Contáctame
+            </Link>
 
-          {/* Hamburguesa / Cerrar */}
-          <button
-            type="button"
-            className="hamburger"
-            aria-label={open ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? (
-              /* Icono cerrar */
-              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            ) : (
-              /* Icono hamburguesa */
-              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            )}
-          </button>
+            <button
+              type="button"
+              className="hamburger c-btn c-btn--icon"
+              aria-label="Abrir menú"
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              onClick={() => setOpen((v) => !v)}
+            >
+              <SvgMenu />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Panel móvil: solo links + CTA (sin iconos) */}
-      <div id="mobile-menu" className="mobile-panel" data-open={open ? "true" : "false"}>
+      {/* +++ NUEVO +++ */}
+        <div
+          className="mobile-overlay"
+          data-open={open ? 'true' : 'false'}
+          onClick={() => setOpen(false)}
+        />
+        {/* +++ FIN NUEVO +++ */}
+
+
+      {/* Mobile panel */}
+      <div
+        id="mobile-menu"
+        className="mobile-panel"
+        data-open={open ? 'true' : 'false'}
+      >
+        <button
+            type="button"
+            className="c-btn c-btn--icon mobile-close"
+            aria-label="Cerrar menú"
+            onClick={() => setOpen(false)}
+          >
+            <SvgClose />
+        </button>
+
         <nav aria-label="Menú móvil">
-          {NAV.map((item) => (
-            <Link
-              key={`m-${item.href}`}
-              href={item.href}
-              className={`nav-link${pathname === item.href ? " active" : ""}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <div className="mobile-actions">
-            <Link href="/contacto" className="btn-pill">Contáctame</Link>
-          </div>
+          <Link
+            href="/"
+            className={`c-link--nav ${isActive('/') ? 'is-active' : ''}`}
+            onClick={() => setOpen(false)}
+          >
+            Inicio
+          </Link>
+          <Link
+            href="/sobre-mi"
+            className={`c-link--nav ${isActive('/sobre-mi') ? 'is-active' : ''}`}
+            onClick={() => setOpen(false)}
+          >
+            Sobre mí
+          </Link>
+          <Link
+            href="/blog"
+            className={`c-link--nav ${isActive('/blog') ? 'is-active' : ''}`}
+            onClick={() => setOpen(false)}
+          >
+            Blog
+          </Link>
         </nav>
+
+        <div className="mobile-actions">
+          <Link
+            href="/contacto"
+            className="c-btn c-btn--solid c-btn--pill"
+            onClick={() => setOpen(false)}
+          >
+            Contáctame
+          </Link>
+        </div>
       </div>
     </header>
   );
 }
+
+/* ==== Inline SVGs sin dependencias ==== */
+function SvgInstagram(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5zm5.75-3.25a1 1 0 1 1-1 1 1 1 0 0 1 1-1z" />
+    </svg>
+  );
+}
+
+function SvgYouTube(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M23.5 6.2a3.1 3.1 0 0 0-2.2-2.2C19.4 3.5 12 3.5 12 3.5s-7.4 0-9.3.5A3.1 3.1 0 0 0 .5 6.2 32.9 32.9 0 0 0 0 12a32.9 32.9 0 0 0 .5 5.8 3.1 3.1 0 0 0 2.2 2.2c1.9.5 9.3.5 9.3.5s7.4 0 9.3-.5a3.1 3.1 0 0 0 2.2-2.2A32.9 32.9 0 0 0 24 12a32.9 32.9 0 0 0-.5-5.8zM9.8 15.5v-7l6 3.5-6 3.5z" />
+    </svg>
+  );
+}
+
+function SvgMenu(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+    </svg>
+  );
+}
+
+function SvgClose(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/>
+    </svg>
+  );
+}
+
