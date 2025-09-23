@@ -15,8 +15,8 @@ export default function SiteFooter() {
           {/* Sustituir por embed de Brevo en Semana 3 */}
           <form className="subscribe-form">
             <label htmlFor="email" className="sr-only">Correo electrónico</label>
-            <input id="email" type="email" placeholder="Correo electrónico" required className="input" />
-            <button type="submit" className="btn-solid">Suscribirme</button>
+            <input id="email" type="email" placeholder="Correo electrónico" required className="c-form-control" />
+            <button type="submit" className="c-btn c-btn--solid">Suscribirme</button>
           </form>
         </div>
 
@@ -24,9 +24,9 @@ export default function SiteFooter() {
         <div className="footer-col">
           <strong>Secciones</strong>
           <ul className="footer-list">
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/sobre-mi">Sobre mi</Link></li>
-            <li><Link href="/blog">Blog</Link></li>
+            <li><Link href="/" className="c-link">Home</Link></li>
+            <li><Link href="/sobre-mi" className="c-link">Sobre mi</Link></li>
+            <li><Link href="/blog" className="c-link">Blog</Link></li>
           </ul>
         </div>
 
@@ -34,9 +34,9 @@ export default function SiteFooter() {
         <div className="footer-col">
           <strong>Información</strong>
           <ul className="footer-list">
-            <li><Link href="/#faq">FAQs</Link></li>
-            <li><Link href="/aviso-de-privacidad">Privacidad</Link></li>
-            <li><Link href="/contacto">Contacto</Link></li>
+            <li><Link href="/#faq" className="c-link">FAQs</Link></li>
+            <li><Link href="/aviso-de-privacidad" className="c-link">Privacidad</Link></li>
+            <li><Link href="/contacto" className="c-link">Contacto</Link></li>
           </ul>
         </div>
       </div>

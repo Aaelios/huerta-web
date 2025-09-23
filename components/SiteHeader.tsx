@@ -106,6 +106,7 @@ export default function Header() {
       {/* +++ NUEVO +++ */}
         <div
           className="mobile-overlay"
+          aria-hidden="true"
           data-open={open ? 'true' : 'false'}
           onClick={() => setOpen(false)}
         />

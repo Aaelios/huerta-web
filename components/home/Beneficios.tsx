@@ -1,6 +1,7 @@
 // components/home/Beneficios.tsx
 "use client";
-import React, { useState } from "react";
+
+import type { ReactNode } from "react";
 
 function IconCheck() {
   return (
@@ -31,95 +32,33 @@ function IconTools() {
   );
 }
 
-type Item = { icon: React.ReactNode; title: string; desc: string };
+type Item = { icon: ReactNode; title: string; desc: string };
 
 const items: Item[] = [
-  { icon: <IconCheck />,  title: "Claridad financiera",  desc: "Entiende en minutos cómo está tu negocio sin perderte en hojas de cálculo." },
-  { icon: <IconSteps />,  title: "Pasos accionables",    desc: "Guías simples para que sepas qué hacer primero y qué dejar de hacer." },
-  { icon: <IconSupport />,title: "Acompañamiento",       desc: "No aprendes solo: cada paso está pensado para negocios reales en LATAM." },
-  { icon: <IconTools />,  title: "Herramientas prácticas", desc: "Plantillas y recursos listos para usar que te ahorran tiempo y errores." },
+  { icon: <IconCheck />,  title: "Claridad financiera",   desc: "Entiende en minutos cómo está tu negocio sin perderte en hojas de cálculo." },
+  { icon: <IconSteps />,  title: "Pasos accionables",     desc: "Guías simples para que sepas qué hacer primero y qué dejar de hacer." },
+  { icon: <IconSupport />,title: "Acompañamiento",        desc: "No aprendes solo: cada paso está pensado para negocios reales en LATAM." },
+  { icon: <IconTools />,  title: "Herramientas prácticas",desc: "Plantillas y recursos listos para usar que te ahorran tiempo y errores." },
 ];
-
-function Card({ children }: { children: React.ReactNode }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <article
-      className="card"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        height: "100%",
-        borderRadius: 12,
-        padding: "18px 22px",
-        border: "1px solid rgba(255,255,255,.10)",
-        transition: "transform .15s ease, box-shadow .15s ease",
-        transform: hovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: hovered ? "0 2px 8px rgba(0,0,0,.06)" : "none",
-        outlineOffset: 2,
-      }}
-    >
-      {children}
-    </article>
-  );
-}
 
 export default function Beneficios() {
   return (
-    <section
-      aria-labelledby="beneficios-title"
-      style={{
-        background: "var(--surface)",
-        padding: "clamp(48px,6vw,72px) 0",
-        borderBottom: "1px solid rgba(255,255,255,.08)",
-      }}
-    >
-      <div className="container" style={{ textAlign: "center" }}>
-        <h2
-          id="beneficios-title"
-          style={{ marginBottom: 20, fontSize: "clamp(1.6rem,6vw,2.2rem)" }}
-        >
-          Lo que obtienes
-        </h2>
+    <section className="l-beneficios" aria-labelledby="beneficios-title">
+      <div className="container u-text-center">
+        <h2 id="beneficios-title">Lo que obtienes</h2>
+      </div>
 
-        <ul
-          role="list"
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: "0 auto",
-            maxWidth: "var(--maxw)",
-            display: "grid",
-            gap: "clamp(16px,2.5vw,24px)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            textAlign: "left",
-          }}
-        >
+      <div className="container">
+        <ul className="l-beneficiosGrid" role="list">
           {items.map((it) => (
-            <li role="listitem" key={it.title}>
-              <Card>
-                <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 34,
-                      height: 34,
-                      borderRadius: 10,
-                      background: "rgba(255,255,255,.06)",
-                      color: "var(--primary-1)",
-                      border: "1px solid rgba(255,255,255,.14)",
-                      flex: "0 0 34px",
-                    }}
-                  >
-                    {it.icon}
-                  </span>
-                  <h5 style={{ margin: 0, fontSize: 21 }}>{it.title}</h5>
+            <li key={it.title} role="listitem">
+              <article className="c-card c-card--benefit" tabIndex={0}>
+                <header>
+                  <span className="c-card__icon" aria-hidden="true">{it.icon}</span>
+                  <h3>{it.title}</h3>
                 </header>
-
-                <p style={{ margin: 0, color: "var(--fg-70)" }}>{it.desc}</p>
-              </Card>
+                <p className="u-small">{it.desc}</p>
+              </article>
             </li>
           ))}
         </ul>

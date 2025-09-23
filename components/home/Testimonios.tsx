@@ -24,36 +24,30 @@ const testimonios: Testimonio[] = [
 
 export default function Testimonios() {
   return (
-    <section
-      className="section--surface"
-      aria-labelledby="testimonios-title"
-      style={{
-        background: "var(--surface)",
-        padding: "clamp(48px,6vw,72px) 0",
-        borderBottom: "1px solid rgba(255,255,255,.08)",
-      }}
-    >
+    <div className="l-testimonios" aria-labelledby="testimonios-title">
       <div className="container">
-        <h2 id="testimonios-title" style={{ marginBottom: 20 }}>
+        <h2 id="testimonios-title" className="u-text-center">
           Lo que dicen otros emprendedores
         </h2>
 
-        <div
-          style={{
-            display: "grid",
-            gap: 20,
-          }}
-        >
+        <ul className="l-testimoniosGrid" role="list">
           {testimonios.map((t) => (
-            <blockquote key={t.name}>
-              <p>{`“${t.quote}”`}</p>
-              <footer>
-                <strong>{t.name}</strong>, {t.role}
-              </footer>
-            </blockquote>
+            <li key={t.name} role="listitem">
+              <figure
+                className="c-card c-card--light c-quote"
+                tabIndex={0}
+                role="group"
+                aria-label={`Testimonio de ${t.name}`}
+              >
+                <blockquote className="c-quote__text">{t.quote}</blockquote>
+                <figcaption className="c-quote__meta">
+                  <strong>{t.name}</strong>, {t.role}
+                </figcaption>
+              </figure>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
-    </section>
+    </div>
   );
 }

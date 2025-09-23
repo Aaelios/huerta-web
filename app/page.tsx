@@ -38,15 +38,13 @@ export default function Home() {
         <Beneficios />
       </section>
 
-      <section className="section--light">
-        <WebinarDestacado featured={FEATURED} />
-      </section>
+      <WebinarDestacado featured={FEATURED} />
 
       <section className="section--dark">
         <SteppingStones />
       </section>
 
-      <section className="section--light">
+      <section className="section--dark">
         <ProprietaryPlan />
       </section>
 
@@ -54,11 +52,11 @@ export default function Home() {
         <MiniBio />
       </section>
 
-      <section className="section--light">
+      <section className="section--surface">
         <Testimonios />
       </section>
 
-      <section className="section--dark">
+     <section id="faq" className="section--dark">
         <FAQ />
       </section>
 
