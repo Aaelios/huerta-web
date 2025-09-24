@@ -49,20 +49,30 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
-    "name": title,
-    "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
-    "eventStatus": "https://schema.org/EventScheduled",
-    ...(dateISO ? { "startDate": dateISO } : {}),
-    "organizer": { "@type": "Organization", "name": "Huerta Consulting" },
-    ...(href ? { "url": href } : {}),
+    name: title,
+    description: summary,
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    ...(dateISO ? { startDate: dateISO } : {}),
+    organizer: { "@type": "Organization", name: "Huerta Consulting" },
+    location: { "@type": "VirtualLocation", url: href },
+    ...(f.imageUrl ? { image: [f.imageUrl] } : {}),
+    offers: {
+      "@type": "Offer",
+      url: href,
+      priceCurrency: "MXN",
+      price: price,
+      availability: "https://schema.org/InStock",
+      ...(dateISO ? { validFrom: dateISO } : {})
+    }
   };
 
   return (
-    <section className="section--surface featured" aria-labelledby="featured-webinar-title">
+    <section className="section section--surface featured" aria-labelledby="featured-webinar-title">
       <div className="container">
         <div className="featured-grid" role="group" aria-label="Webinar destacado">
           {/* Card */}
-          <article className="featured-card c-card c-card--light shadow-soft" aria-describedby="featured-webinar-desc">
+          <article className="featured-card c-card shadow-soft" aria-describedby="featured-webinar-desc">
             <span className="badge badge--live" aria-label="En vivo">
               <span aria-hidden="true">●</span> EN VIVO
             </span>
@@ -101,11 +111,10 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
               </Link>
             </div>
 
-            {/* Nota secundaria sin inline style */}
             <p className="small">Aplica tu cupón en el checkout. Cupo limitado.</p>
           </article>
 
-          {/* Imagen con altura acoplada al card */}
+          {/* Imagen */}
           <div className="l-hero-imgCol" aria-hidden="true">
             <Image
               src={f.imageUrl || "/images/home/roberto-huerta-webinar-800x1000.jpg"}

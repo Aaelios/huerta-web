@@ -1,4 +1,4 @@
-// components/home/SteppingStones.tsx
+// components/home/SteppingStones.tsx 
 "use client";
 
 import Link from "next/link";
@@ -12,120 +12,91 @@ export default function SteppingStones() {
     } catch {}
   }, []);
 
-  const items = useMemo(
+  // Pasos L-O-B-R-Á
+  const steps = useMemo(
     () =>
       [
-        {
-          id: "step-1",
-          position: 1,
-          title: "Organiza tu base",
-          desc:
-            "Ten claridad sobre tus números y prioridades. El punto de partida que trabajamos en el webinar.",
-          href: "/webinars",
-          cta: "Reservar lugar en el webinar",
-          label: "organiza-tu-base",
-        },
-        {
-          id: "step-2",
-          position: 2,
-          title: "Crea una oferta que conecta",
-          desc:
-            "Presenta lo que vendes para que tu cliente piense “lo necesito”.",
-          href: "/servicios#oferta",
-          cta: "Ver ejemplo de oferta",
-          label: "oferta-que-conecta",
-        },
-        {
-          id: "step-3",
-          position: 3,
-          title: "Implementa un sistema simple",
-          desc:
-            "Diseña rutinas de ventas y seguimiento sostenibles sin abrumarte.",
-          href: "/servicios#sistema",
-          cta: "Ver rutina sugerida",
-          label: "sistema-simple",
-        },
-        {
-          id: "step-4",
-          position: 4,
-          title: "Recupera tu tiempo",
-          desc:
-            "Usa herramientas y plantillas que te devuelven horas para enfocarte en lo que importa.",
-          href: "/plantillas",
-          cta: "Explorar plantillas",
-          label: "recupera-tiempo",
-        },
+        { id: "L", title: "Logro inicial", desc: "Primer resultado práctico en 1–2 horas.", href: "/webinars", cta: "Empezar aquí", label: "L-logro" },
+        { id: "O", title: "Organizar piezas", desc: "Conecta resultados aislados en un mismo tema.", href: "/webinars", cta: "Ver cómo", label: "O-organizar" },
+        { id: "B", title: "Base sólida", desc: "Dominas un área completa y usable.", href: "/webinars", cta: "Construir base", label: "B-base" },
+        { id: "R", title: "Red integral", desc: "Integras varias competencias en un sistema.", href: "/webinars", cta: "Integrar sistema", label: "R-red" },
+        { id: "Á", title: "Alcance logrado", desc: "Más ingresos, tiempo libre y confianza.", href: "/webinars", cta: "Alcanzar esto", label: "A-alcance" },
       ] as const,
     []
   );
 
-  // JSON-LD para la secuencia de pasos
+  // JSON-LD para los pasos
   const itemListJSON = useMemo(() => {
-    const elements = items.map((it) => ({
+    const elements = steps.map((s, i) => ({
       "@type": "ListItem",
-      position: it.position,
-      name: it.title,
-      url: it.href,
+      position: i + 1,
+      name: `${s.id} · ${s.title}`,
+      url: s.href,
     }));
     return JSON.stringify({
       "@context": "https://schema.org",
       "@type": "ItemList",
       itemListElement: elements,
-      name: "Pasos para avanzar",
+      name: "Pasos LOBRÁ",
     });
-  }, [items]);
+  }, [steps]);
 
   return (
-    <section className="l-steps" aria-labelledby="steps-title" role="region">
-      <div className="container">
-        <header>
-          <h2 id="steps-title">Los pasos para avanzar</h2>
-        </header>
+    <section className="section section--dark l-steps" aria-labelledby="steps-title" role="region">
+      <div className="container u-text-center">
+        <h2 id="steps-title">Los pasos para avanzar con <span className="accent">LOBRÁ</span></h2>
+        <p className="u-small">Cinco piedras que convierten tu aprendizaje en resultados acumulativos.</p>
+      </div>
 
-        <ol className="l-stepsGrid" role="list">
-          {items.map((it) => (
-            <li key={it.id} id={it.id} role="listitem">
-              <article className="c-step" role="group" aria-labelledby={`${it.id}-title`}>
-                <span className="c-step__num" aria-hidden="true">
-                  {it.position}
+      {/* Lista L-O-B-R-Á */}
+      <div className="container">
+        <ol className="l-stepsGrid u-grid-equal" role="list">
+          {steps.map((s) => (
+            <li key={s.id} role="listitem" id={`step-${s.id}`}>
+              <article
+                className="c-card c-step"
+                role="group"
+                aria-labelledby={`step-${s.id}-title`}
+                aria-describedby={`step-${s.id}-desc`}
+              >
+                <span className="c-step__num accent" aria-hidden="true">
+                  {s.id}
                 </span>
 
-                <h3 id={`${it.id}-title`} className="c-step__title">
-                  {it.title}
+                <h3 id={`step-${s.id}-title`} className="c-step__title">
+                  {s.title}
                 </h3>
 
-                <p className="c-step__desc">{it.desc}</p>
+                <p id={`step-${s.id}-desc`} className="c-step__desc">
+                  {s.desc}
+                </p>
 
-                {it.position === 1 ? (
-                  <Link
-                    href={it.href}
-                    className="c-btn c-btn--solid c-btn--pill"
-                    aria-label={it.cta}
-                    onClick={() => track(`cta-${it.label}`)}
-                  >
-                    {it.cta}
-                  </Link>
-                ) : (
-                  <Link
-                    href={it.href}
-                    className="c-link"
-                    aria-label={it.cta}
-                    onClick={() => track(`cta-${it.label}`)}
-                  >
-                    {it.cta}
-                  </Link>
-                )}
+                <Link
+                  href={s.href}
+                  className="c-btn c-btn--ghost c-btn--pill"
+                  aria-label={`${s.cta}: ${s.title}`}
+                  onClick={() => track(`cta-${s.label}`)}
+                >
+                  {s.cta}
+                </Link>
               </article>
             </li>
           ))}
         </ol>
       </div>
 
-      <Script
-        id="steps-itemlist"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: itemListJSON }}
-      />
+      {/* Bloque final: PTR reforzado */}
+      <div className="container u-text-center" aria-labelledby="resultados-title">
+        <h3 id="resultados-title" className="u-center">Resultados que sientes desde el primer paso</h3>
+        <p className="u-small">
+          Con LOBRÁ no necesitas terminar todo para ver cambios. Cada paso te da{" "}
+          <span className="accent">libertad</span> y{" "}
+          <span className="accent">tranquilidad</span>, con un negocio que realmente{" "}
+          <span className="accent">te impulsa</span>. Al completar el recorrido, el impacto se multiplica.
+        </p>
+      </div>
+
+      <Script id="steps-itemlist" type="application/ld+json" dangerouslySetInnerHTML={{ __html: itemListJSON }} />
     </section>
   );
 }

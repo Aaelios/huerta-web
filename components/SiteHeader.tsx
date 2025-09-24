@@ -37,7 +37,7 @@ export default function Header() {
         <div className="nav-container">
           {/* Brand */}
           <Link href="/" className="brand" aria-label="Inicio">
-            Roberto Huerta
+            LOBRÁ
           </Link>
 
           {/* Nav desktop */}

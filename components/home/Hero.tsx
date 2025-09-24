@@ -17,44 +17,43 @@ export default function Hero() {
         <div className="l-heroGrid">
           {/* Columna texto */}
           <div>
-            <p className="small">
-              Para dueños de pequeños negocios en LATAM
-            </p>
+            <p className="small">Para emprendedores, freelancers y pequeños negocios en LATAM</p>
 
             <h1 id="hero-title">
-              Convierte tu negocio en una{" "}
-              <span className="accent">máquina rentable</span>, clara y{" "}
-              <span className="accent">accionable</span>.
+              Más <span className="accent">ingresos</span>, más <span className="accent">tiempo</span> libre y <span className="accent">confianza</span> en ti mismo.
             </h1>
 
-            <p className="small">
-              Estrategias simples y prácticas para lograr resultados reales sin humo.
+            <p className="u-lead u-maxw-prose">
+              LOBRÁ es un <span className="accent">sistema educativo</span> con webinars y cursos que generan avances rápidos, con <span className="accent">herramientas</span> listas para usar.
             </p>
 
-            {/* Cluster de CTAs + texto siguiente */}
+            <p className="small u-maxw-prose">
+              Si tus ingresos son inestables, cada hora de aprendizaje se convierte en <span className="accent">progreso visible</span> y medible.
+            </p>
+
+            {/* Cluster de CTAs + nota de confianza */}
             <div className="cluster-3">
               <Link
                 href="/webinars"
                 className="c-btn c-btn--solid c-btn--pill"
                 onClick={() => track("hero", "webinars")}
-                aria-label="Ver próximos webinars"
+                aria-label="Empieza con los webinars"
               >
-                Ver próximos webinars
+                Empieza con los webinars
               </Link>
 
               <Link
-                href="/sobre-mi"
-                onClick={() => track("hero", "conoceme")}
-                aria-label="Conóceme"
+                href="#steps-title"
+                onClick={() => track("hero", "como-funciona")}
+                aria-label="Cómo funciona LOBRÁ"
                 className="c-btn c-btn--ghost c-btn--pill"
               >
-                Conóceme
+                Cómo funciona LOBRÁ
               </Link>
 
-              <p className="small">
-                Sin fórmulas mágicas. Pasos claros que ya aplicaron emprendedores como tú.
+              <p className="small" style={{ color: "var(--fg-60)" }}>
+                Sin fórmulas mágicas. Acciones que ya usan emprendedores en LATAM.
               </p>
-
             </div>
           </div>
 
@@ -62,7 +61,7 @@ export default function Hero() {
           <div className="l-hero-imgCol">
             <Image
               src="/images/home/roberto-huerta-consultor-finanzas-home-hero-800x1000.jpg"
-              alt="Roberto Huerta, consultor de pequeños negocios"
+              alt="Método LOBRÁ: educación y herramientas para emprendedores"
               width={800}
               height={1000}
               priority

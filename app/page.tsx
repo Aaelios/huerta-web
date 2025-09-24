@@ -2,9 +2,7 @@
 import {
   Hero,
   Transformacion,
-  Beneficios,
   SteppingStones,
-  ProprietaryPlan,
   WebinarDestacado,
   MiniBio,
   Testimonios,
@@ -16,11 +14,11 @@ const FEATURED = {
   title: "Webinar en vivo — Septiembre 2025",
   summary:
     "Organiza tus finanzas y tu operación para lograr ingresos más estables. Sesión en vivo por Zoom.",
-  href: "/webinars/sep-2025",
+  href: "webinars/oct-2025-01",
   ctaLabel: "Quiero mi lugar",
   type: "webinar" as const,
   startAt: "2025-09-30T20:30:00-06:00", // martes 30 septiembre, 8:30 PM CDMX
-  imageUrl: "/images/home/roberto-huerta-webinar-800x1000.jpg", // cámbiala cuando definas la oficial
+  imageUrl: "/images/home/roberto-huerta-webinar-800x1000.jpg",
 };
 
 export default function Home() {
@@ -30,22 +28,14 @@ export default function Home() {
         <Hero />
       </section>
 
-      <section className="section--light">
-        <Transformacion />
-      </section>
-
       <section className="section--dark">
-        <Beneficios />
+        <Transformacion />
       </section>
 
       <WebinarDestacado featured={FEATURED} />
 
       <section className="section--dark">
         <SteppingStones />
-      </section>
-
-      <section className="section--dark">
-        <ProprietaryPlan />
       </section>
 
       <section className="section--dark">
@@ -56,11 +46,11 @@ export default function Home() {
         <Testimonios />
       </section>
 
-     <section id="faq" className="section--dark">
+      <section id="faq" className="section--dark">
         <FAQ />
       </section>
 
-      <section className="section--light">
+      <section className="section--dark">
         <CTACierre />
       </section>
     </>
