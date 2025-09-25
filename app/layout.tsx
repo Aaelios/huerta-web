@@ -16,8 +16,9 @@ const satoshi = localFont({
   variable: "--font-satoshi",
   display: "swap",
   preload: true,
-  fallback: ["Arial", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue"],
-  adjustFontFallback: "Arial",
+  // Fallback métrico compatible con :root --font-satoshi en globals.css
+  fallback: ["ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Arial", "sans-serif"],
+    adjustFontFallback: "Arial",
 });
 
 export const metadata = {
@@ -30,7 +31,7 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={satoshi.variable}>
-      <body className={satoshi.variable}>
+      <body>
         {GTM_ID ? (
           <noscript>
             <iframe

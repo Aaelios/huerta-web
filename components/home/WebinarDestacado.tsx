@@ -93,9 +93,10 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
             <p id="featured-webinar-desc" className="u-small">{summary}</p>
 
             <ul className="list-check" role="list">
-              <li>Paso a paso claro para ordenar.</li>
-              <li>Plantillas listas para usar.</li>
-              <li>Próxima acción concreta en 7 días.</li>
+              <li>Claridad inmediata sobre tus ventas e ingresos.</li>
+              <li>Detecta qué productos y clientes sostienen tu negocio.</li>
+              <li>Reportes simples que muestran tu crecimiento real.</li>
+              <li>Decisiones basadas en datos, no en intuición.</li>
             </ul>
 
             {/* Fila de precio + CTA */}

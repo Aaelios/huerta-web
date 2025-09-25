@@ -49,6 +49,7 @@
   --border-light-3: rgba(10, 10, 10, .18);
 
   /* ---- Tipografía ---- */
+  --font-satoshi: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --font-sans: var(--font-satoshi), system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 
   /* ---- Escalas ---- */
@@ -452,6 +453,12 @@ p.small {
   flex-wrap: wrap;
   gap: var(--space-3);
   align-items: center;
+  justify-content: center;
+}
+
+/* Fijar altura mínima para evitar CLS en clusters con CTA + texto */
+.cluster-3 {
+  min-height: 3.5rem; /* ~altura botón + línea de texto */
 }
 
 .cluster-4 {
@@ -469,11 +476,19 @@ p.small {
 }
 
 /* Utilidad: filas iguales para tarjetas */
-.u-grid-equal {
+/*.u-grid-equal {
   display: grid;
   grid-auto-rows: 1fr;
   align-items: stretch;
+}*/
+
+/* Variante: grid sin forzar alturas, evita CLS */
+.u-grid-auto {
+  display: grid;
+  grid-auto-rows: auto;
+  align-items: start;
 }
+
 .u-grid-equal > * { height: 100%; }
 .u-grid-equal > * .c-card { height: 100%; display: flex; flex-direction: column; }
 
@@ -611,6 +626,7 @@ hr {
   width: min(480px, 100%);
   border-radius: 16px;
   overflow: hidden;
+  position: relative;
   border: 1px solid var(--border-dark-2);
   background: rgba(255, 255, 255, 0.02);
   aspect-ratio: 4 / 5;
@@ -716,6 +732,53 @@ hr {
   .l-stepsGrid {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* ---- Stones row + goal (detalle producto/webinar) ---- */
+.l-stonesRow {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (min-width: 1200px) {
+  .l-stonesRow {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Estado meta Á como franja base (más compacto) */
+.c-step--goal {
+  grid-column: 1 / -1;
+  margin-top: 12px;          /* menos aire con L-O-B-R */
+  padding: 12px 16px;        /* ↓ padding vertical principal */
+  min-height: 180px;         /* reserva altura y reduce CLS en móvil */
+  text-align: center;
+  background: var(--bg-30);
+  border: 1px solid var(--bg-40);
+  display: grid;
+  place-items: center;
+  row-gap: 2px;              /* menos separación interna */
+  height: auto !important;   /* asegura altura por contenido */
+}
+.c-step--goal .c-step__num   { margin-bottom: 6px; } /* ↓ margen del badge */
+.c-step--goal .c-step__title { margin: 0 0 2px 0; }  /* ↓ separación título */
+.c-step--goal .c-step__desc  { margin: 0; }
+/* Ajuste: reducir altura del goal */
+.c-step--goal.l-stoneGoal { padding-block: 2rem 1.5rem; } /* antes era más alto, reduce top/bottom */
+
+
+/* Franja final Á (full-width) */
+.l-stoneGoal {
+  text-align: center;
+}
+
+/* Wrapper del CTA pegado a la franja Á */
+.l-stoneCTA {
+  margin-top: 2rem;    /* menos aire que antes */
 }
 
 /* ---- Proprietary Plan ---- */
@@ -1364,6 +1427,11 @@ hr {
   }
 }
 
+/* altura mínima en móvil para evitar CLS */
+.c-step {
+  min-height: 200px;
+}
+
 @media (min-width: 1200px) {
   .c-step {
     min-height: 290px;
@@ -1373,6 +1441,184 @@ hr {
   .c-step .c-btn,
   .c-step .c-link {
     margin-top: auto;
+  }
+}
+
+/* === LOBRÁ · Stones & Goal tweaks (insert after @media (min-width:1200px){ .c-step { ... } }) === */
+
+/* 1) Override puntual: el goal no hereda min-height 290px en ≥1200px */
+@media (min-width: 1200px) {
+  .c-step.c-step--goal {
+    min-height: auto; /* evita el card alto innecesario */
+  }
+}
+
+/* 2) Secuencia compacta: reduce el hueco entre Confusión/Claridad y las piedras */
+.l-stonesRow.is-compact {
+  margin-top: 16px; /* antes visualmente mayor; ajusta si hace falta */
+}
+
+/* 3) Conector visual de la secuencia (línea con puntas sutiles) */
+.l-stonesConnector {
+  position: relative;
+  height: 12px;            /* grosor del conector */
+  margin: 8px 0 24px;      /* separación arriba/abajo del conector */
+}
+.l-stonesConnector::before {
+  content: "";
+  position: absolute;
+  inset: 5px 0;
+  border-top: 1px solid var(--border-dark-2); /* línea */
+  opacity: .6;
+}
+.l-stonesConnector::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--fg-60);
+  border-bottom: 2px solid var(--fg-60);
+}
+
+/* 4) Énfasis en la meta Á: fondo sutil y badge ligeramente mayor */
+.c-step--goal.is-emphasis {
+  background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.08));
+  box-shadow: inset 0 0 0 1px var(--border-dark-2);
+}
+.c-step--goal.is-emphasis .c-step__num {
+  transform: scale(1.15);
+}
+
+/* 5) Banda para el CTA: base visual para que no “flote” */
+.l-stoneCTA.is-band {
+  margin-top: 28px;        /* más aire respecto al goal */
+  padding: 12px 0;         /* respiración vertical de la banda */
+  background: rgba(0,0,0,0.06);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--border-dark-2);
+}
+
+/* === LOBRÁ · Ajuste de aire vertical (Transformación) === */
+
+/* Compactar transición entre Confusión/Claridad → conector */
+.l-heroGrid + .l-stonesConnector {
+  margin-top: 12px;    /* antes era mayor, ahora más cercano */
+  margin-bottom: 12px; /* junta más con las piedras */
+}
+
+/* Reducir aire encima de la fila de piedras */
+.l-stepsGrid.l-stonesRow.is-compact {
+  margin-top: 8px;     /* conecta visualmente con el conector */
+}
+
+/* Padding más compacto en la sección oscura de pasos */
+.section.section--dark {
+  padding-top: 24px;   /* menos aire arriba */
+  padding-bottom: 32px; /* mantiene respiración abajo */
+}
+
+/* === LOBRÁ · Refinamientos visuales === */
+
+/* 1) Conector visual más integrado */
+.l-stonesConnector {
+  height: 20px; /* más alto para que respire */
+  margin: 16px 0 12px;
+}
+.l-stonesConnector::before {
+  border-top: 2px dashed var(--border-dark-2); /* línea más visible */
+  opacity: .4;
+}
+.l-stonesConnector::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--fg-60);
+  border-bottom: 2px solid var(--fg-60);
+}
+
+/* 2) Meta Á más protagonista */
+.c-step--goal.is-emphasis {
+  background: linear-gradient(180deg, rgba(0,255,128,0.05), rgba(0,255,128,0.1));
+  border: 1px solid var(--accent);
+}
+.c-step--goal.is-emphasis .c-step__num {
+  transform: scale(1.3);   /* badge más grande */
+  font-weight: 600;
+}
+
+/* 3) Banda CTA más premium */
+.l-stoneCTA.is-band {
+  background: rgba(0,0,0,0.04); /* más sutil */
+  border: none;                 /* sin borde interno */
+  padding: 20px 0;
+}
+.l-stoneCTA.is-band .c-btn {
+  min-width: 260px;             /* botón más protagonista */
+}
+
+/* === LOBRÁ · Ajuste de aire vertical + conector al ancho de pasos === */
+
+/* Compactar transición entre Confusión/Claridad → conector */
+.l-heroGrid + .l-stonesConnector {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+/* Reducir aire encima de la fila de piedras */
+.l-stepsGrid.l-stonesRow.is-compact {
+  margin-top: 8px;
+}
+
+/* Padding más compacto en la sección oscura de pasos */
+.section.section--dark {
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
+/* Conector limitado al ancho del grid de pasos */
+.l-stonesConnector {
+  position: relative;
+  height: 16px;
+  max-width: 100%;              /* se ajusta al ancho disponible */
+  margin-inline: auto;          /* centra respecto al contenedor */
+}
+.l-stepsGrid.l-stonesRow.is-compact + .l-stoneGoal {
+  margin-top: 16px;             /* aire consistente entre pasos y meta */
+}
+.l-stonesConnector::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed var(--border-dark-2);
+  opacity: .4;
+  transform: translateY(-50%);
+}
+.l-stonesConnector::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+
+/* Override: el goal no hereda la altura mínima */
+@media (min-width: 1200px) {
+  .c-step.c-step--goal {
+    min-height: auto; /* ó 'unset' si prefieres */
   }
 }
 
