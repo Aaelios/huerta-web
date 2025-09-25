@@ -9,6 +9,17 @@ export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  // Tracking CTA header
+const trackCTA = () => {
+  try {
+    window.dataLayer?.push({
+      event: 'cta_click',
+      placement: 'header',
+      label: 'Inscribirme al próximo webinar',
+    });
+  } catch {}
+};
+
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname?.startsWith(href);
@@ -43,22 +54,22 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="nav-center" aria-label="Principal">
             <Link
-              href="/"
-              className={`c-link--nav ${isActive('/') ? 'is-active' : ''}`}
+              href="/que-es-lobra"
+              className={`c-link--nav ${isActive('/que-es-lobra') ? 'is-active' : ''}`}
             >
-              Inicio
+              Qué es LOBRÁ
+            </Link>
+            <Link
+              href="/webinars/oct-2025-01"
+              className={`c-link--nav ${isActive('/webinars') ? 'is-active' : ''}`}
+            >
+              Webinars
             </Link>
             <Link
               href="/sobre-mi"
               className={`c-link--nav ${isActive('/sobre-mi') ? 'is-active' : ''}`}
             >
               Sobre mí
-            </Link>
-            <Link
-              href="/blog"
-              className={`c-link--nav ${isActive('/blog') ? 'is-active' : ''}`}
-            >
-              Blog
             </Link>
           </nav>
 
@@ -85,10 +96,14 @@ export default function Header() {
               <SvgYouTube />
             </a>
 
-            <Link href="/contacto" className="c-btn c-btn--solid c-btn--pill">
-              Contáctame
+            {/* CTA principal */}
+            <Link
+              href="/webinars/oct-2025-01"
+              className="c-btn c-btn--solid c-btn--pill"
+              onClick={trackCTA}
+            >
+              Inscribirme al próximo webinar
             </Link>
-
             <button
               type="button"
               className="hamburger c-btn c-btn--icon"
@@ -103,15 +118,13 @@ export default function Header() {
         </div>
       </div>
 
-      {/* +++ NUEVO +++ */}
-        <div
-          className="mobile-overlay"
-          aria-hidden="true"
-          data-open={open ? 'true' : 'false'}
-          onClick={() => setOpen(false)}
-        />
-        {/* +++ FIN NUEVO +++ */}
-
+      {/* Overlay móvil */}
+      <div
+        className="mobile-overlay"
+        aria-hidden="true"
+        data-open={open ? 'true' : 'false'}
+        onClick={() => setOpen(false)}
+      />
 
       {/* Mobile panel */}
       <div
@@ -120,13 +133,24 @@ export default function Header() {
         data-open={open ? 'true' : 'false'}
       >
         <button
-            type="button"
-            className="c-btn c-btn--icon mobile-close"
-            aria-label="Cerrar menú"
-            onClick={() => setOpen(false)}
-          >
-            <SvgClose />
+          type="button"
+          className="c-btn c-btn--icon mobile-close"
+          aria-label="Cerrar menú"
+          onClick={() => setOpen(false)}
+        >
+          <SvgClose />
         </button>
+
+        {/* CTA arriba del panel */}
+        <div className="mobile-actions">
+          <Link
+            href="/webinars/oct-2025-01"
+            className="c-btn c-btn--solid c-btn--pill"
+            onClick={() => { trackCTA(); setOpen(false); }}
+          >
+            Inscribirme al próximo webinar
+          </Link>
+        </div>
 
         <nav aria-label="Menú móvil">
           <Link
@@ -137,30 +161,27 @@ export default function Header() {
             Inicio
           </Link>
           <Link
+            href="/que-es-lobra"
+            className={`c-link--nav ${isActive('/que-es-lobra') ? 'is-active' : ''}`}
+            onClick={() => setOpen(false)}
+          >
+            Qué es LOBRÁ
+          </Link>
+          <Link
+            href="/webinars/oct-2025-01"
+            className={`c-link--nav ${isActive('/webinars') ? 'is-active' : ''}`}
+            onClick={() => setOpen(false)}
+          >
+            Webinars
+          </Link>
+          <Link
             href="/sobre-mi"
             className={`c-link--nav ${isActive('/sobre-mi') ? 'is-active' : ''}`}
             onClick={() => setOpen(false)}
           >
             Sobre mí
           </Link>
-          <Link
-            href="/blog"
-            className={`c-link--nav ${isActive('/blog') ? 'is-active' : ''}`}
-            onClick={() => setOpen(false)}
-          >
-            Blog
-          </Link>
         </nav>
-
-        <div className="mobile-actions">
-          <Link
-            href="/contacto"
-            className="c-btn c-btn--solid c-btn--pill"
-            onClick={() => setOpen(false)}
-          >
-            Contáctame
-          </Link>
-        </div>
       </div>
     </header>
   );
@@ -198,4 +219,3 @@ function SvgClose(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-

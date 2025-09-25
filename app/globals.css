@@ -94,7 +94,7 @@
   --maxw: 960px;
 
   /* ---- Header ---- */
-  --header-h-sm: 56px;
+  --header-h-sm: 58px;
   --header-h-lg: 64px;
   --header-h: var(--header-h-sm);
 
@@ -133,7 +133,7 @@ html {
   font-synthesis-weight: none;
 }
 
-html,
+/*html,
 body {
   margin: 0;
   padding: 0;
@@ -144,7 +144,20 @@ body {
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
   padding-top: var(--header-h); /* reserva para header fijo: evita CLS */
+
+  html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  /*padding-top: var(--header-h); /* reserva para header fijo: evita CLS */
 }
+
 
 img,
 svg,
@@ -280,6 +293,19 @@ p.small {
   padding-inline: var(--gutter-x);
   padding-block: 24px;
 }
+
+/* Header: compactar padding del contenedor */
+.site-header .container {
+  padding-block: 8px;   /* antes heredaba 24px */
+}
+
+/* Desktop: un poco más de aire, sin exagerar */
+@media (min-width: 1024px) {
+  .site-header .container {
+    padding-block: 10px;
+  }
+}
+
 
 .section {
   padding-block: var(--section-py);
@@ -611,7 +637,7 @@ hr {
 
 /* ---- Hero ---- */
 .l-hero {
-  padding: 40px 0 24px;
+  padding-top: var(--space-8); /* ≈32px–40px en vez de 80+ */
 }
 
 .l-heroGrid {
@@ -651,9 +677,11 @@ hr {
 /* ---- Breakpoints hero ---- */
 @media (max-width: 600px) {
   .l-hero {
-    padding: 12px 0 16px;
+    /*padding: 0 0 16px; old definition */
+    padding-top: var(--space-5);
   }
 }
+
 
 @media (min-width: 1200px) {
   .l-heroGrid {
@@ -1080,14 +1108,10 @@ hr {
   position: relative;
   display: inline-block;
   padding: 6px 0;
-  color: rgba(255, 255, 255, .88);
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none; /* evita subrayado blanco global */
   transition: color var(--duration-2) var(--easing-standard);
 }
-
-.c-link--nav:hover {
-  color: #fff;
-}
-
 .c-link--nav::after {
   content: "";
   position: absolute;
@@ -1100,24 +1124,31 @@ hr {
   transform-origin: left;
   transition: transform var(--duration-2) var(--easing-standard);
 }
-
-.c-link--nav:hover::after {
+/* Hover/focus: solo barra verde */
+.c-link--nav:hover,
+.c-link--nav:focus {
+  text-decoration: none;        /* sin subrayado blanco */
+}
+.c-link--nav:hover::after,
+.c-link--nav:focus-visible::after {
   transform: scaleX(1);
 }
-
+/* Activo persistente: misma barra verde, sin cambio de color a blanco puro */
 .c-link--nav.is-active {
-  color: #fff;
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
 }
-
 .c-link--nav.is-active::after {
   transform: scaleX(1);
 }
-
-.c-link--nav:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+/* Desktop: asegurar que el override no afecte otros links del sitio */
+@media (min-width: 1024px) {
+  .site-header .c-link--nav,
+  .site-header .c-link--nav:hover,
+  .site-header .c-link--nav:focus {
+    text-decoration: none;
+  }
 }
-
 /* ---- Botones ---- */
 .c-btn {
   display: inline-flex;
@@ -1206,6 +1237,9 @@ hr {
   padding: 0;
   border-radius: 8px;
 }
+
+/* Tamaño fijo de SVGs en icon buttons del header */
+.nav-right .c-btn--icon svg { width: 28px; height: 28px; }
 
 /* Estados: active, disabled y busy accesibles */
 .c-btn:active {
@@ -2067,6 +2101,12 @@ input[type="button"]:focus-visible {
   padding: 0 var(--gutter-x);
 }
 
+/* Compensación: empuja el contenido bajo el header fijo */
+.site-header + main {
+  padding-top: var(--header-h);
+}
+
+
 .site-nav {
   display: flex;
   gap: 16px;
@@ -2084,7 +2124,7 @@ input[type="button"]:focus-visible {
 .brand {
   color: #fff;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 28px;
 }
 
 .nav-center {
@@ -2132,6 +2172,11 @@ input[type="button"]:focus-visible {
   outline-offset: 2px;
 }
 
+/* Evita que iconos/hamburguesa toquen el borde en móvil */
+@media (max-width: 1023px) {
+  .nav-right { padding-right: 12px; }
+}
+
 
 /* ---- Panel móvil ---- */
 .mobile-panel {
@@ -2172,6 +2217,17 @@ input[type="button"]:focus-visible {
   font-size: 17px;
 }
 
+/* Subrayado solo bajo el texto en menú móvil */
+.mobile-panel .c-link--nav { position: static; }
+.mobile-panel .c-link--nav::after { content: none; } /* anula barra completa */
+.mobile-panel .c-link--nav.is-active {
+  text-decoration: underline;
+  text-decoration-color: var(--primary-1);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+
 .mobile-panel nav a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -2210,14 +2266,31 @@ input[type="button"]:focus-visible {
 
 .mobile-close {
   position: absolute;
-  top: 12px;
-  right: 24px;
-  width: 36px;
-  height: 36px;
+  top: 10px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  /* más pequeño en móvil */
+  border: 1px solid var(--fg-40, #6b7c76);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg-80, #e8f0ec);
+  border-radius: 8px;
 }
+
+.mobile-close:hover,
+.mobile-close:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--fg-60, #9fb5ad);
+  outline: none;
+}
+
+.mobile-close svg {
+  color: currentColor;
+  width: 18px;
+  height: 18px;
+}
+
 
 @media (min-width: 1024px) {
   .hamburger,

@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/aviso-de-privacidad",
+      "destination": "/privacidad",
+      "permanent": true
+    }
+  ]
+}
