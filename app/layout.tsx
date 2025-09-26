@@ -14,11 +14,12 @@ const satoshi = localFont({
     { path: "../public/fonts/satoshi/Satoshi-Black.woff2",   weight: "900", style: "normal" },
   ],
   variable: "--font-satoshi",
-  display: "swap",
+  // reduce CLS en conexiones lentas manteniendo UX
+  display: "optional",
   preload: true,
-  // Fallback métrico compatible con :root --font-satoshi en globals.css
-  fallback: ["ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Arial", "sans-serif"],
-    adjustFontFallback: "Arial",
+  fallback: ["system-ui", "Segoe UI", "Roboto", "Arial", "sans-serif"],
+  // activa size-adjust para que el fallback tenga métrica compatible
+  adjustFontFallback: "Arial",
 });
 
 export const metadata = {
@@ -31,7 +32,7 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={satoshi.variable}>
-      <body>
+      <body className={satoshi.className}>
         {GTM_ID ? (
           <noscript>
             <iframe

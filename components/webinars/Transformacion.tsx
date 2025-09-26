@@ -140,11 +140,6 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
         </div>
       </div>
 
-      {/* Conector visual */}
-      <div className="container">
-        <div className="l-stonesConnector" aria-hidden="true" />
-      </div>
-
       {/* L-O-B-R */}
       <div className="section section--dark">
         <div className="container">
