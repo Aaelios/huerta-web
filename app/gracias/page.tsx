@@ -189,7 +189,7 @@ export default async function Page({ searchParams }: PageProps) {
                   <li>Espera 5 minutos.</li>
                   <li>Revisa Spam y Promociones.</li>
                   <li>Confirma que usaste el correo correcto{emailMasked ? ` (${emailMasked})` : ''}.</li>
-                  <li>Busca “Huerta Consulting” o “Stripe”.</li>
+                  <li>Busca “LOBRÁ” o “Stripe”.</li>
                 </ul>
                 <p className="u-small">
                   Si sigues con problemas, escríbenos a <a className="link" href={mailtoHref}>soporte@lora.net</a>.

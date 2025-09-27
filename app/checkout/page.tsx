@@ -269,7 +269,7 @@ function CheckoutPageInner() {
 
             <p className="u-small">
               ¿Necesitas ayuda?{' '}
-              <a href="mailto:roberto@huerta.consulting" className="link text-weak">
+              <a href="mailto:soporte@lobra.net" className="link text-weak">
                 roberto@huerta.consulting
               </a>
             </p>
@@ -292,7 +292,7 @@ function CheckoutPageInner() {
                 <p className="u-small break-words">{error}</p>
                 <div className="stack-row gap-2">
                   <button className="c-btn" onClick={retry}>Reintentar</button>
-                  <a className="c-btn c-btn--ghost" href="mailto:roberto@huerta.consulting">Pedir ayuda</a>
+                  <a className="c-btn c-btn--ghost" href="mailto:soporte@lobra.net">Pedir ayuda</a>
                 </div>
               </div>
             </div>
@@ -314,7 +314,7 @@ function CheckoutPageInner() {
                   <p className="mb-2">Si el formulario no aparece, intenta de nuevo o contáctanos.</p>
                   <div className="stack-row gap-2">
                     <button className="c-btn" onClick={retry}>Reintentar</button>
-                    <a className="c-btn c-btn--ghost" href="mailto:roberto@huerta.consulting">Soporte por email</a>
+                    <a className="c-btn c-btn--ghost" href="mailto:soporte@lobra.net">Soporte por email</a>
                   </div>
                 </div>
               )}

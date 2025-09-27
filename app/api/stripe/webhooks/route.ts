@@ -27,7 +27,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
 // dominio base para el CTA del correo (producción)
-const BASE_URL = 'https://huerta.consulting';
+// const BASE_URL = 'https://lobra.net';
+const BASE_URL = (process.env.APP_URL || '').trim();
 
 export async function POST(req: Request) {
   const version = 'route.v5+receipt';
@@ -183,7 +184,7 @@ export async function POST(req: Request) {
             </div>
           `;
 
-          const from = 'Huerta Consulting <no-reply@huerta.consulting>';
+          const from = 'LOBRÁ <no-reply@mail.lobra.net>';
           const send = await resend.emails.send({ from, to: email, subject, html });
 
           if (send.data?.id) {

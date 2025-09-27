@@ -1,3 +1,4 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -46,12 +47,6 @@ export function middleware(req: NextRequest) {
     return new NextResponse('Not Found', { status: 404 });
   }
 
-  // Noindex para dominio de staging
-  const host = req.headers.get('host') || '';
-  const res = NextResponse.next();
-  if (host.includes('huerta-consulting.com')) {
-    res.headers.set('X-Robots-Tag', 'noindex,nofollow');
-  }
-
-  return res;
+  // Respuesta normal para el resto
+  return NextResponse.next();
 }
