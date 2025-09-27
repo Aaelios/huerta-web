@@ -1,33 +1,63 @@
 // app/sitemap.ts
 import type { MetadataRoute } from "next";
 
-// --- listado manual de páginas principales ---
-const staticPages = [
-  { url: "https://lobra.net/", priority: 1.0 },
-  { url: "https://lobra.net/sobre-mi", priority: 0.8 },
-  { url: "https://lobra.net/contacto", priority: 0.8 },
-];
-
-// --- listado de webinars (puedes ir agregando conforme crezcan) ---
-const webinars = [
-  { url: "https://lobra.net/webinars/oct-2025-01", priority: 0.9 },
-];
-
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastMod = new Date();
 
   return [
-    ...staticPages.map((p) => ({
-      url: p.url,
+    {
+      url: "https://lobra.net/",
       lastModified: lastMod,
-      changeFrequency: "weekly" as const,
-      priority: p.priority,
-    })),
-    ...webinars.map((p) => ({
-      url: p.url,
+      changeFrequency: "weekly",
+      priority: 1.0,
+    },
+    {
+      url: "https://lobra.net/que-es-lobra",
       lastModified: lastMod,
-      changeFrequency: "weekly" as const,
-      priority: p.priority,
-    })),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: "https://lobra.net/webinars",
+      lastModified: lastMod,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: "https://lobra.net/webinars/oct-2025-01",
+      lastModified: lastMod,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: "https://lobra.net/sobre-mi",
+      lastModified: lastMod,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: "https://lobra.net/contacto",
+      lastModified: lastMod,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: "https://lobra.net/privacidad",
+      lastModified: lastMod,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: "https://lobra.net/terminos",
+      lastModified: lastMod,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: "https://lobra.net/reembolsos",
+      lastModified: lastMod,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
   ];
 }
