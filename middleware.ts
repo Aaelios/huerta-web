@@ -1,6 +1,6 @@
 // middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname.toLowerCase();
@@ -14,8 +14,8 @@ export function middleware(req: NextRequest) {
     /^\/wp-content(\/|$)/.test(p) ||
     /^\/wp-admin(\/|$)/.test(p) ||
     /^\/wp-json(\/|$)/.test(p) ||
-    p === '/xmlrpc.php' ||
-    p === '/wp-login.php' ||
+    p === "/xmlrpc.php" ||
+    p === "/wp-login.php" ||
 
     // Joomla
     /^\/administrator(\/|$)/.test(p) ||
@@ -24,7 +24,7 @@ export function middleware(req: NextRequest) {
 
     // Drupal
     /^\/sites\/default(\/|$)/.test(p) ||
-    p === '/user/login' ||
+    p === "/user/login" ||
     /^\/misc\//.test(p) ||
 
     // Archivos sensibles
@@ -32,8 +32,8 @@ export function middleware(req: NextRequest) {
     /^\/\.git/.test(p) ||
     /^\/\.svn/.test(p) ||
     /^\/\.hg/.test(p) ||
-    p === '/.ds_store' ||
-    p === '/phpinfo.php' ||
+    p === "/.ds_store" ||
+    p === "/phpinfo.php" ||
     /^\/vendor\/phpunit(\/|$)/.test(p) ||
     /^\/config(\.php)?$/.test(p) ||
 
@@ -42,11 +42,16 @@ export function middleware(req: NextRequest) {
 
     // CGI y status
     /^\/cgi-bin(\/|$)/.test(p) ||
-    p === '/server-status'
+    p === "/server-status"
   ) {
-    return new NextResponse('Not Found', { status: 404 });
+    return new NextResponse("Not Found", { status: 404 });
   }
 
   // Respuesta normal para el resto
   return NextResponse.next();
 }
+
+// Solo se ejecuta en rutas de páginas, no en estáticos ni APIs
+export const config = {
+  matcher: ["/((?!_next|api|.*\\..*).*)"],
+};

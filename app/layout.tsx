@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   description:
     "LOBRÁ es una plataforma para emprendedores en Latinoamérica que ofrece cursos, plantillas y asesoría para lograr rentabilidad, claridad financiera y crecimiento sostenible.",
-  metadataBase: new URL("https://huerta.consulting"),
+  metadataBase: new URL("https://lobra.net"),
 };
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
