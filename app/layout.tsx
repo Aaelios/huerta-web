@@ -5,6 +5,7 @@ import SiteFooter from "../components/SiteFooter";
 import Gtm from "../components/Gtm";
 import { Suspense } from "react";
 import localFont from "next/font/local";
+import type { Metadata } from "next";
 
 const satoshi = localFont({
   src: [
@@ -14,17 +15,20 @@ const satoshi = localFont({
     { path: "../public/fonts/satoshi/Satoshi-Black.woff2",   weight: "900", style: "normal" },
   ],
   variable: "--font-satoshi",
-  // reduce CLS en conexiones lentas manteniendo UX
   display: "optional",
   preload: true,
   fallback: ["system-ui", "Segoe UI", "Roboto", "Arial", "sans-serif"],
-  // activa size-adjust para que el fallback tenga métrica compatible
   adjustFontFallback: "Arial",
 });
 
-export const metadata = {
-  title: "Huerta Consulting",
-  description: "Migración a Next.js",
+export const metadata: Metadata = {
+  title: {
+    default: "LOBRÁ",
+    template: "%s | LOBRÁ",
+  },
+  description:
+    "LOBRÁ es una plataforma para emprendedores en Latinoamérica que ofrece cursos, plantillas y asesoría para lograr rentabilidad, claridad financiera y crecimiento sostenible.",
+  metadataBase: new URL("https://huerta.consulting"),
 };
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
