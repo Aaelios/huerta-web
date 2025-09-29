@@ -6,6 +6,7 @@ import Gtm from "../components/Gtm";
 import { Suspense } from "react";
 import localFont from "next/font/local";
 import type { Metadata } from "next";
+import Script from "next/script";
 
 const satoshi = localFont({
   src: [
@@ -36,6 +37,15 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={satoshi.variable}>
+      <head>
+        {/* Cloudflare Turnstile */}
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+          async
+          defer
+        />
+      </head>
       <body className={satoshi.className}>
         {GTM_ID ? (
           <noscript>

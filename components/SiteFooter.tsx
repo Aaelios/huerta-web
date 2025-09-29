@@ -1,7 +1,44 @@
+// components/SiteFooter.tsx
+"use client";
+
 import Link from "next/link";
+import { FormEvent } from "react";
 
 export default function SiteFooter() {
   const year = new Date().getFullYear();
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const emailInput = form.elements.namedItem("email") as HTMLInputElement | null;
+    const email = emailInput?.value.trim();
+
+    if (!email) return;
+
+    try {
+      const res = await fetch("/api/forms/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "newsletter",
+          email,
+          source: "web_form_footer",
+          request_id: crypto.randomUUID(),
+          turnstile_token: (document.querySelector(
+            "#newsletter-turnstile [name='cf-turnstile-response']"
+          ) as HTMLInputElement | null)?.value,
+          marketing_opt_in: true,
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Newsletter submit response:", data);
+      alert(data?.status === "ok" ? "¡Gracias por suscribirte!" : "Hubo un problema");
+    } catch (err) {
+      console.error("Newsletter submit error", err);
+      alert("Error al enviar. Intenta más tarde.");
+    }
+  };
 
   return (
     <footer className="site-footer" role="contentinfo">
@@ -9,20 +46,31 @@ export default function SiteFooter() {
         {/* Columna izquierda: Marca + Newsletter */}
         <div className="footer-col">
           <h3 className="brand">
-            <Link href="/" className="c-link">LOBRÁ</Link>
+            <Link href="/" className="c-link">
+              LOBRÁ
+            </Link>
           </h3>
 
           <h5>Mantente al tanto</h5>
           <p className="text-white-75">
-            Suscríbete y recibe ideas prácticas para tener más ingresos, más tiempo libre y orgullo en lo que logras.
+            Suscríbete y recibe ideas prácticas para tener más ingresos, más
+            tiempo libre y orgullo en lo que logras.
           </p>
 
-          {/* Embed Brevo pendiente: Semana 3 */}
-          <form className="subscribe-form" method="post">
+          <form className="subscribe-form" method="post" onSubmit={handleSubmit}>
             {/* Honeypot anti-bots */}
-            <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only" />
+            <input
+              type="text"
+              name="company"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="sr-only"
+            />
 
-            <label htmlFor="email" className="sr-only">Correo electrónico</label>
+            <label htmlFor="email" className="sr-only">
+              Correo electrónico
+            </label>
             <input
               id="email"
               name="email"
@@ -33,13 +81,27 @@ export default function SiteFooter() {
               aria-label="Correo electrónico"
             />
 
-            <button type="submit" className="c-btn c-btn--solid" aria-label="Suscribirme al newsletter">
+            {/* Turnstile widget */}
+            <div
+              id="newsletter-turnstile"
+              className="cf-turnstile"
+              data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            />
+
+            <button
+              type="submit"
+              className="c-btn c-btn--solid"
+              aria-label="Suscribirme al newsletter"
+            >
               Suscribirme
             </button>
 
             <small className="text-white-60">
               Al suscribirte aceptas la{" "}
-              <Link href="/privacidad" className="c-link">Política de Privacidad</Link>.
+              <Link href="/privacidad" className="c-link">
+                Política de Privacidad
+              </Link>
+              .
             </small>
           </form>
         </div>
@@ -49,13 +111,19 @@ export default function SiteFooter() {
           <strong>Secciones</strong>
           <ul className="footer-list">
             <li>
-              <Link href="/" className="c-link">Home</Link>
+              <Link href="/" className="c-link">
+                Home
+              </Link>
             </li>
             <li>
-              <Link href="/sobre-mi" className="c-link">Sobre mí</Link>
+              <Link href="/sobre-mi" className="c-link">
+                Sobre mí
+              </Link>
             </li>
             <li>
-              <Link href="/blog" className="c-link">Blog</Link>
+              <Link href="/blog" className="c-link">
+                Blog
+              </Link>
             </li>
             <li>
               <a
@@ -75,19 +143,29 @@ export default function SiteFooter() {
           <strong>Información</strong>
           <ul className="footer-list">
             <li>
-              <Link href="/#faq" className="c-link">FAQs</Link>
+              <Link href="/#faq" className="c-link">
+                FAQs
+              </Link>
             </li>
             <li>
-              <Link href="/privacidad" className="c-link">Privacidad</Link>
+              <Link href="/privacidad" className="c-link">
+                Privacidad
+              </Link>
             </li>
             <li>
-              <Link href="/terminos" className="c-link">Términos</Link>
+              <Link href="/terminos" className="c-link">
+                Términos
+              </Link>
             </li>
             <li>
-              <Link href="/reembolsos" className="c-link">Reembolsos</Link>
+              <Link href="/reembolsos" className="c-link">
+                Reembolsos
+              </Link>
             </li>
             <li>
-              <Link href="/contacto" className="c-link">Soporte y contacto</Link>
+              <Link href="/contacto" className="c-link">
+                Soporte y contacto
+              </Link>
             </li>
           </ul>
         </nav>
