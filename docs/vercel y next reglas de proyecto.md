@@ -33,9 +33,9 @@
 
 ## Dominios, DNS y SEO técnico
 
-* Dominio primario: `https://huerta.consulting`.
-* `https://huerta-consulting.com` y `https://www.huerta-consulting.com` → **301** al primario (reglas en `vercel.json`).
-* `middleware.ts`: añadir `X-Robots-Tag: noindex,nofollow` cuando `host` incluya `huerta-consulting.com`.
+* Dominio primario: `https://lobra.net`.
+* `https://lobra.net` y `https://www.lobra.net` → **301** al primario (reglas en `vercel.json`).
+* `middleware.ts`: añadir `X-Robots-Tag: noindex,nofollow` cuando `host` incluya `lobra.net.com`.
 * Un solo sitemap en dominio primario. Canónicas al primario en todas las páginas.
 * `robots.txt` gestionado en App Router. Respetar `noindex` por host.
 
