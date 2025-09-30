@@ -22,13 +22,14 @@ const NAME_MAX = 128;
 const MSG_MIN = 20;
 const MSG_MAX = 1500;
 
-// Opciones de motivo
+// Opciones de motivo (incluye soporte) con microcopy amigable
 const MOTIVOS = [
   { value: "", label: "Selecciona un motivo" },
-  { value: "contacto", label: "Contacto" },
-  { value: "soporte", label: "Soporte" },
-  { value: "sugerencia", label: "Sugerencia" },
-  { value: "queja", label: "Queja" },
+  { value: "pago", label: "Problema con un pago o factura" },
+  { value: "acceso", label: "No puedo acceder a un curso/descarga" },
+  { value: "mejora", label: "Quiero proponer una mejora" },
+  { value: "consulta", label: "Solo tengo una duda general" },
+  { value: "soporte", label: "Necesito ayuda técnica" },
 ];
 
 function uuidv4() {
@@ -62,7 +63,7 @@ export default function FormularioContacto() {
   const [telefono, setTelefono] = useState<string>("");
 
   // Control UI
-  const [requestId] = useState(() => uuidv4());
+  const [requestId, setRequestId] = useState(() => uuidv4());
   const [submitting, setSubmitting] = useState(false);
   const [disabledAll, setDisabledAll] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -128,6 +129,11 @@ export default function FormularioContacto() {
     return el?.value?.trim() || "";
   }
 
+  function getCompanyHoneypot(): string {
+    const el = document.querySelector("input[name='company']") as HTMLInputElement | null;
+    return el?.value ?? "";
+  }
+
   function validate(localToken: string): Record<string, string> {
     const e: Record<string, string> = {};
     const n = trim(fullName);
@@ -160,6 +166,15 @@ export default function FormularioContacto() {
     tMinPassed &&
     hasTsToken;
 
+  // Checklist en vivo para explicar por qué el botón está deshabilitado
+  const missing: string[] = [];
+  if (!(trim(fullName).length >= NAME_MIN)) missing.push("Nombre válido");
+  if (!reEmail.test(trim(email))) missing.push("Correo válido");
+  if (!trim(motivo)) missing.push("Selecciona un motivo");
+  if (!(trim(mensaje).length >= MSG_MIN)) missing.push(`Mensaje de al menos ${MSG_MIN} caracteres`);
+  if (!tMinPassed) missing.push("Espera unos segundos");
+  if (!hasTsToken) missing.push("Completa la verificación");
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setGlobalMsg(null);
@@ -182,6 +197,8 @@ export default function FormularioContacto() {
       const targetId = first ? map[first] : undefined;
       if (targetId) document.getElementById(targetId)?.focus();
       else errorRef.current?.focus();
+      // Analítica bloqueado por UI
+      window.dataLayer?.push?.({ event: "contact_submit", status: "blocked_frontend", request_id: requestId });
       return;
     }
 
@@ -191,7 +208,7 @@ export default function FormularioContacto() {
         type: "contact_form" as const,
         source: "web_form" as const,
         request_id: requestId,
-        email: trim(email),
+        email: trim(email).toLowerCase(),
         full_name: trim(fullName),
         marketing_opt_in: !!marketing,
         payload: { message: trim(mensaje) },
@@ -202,6 +219,8 @@ export default function FormularioContacto() {
           motivo: trim(motivo),
           telefono: trim(telefono) || undefined,
         },
+        // Honeypot: debe viajar aunque esté vacío
+        company: getCompanyHoneypot(),
       };
 
       const res = await fetch(ENDPOINT, {
@@ -222,34 +241,65 @@ export default function FormularioContacto() {
         setDisabledAll(true);
 
         // Analítica mínima
-        window.dataLayer?.push?.({ event: "contact_submit", type: "contact" });
+        window.dataLayer?.push?.({
+          event: "contact_submit",
+          status: duplicate ? "duplicate" : "ok",
+          request_id: requestId,
+        });
 
         setTimeout(() => successRef.current?.focus(), 30);
         return;
       }
 
-      if (res.status === 422) {
-        setGlobalMsg({ type: "error", text: "Revisa los campos marcados." });
+      // Manejo de errores con diferenciación
+      const errorCode: string | undefined = data?.error?.error_code;
+      if (res.status === 413 || errorCode === "payload_too_large") {
+        setGlobalMsg({ type: "error", text: "Tu mensaje es muy grande. Reduce el contenido y vuelve a intentar." });
+        window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "payload_too_large", request_id: requestId });
         setTimeout(() => errorRef.current?.focus(), 30);
         return;
       }
 
       if (res.status === 403) {
-        setGlobalMsg({ type: "error", text: "No pasó la verificación. Intenta de nuevo." });
+        if (errorCode === "qa_forbidden") {
+          setGlobalMsg({ type: "error", text: "No pudimos validar la solicitud. Intenta de nuevo más tarde." });
+          window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "qa_forbidden", request_id: requestId });
+        } else if (errorCode === "turnstile_invalid") {
+          setGlobalMsg({ type: "error", text: "Verificación anti-bot inválida. Recarga e inténtalo de nuevo." });
+          window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "turnstile_invalid", request_id: requestId });
+        } else {
+          setGlobalMsg({ type: "error", text: "No pasó la verificación. Intenta de nuevo." });
+          window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "403_unknown", request_id: requestId });
+        }
+        setTimeout(() => errorRef.current?.focus(), 30);
+        return;
+      }
+
+      if (res.status === 422) {
+        // Si vienen errores de campo desde API, podríamos mapearlos aquí
+        const apiFieldErrors: Record<string, string> | undefined = data?.error?.field_errors;
+        if (apiFieldErrors) setErrors(prev => ({ ...prev, ...apiFieldErrors }));
+        setGlobalMsg({ type: "error", text: "Revisa los campos marcados." });
+        window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "invalid_input", request_id: requestId });
         setTimeout(() => errorRef.current?.focus(), 30);
         return;
       }
 
       if (res.status === 429) {
         setGlobalMsg({ type: "error", text: "Demasiados intentos. Espera 60 s e inténtalo otra vez." });
+        window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "rate_limited", request_id: requestId });
         setTimeout(() => errorRef.current?.focus(), 30);
         return;
       }
 
-      setGlobalMsg({ type: "error", text: "No pudimos enviar tu mensaje. Intenta más tarde." });
+      // Otros
+      const rid = data?.error?.request_id || requestId;
+      setGlobalMsg({ type: "error", text: `No pudimos enviar tu mensaje. Usa este ID al reportarlo: ${rid}` });
+      window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: `http_${res.status}`, request_id: requestId });
       setTimeout(() => errorRef.current?.focus(), 30);
     } catch {
-      setGlobalMsg({ type: "error", text: "No pudimos enviar tu mensaje. Intenta más tarde." });
+      setGlobalMsg({ type: "error", text: `No pudimos enviar tu mensaje. Usa este ID al reportarlo: ${requestId}` });
+      window.dataLayer?.push?.({ event: "contact_submit", status: "error", error_code: "exception", request_id: requestId });
       setTimeout(() => errorRef.current?.focus(), 30);
     } finally {
       setSubmitting(false);
@@ -265,7 +315,7 @@ export default function FormularioContacto() {
       <div className="container u-maxw-md stack-5">
         <header className="stack-2 u-center-text-block">
           <h2>Contacto</h2>
-          <p className="u-small">Respondemos en ~2 días hábiles.</p>
+          <p className="u-small">Te contestamos normalmente dentro de 24–48 h hábiles.</p>
         </header>
 
         {globalMsg && (
@@ -356,9 +406,15 @@ export default function FormularioContacto() {
               onChange={e => setTelefono(e.target.value)}
               disabled={disabledAll}
               aria-invalid={!!errors.telefono}
-              aria-describedby={errors.telefono ? `${idTelefono}-err` : undefined}
+              aria-describedby={errors.telefono ? `${idTelefono}-err` : `${idTelefono}-help`}
             />
-            {errors.telefono && <p id={`${idTelefono}-err`} className="c-form-error">{errors.telefono}</p>}
+            {errors.telefono ? (
+              <p id={`${idTelefono}-err`} className="c-form-error">{errors.telefono}</p>
+            ) : (
+              <p id={`${idTelefono}-help`} className="c-form-help">
+                No enviamos mensajes de marketing. Se usa solo para solicitudes de soporte y seguimiento de tu caso.
+              </p>
+            )}
             {motivo === "soporte" && (
               <p className="c-form-help">Si es soporte, incluir teléfono acelera la respuesta.</p>
             )}
@@ -417,6 +473,18 @@ export default function FormularioContacto() {
             <input id="company" type="text" name="company" tabIndex={-1} autoComplete="off" />
           </div>
 
+          {/* Checklist de requisitos cuando el botón está deshabilitado */}
+          {!disabledAll && !canSubmit && (
+            <div className="c-card">
+              <p className="u-small">Completa lo siguiente para enviar:</p>
+              <ul className="u-small">
+                {missing.map(item => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Acciones */}
           <div className="l-cluster">
             <button
@@ -424,6 +492,7 @@ export default function FormularioContacto() {
               className="c-btn c-btn--solid"
               disabled={!canSubmit}
               aria-busy={submitting ? "true" : undefined}
+              title={canSubmit ? "Enviar formulario" : "Faltan datos para enviar"}
             >
               {submitting ? "Enviando…" : "Enviar"}
             </button>
@@ -433,6 +502,7 @@ export default function FormularioContacto() {
                 type="button"
                 className="c-btn c-btn--ghost"
                 onClick={() => {
+                  // Reset UI y datos
                   setDisabledAll(false);
                   setGlobalMsg(null);
                   setErrors({});
@@ -442,9 +512,15 @@ export default function FormularioContacto() {
                   setMarketing(false);
                   setMotivo("");
                   setTelefono("");
+                  setRequestId(uuidv4()); // Regenerar request_id
+                  setStartedAt(null);
+                  setTMinPassed(false);
                   // reset Turnstile
                   const box = document.getElementById("contact-turnstile");
                   if (box) box.innerHTML = "";
+                  // limpiar honeypot si quedó texto
+                  const hp = document.querySelector("input[name='company']") as HTMLInputElement | null;
+                  if (hp) hp.value = "";
                 }}
               >
                 Enviar otro mensaje
@@ -454,7 +530,7 @@ export default function FormularioContacto() {
 
           {/* Nota de privacidad */}
           <p className="c-form-help">
-            Al enviar aceptas la <a href="/privacidad" className="c-link">Política de Privacidad</a>.
+            Al enviar aceptas la <a href="/privacidad" className="c-link" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
           </p>
 
           {/* Metadatos ocultos recomendados */}

@@ -4,7 +4,7 @@
  * Normalización y safe-list para /api/forms/submit
  * - Aplica trims, lowercase de email y defaults por tipo.
  * - Normaliza `source` a catálogo y genera `warnings`.
- * - Trunca strings largos y registra `truncated_field:<name>`.
+ * - Registra `truncated_field:<name>` solo donde aplique.
  * - Construye el payload seguro para la RPC (solo campos permitidos).
  */
 
@@ -12,13 +12,12 @@ import {
   ALLOWED_SOURCES,
   SOURCE_NORMALIZATION,
   STRING_LIMITS,
-  MAX_MESSAGE_BYTES,
   WARNING_KEYS,
   RPC_SAFE_FIELDS,
 } from './constants';
 import type { FormSource } from './constants';
 import type { SubmitInput } from './schemas';
-import { byteSize, truncateByChars } from './schemas';
+import { truncateByChars } from './schemas';
 
 /* ===== Tipos de salida ===== */
 
@@ -69,58 +68,56 @@ export function h_validate_normalize(input: SubmitInput): NormalizedResult {
   // 1) Email a lowercase + trim
   const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : input.email;
 
-  // 2) Full name truncado
-  const full_name = truncateWithWarning(warnings, 'full_name', input.full_name, STRING_LIMITS.fullNameMax);
-
-  // 3) Source → catálogo
+  // 2) Source → catálogo
   const { value: source, normalized: sourceWasNormalized } = normalizeSource(input.source);
   if (sourceWasNormalized) pushWarning(warnings, WARNING_KEYS.sourceNormalized, source);
 
-  // 4) Marketing opt-in por tipo
+  // 3) Marketing opt-in por tipo
   let marketing_opt_in = input.marketing_opt_in;
   if (input.type === 'newsletter' && typeof marketing_opt_in !== 'boolean') {
     marketing_opt_in = true; // default para newsletter
   }
 
-  // 5) Secciones opcionales (mantener shape si existen)
+  // 4) Secciones opcionales (mantener shape si existen)
   const utm = input.utm ?? undefined;
   const context = input.context ?? undefined;
   const metadata = input.metadata ?? undefined;
 
-  // 6) Construir objeto normalizado por rama del discriminante para satisfacer el tipo
+  // 5) Construir objeto normalizado por rama del discriminante
   let normalized: SubmitInput;
 
   if (input.type === 'contact_form') {
-    // Sanitizar y reforzar tamaño de message
-    const rawMsg = (input.payload as { message: string }).message?.trim();
-    let finalMsg = rawMsg;
+    // `full_name` es requerido por contrato aquí; asegurar string truncado o el original trim.
+    const full_name_cf =
+      truncateWithWarning(warnings, 'full_name', input.full_name, STRING_LIMITS.fullNameMax) ??
+      input.full_name.trim();
 
-    if (byteSize(rawMsg) > MAX_MESSAGE_BYTES) {
-      // Heurística segura para evitar desbordes por multibyte
-      const approxChars = Math.max(1, Math.floor(MAX_MESSAGE_BYTES / 2));
-      finalMsg = truncateByChars(rawMsg, approxChars).value;
-      pushWarning(warnings, WARNING_KEYS.truncatedField, 'payload.message');
-    }
+    const rawMsg = input.payload.message.trim(); // Zod ya valida longitudes; no truncar
 
     normalized = {
       ...input,
       type: 'contact_form',
       email,
-      full_name,
+      full_name: full_name_cf, // siempre string
       source,
       marketing_opt_in,
       utm,
       context,
       metadata,
-      payload: { message: finalMsg },
+      payload: { message: rawMsg },
     };
   } else {
-    // newsletter: payload es opcional y de tipo unknown
+    // newsletter: full_name es opcional
+    const full_name_nl =
+      typeof (input as any).full_name === 'string'
+        ? truncateWithWarning(warnings, 'full_name', (input as any).full_name, STRING_LIMITS.fullNameMax)
+        : undefined;
+
     normalized = {
       ...input,
       type: 'newsletter',
       email,
-      full_name,
+      ...(typeof full_name_nl !== 'undefined' ? { full_name: full_name_nl } : {}),
       source,
       marketing_opt_in,
       utm,
@@ -130,7 +127,7 @@ export function h_validate_normalize(input: SubmitInput): NormalizedResult {
     };
   }
 
-  // 7) Safe-list hacia RPC
+  // 6) Safe-list hacia RPC
   const rpcPayload: Record<string, unknown> = {};
   const normIndex = normalized as unknown as Record<string, unknown>;
   for (const key of RPC_SAFE_FIELDS) {

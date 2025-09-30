@@ -16,6 +16,8 @@ import {
   MAX_MESSAGE_BYTES,
   MAX_SECTION_BYTES,
   STRING_LIMITS,
+  MOTIVOS,
+  TELEFONO_REGEX,
 } from './constants';
 
 // ===== Utilidades comunes =====
@@ -73,7 +75,24 @@ const OptionalSectionSchema = z
     { message: `section exceeds ${MAX_SECTION_BYTES} bytes` },
   );
 
-const TurnstileTokenSchema = z.string().min(10);
+/** Turnstile schema dinámico con bypass */
+function buildTurnstileTokenSchema() {
+  if (process.env.FORMS_DISABLE_TURNSTILE === 'true') {
+    // En bypass: aceptar string vacío
+    return z.string().max(0);
+  }
+  return z.string().min(10);
+}
+const TurnstileTokenSchema = buildTurnstileTokenSchema();
+
+// ===== Esquema Metadata =====
+const MetadataSchema = z
+  .object({
+    motivo: z.enum(MOTIVOS),
+    telefono: z.string().regex(TELEFONO_REGEX).optional(),
+  })
+  .strict()
+  .optional();
 
 // ===== Esquema base y variantes por type =====
 
@@ -87,10 +106,16 @@ const BaseSchema = z.object({
   // Secciones opcionales con límite
   utm: OptionalSectionSchema,
   context: OptionalSectionSchema,
-  metadata: OptionalSectionSchema,
+  metadata: MetadataSchema,
   // Campos generales opcionales
-  full_name: z.string().max(STRING_LIMITS.fullNameMax).optional(),
   marketing_opt_in: z.boolean().optional(),
+  // Honeypot
+  company: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || val === '', {
+      message: 'company must be empty',
+    }),
 });
 
 /** `contact_form` requiere `payload.message`. */
@@ -98,7 +123,7 @@ const ContactPayloadSchema = z
   .object({
     message: z
       .string()
-      .min(1, { message: 'message required' })
+      .min(20, { message: 'message must have at least 20 characters' })
       .refine((val: string) => byteSize(val) <= MAX_MESSAGE_BYTES, {
         message: `message exceeds ${MAX_MESSAGE_BYTES} bytes`,
       }),
@@ -107,12 +132,14 @@ const ContactPayloadSchema = z
 
 export const ContactInputSchema = BaseSchema.extend({
   type: z.literal('contact_form'),
+  full_name: z.string().min(2).max(STRING_LIMITS.fullNameMax),
   payload: ContactPayloadSchema,
 });
 
 /** `newsletter` no requiere payload; si viene, respeta tope de sección. */
 export const NewsletterInputSchema = BaseSchema.extend({
   type: z.literal('newsletter'),
+  full_name: z.string().max(STRING_LIMITS.fullNameMax).optional(),
   payload: z
     .unknown()
     .optional()
@@ -146,3 +173,4 @@ export function needsSourceNormalization(source: string): boolean {
 
 // ===== Tipos derivados =====
 export type SubmitInput = z.infer<typeof SubmitInputSchema>;
+export type Metadata = z.infer<typeof MetadataSchema>;
