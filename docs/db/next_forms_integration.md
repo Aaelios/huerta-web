@@ -1,21 +1,19 @@
-````markdown
 # docs/next_forms_integration.md 
 
 # Guía para integración de formularios y RPC en Next.js
 
 ---
 
-## Estado actual (2025-09-28)
+## Estado actual (2025-09-29)
 
 - ✅ Schemas de validación (`zod`) listos.
 - ✅ Helpers implementados: `h_validate_normalize`, `h_rate_limit_touch`, `h_call_orch_contact_write`, `h_hash`.
-- ✅ Carpeta y estructura en `app/api/forms/contact/route.ts` creada.
+- ✅ Carpeta y estructura en `app/api/forms/submit/route.ts` creada.
 - ✅ Contrato de entrada/salida validado contra RPC `f_orch_contact_write`.
-
-- ⏳ Rate limiting real: pendiente de pruebas de carga y afinación de ventana.
-- ⏳ Logs estructurados: solo logging básico, falta estrategia centralizada.
+- ✅ Rate limiting real: probado en producción (burst correcto, sustained requiere revisión de umbral).
+- ✅ Logs estructurados JSON (`submit_ok`, `rpc_error`, `rate_limited`, `turnstile_fail`).
 - ⏳ Integración con **Brevo** y **Resend**: diferida al **Paso 8**.
-- ⏳ QA E2E: casos definidos pero aún no ejecutados en staging.
+- ⏳ QA E2E formal: pendiente de ejecución completa (más allá de pruebas en prod).
 
 ---
 
@@ -30,7 +28,7 @@ Dar al programador de Next.js las especificaciones necesarias para:
 
 ## 1. Endpoint en Next.js
 
-**Ruta**: `POST /api/forms/contact`
+**Ruta**: `POST /api/forms/submit`
 
 - Solo servidor.  
 - Llama `public.f_orch_contact_write` con `SUPABASE_SERVICE_ROLE_KEY`.  
@@ -81,13 +79,13 @@ La RPC devuelve un JSON con estructura:
 * `duplicate`: request_id repetido.
 * `db_error`: error SQL interno.
 * `rls_blocked`: si alguien intenta llamar sin service_role.
-* `rate_limited`: reservado, aún no implementado.
+* `rate_limited`: bloqueado por política de rate-limit.
 
 ---
 
 ## 2. Validaciones en Next.js
 
-* Verificar token de **Turnstile** antes de llamar la RPC.
+* Verificar token de **Turnstile** antes de llamar la RPC (skip si `FORMS_DISABLE_TURNSTILE=true`).
 * Validar con Zod o similar:
 
   * Email válido.
@@ -106,8 +104,9 @@ La RPC devuelve un JSON con estructura:
 
 * `SUPABASE_SERVICE_ROLE_KEY` **solo en servidor**. Nunca exponer en cliente.
 * RPC ejecutada únicamente desde API routes o server actions.
-* Rate-limit por IP y email (ej. 10/min).
+* Rate-limit por IP y email implementado (burst probado, sustained requiere ajuste).
 * Log de auditoría: `request_id`, `email`, `ip`, `ua`, `outcome`.
+* **QA Guard**: si `FORMS_QA_GUARD=true`, el endpoint exige header `x-forms-qa-token`. Útil para entornos sin staging separado.
 
 ---
 
@@ -125,6 +124,10 @@ La RPC devuelve un JSON con estructura:
 * `SUPABASE_URL`
 * `SUPABASE_SERVICE_ROLE_KEY`
 * `TURNSTILE_SECRET_KEY`
+* `FORMS_QA_GUARD` (`true|false`)
+* `FORMS_QA_TOKEN`
+* `FORMS_DISABLE_TURNSTILE` (`true|false`)
+* `FORMS_DISABLE_RL` (`true|false`)
 * `RESEND_API_KEY`
 * `BREVO_API_KEY`
 * `BREVO_LIST_NEWSLETTER`, `BREVO_LIST_CONTACT` (IDs de listas)
@@ -205,6 +208,8 @@ La RPC devuelve un JSON con estructura:
 * Payload grande → error invalid_input ✔️
 * Source variante `web_form_footer` → warning ✔️
 * Turnstile inválido → error 400 antes de la RPC ✔️
+* Rate-limit burst → bloquea después del 3.º/4.º ✔️
+* Rate-limit sustained → pendiente ajuste
 
 ---
 
@@ -249,4 +254,6 @@ La RPC devuelve un JSON con estructura:
   "utm":{"campaign":"test"},
   "context":{"path":"/contacto"}
 }
+```
+
 ```

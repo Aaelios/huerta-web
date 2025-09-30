@@ -25,7 +25,7 @@ import { byteSize, truncateByChars } from './schemas';
 export type NormalizedResult = {
   normalized: SubmitInput;             // shape validado por Zod ya normalizado
   source: FormSource;                  // fuente final en catálogo
-  warnings: string[];                  // p. ej. ["source_normalized:web_form_contact","truncated_field:full_name"]
+  warnings: string[];                  // p. ej. ["source_normalized:web_form","truncated_field:full_name"]
   rpcPayload: Record<string, unknown>; // safe-list para f_orch_contact_write
 };
 
@@ -90,7 +90,7 @@ export function h_validate_normalize(input: SubmitInput): NormalizedResult {
   // 6) Construir objeto normalizado por rama del discriminante para satisfacer el tipo
   let normalized: SubmitInput;
 
-  if (input.type === 'contact') {
+  if (input.type === 'contact_form') {
     // Sanitizar y reforzar tamaño de message
     const rawMsg = (input.payload as { message: string }).message?.trim();
     let finalMsg = rawMsg;
@@ -104,7 +104,7 @@ export function h_validate_normalize(input: SubmitInput): NormalizedResult {
 
     normalized = {
       ...input,
-      type: 'contact',
+      type: 'contact_form',
       email,
       full_name,
       source,
@@ -126,7 +126,6 @@ export function h_validate_normalize(input: SubmitInput): NormalizedResult {
       utm,
       context,
       metadata,
-      // payload se preserva tal cual si vino definido
       ...(typeof input.payload !== 'undefined' ? { payload: input.payload } : {}),
     };
   }

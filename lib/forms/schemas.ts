@@ -2,7 +2,7 @@
 
 /**
  * Esquemas Zod y utilidades de validación para /api/forms/submit
- * - Define contratos por `type`: contact | newsletter
+ * - Define contratos por `type`: contact_form | newsletter
  * - Valida formatos (email, uuid v4, tamaños en bytes)
  * - Normalización profunda vive en h_validate_normalize.ts
  */
@@ -66,7 +66,7 @@ const SourceSchema = z
 
 /** Sección opcional con tope de tamaño. */
 const OptionalSectionSchema = z
-  .record(z.string(), z.unknown()) // claves string, valores desconocidos
+  .record(z.string(), z.unknown())
   .optional()
   .refine(
     (obj: Record<string, unknown> | undefined) => (obj ? byteSize(obj) <= MAX_SECTION_BYTES : true),
@@ -93,21 +93,20 @@ const BaseSchema = z.object({
   marketing_opt_in: z.boolean().optional(),
 });
 
-/** `contact` requiere `payload.message`. */
+/** `contact_form` requiere `payload.message`. */
 const ContactPayloadSchema = z
   .object({
     message: z
       .string()
       .min(1, { message: 'message required' })
-      .refine(
-        (val: string) => byteSize(val) <= MAX_MESSAGE_BYTES,
-        { message: `message exceeds ${MAX_MESSAGE_BYTES} bytes` },
-      ),
+      .refine((val: string) => byteSize(val) <= MAX_MESSAGE_BYTES, {
+        message: `message exceeds ${MAX_MESSAGE_BYTES} bytes`,
+      }),
   })
   .strict();
 
 export const ContactInputSchema = BaseSchema.extend({
-  type: z.literal('contact'),
+  type: z.literal('contact_form'),
   payload: ContactPayloadSchema,
 });
 
@@ -124,7 +123,10 @@ export const NewsletterInputSchema = BaseSchema.extend({
 });
 
 /** Unión discriminada por `type`. */
-export const SubmitInputSchema = z.discriminatedUnion('type', [ContactInputSchema, NewsletterInputSchema]);
+export const SubmitInputSchema = z.discriminatedUnion('type', [
+  ContactInputSchema,
+  NewsletterInputSchema,
+]);
 
 // ===== Guardas complementarias =====
 

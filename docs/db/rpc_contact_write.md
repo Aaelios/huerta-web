@@ -1,78 +1,83 @@
-# docs/rpc_contact_write.md 
+Listo. Documento corregido y alineado con el contrato actual (SQL v1 y caller Next.js).
 
+````md
 # RPC `public.f_orch_contact_write` — Contrato y guía de integración
 
-Versión: **v1** · Última actualización: **2025-09-28**  
+Versión: **v1** · Última actualización: **2025-09-29**  
 Owner: **Huerta Consulting** · Namespace: `public`
 
 ---
 
 ## 1) Propósito
-
-Punto único de **orquestación de writes** para formularios de contacto y newsletter.  
-Garantiza **idempotencia** por `request_id`, aplica **normalización** y registra entidades: `contacts`, `messages`, y `subscription_events` cuando corresponda.
+Único punto de **orquestación de writes** para contacto y newsletter.  
+Aplica **normalización**, asegura **idempotencia** por `request_id` y registra: `contacts`, `messages` y `subscription_events` cuando corresponda.
 
 ---
 
 ## 2) Firma y seguridad
-
-- **Nombre:** `public.f_orch_contact_write`
+- **Nombre estable (alias):** `public.f_orch_contact_write` → apunta a `*_v1`
 - **Firma:** `(v_input jsonb) RETURNS jsonb`
-- **Permisos:** ejecutable **solo** con `service_role` (o `postgres`)
-- **RLS:** tablas subyacentes con RLS activo; la RPC usa `SECURITY DEFINER` bajo roles internos controlados
-- **Timeout recomendado (caller):** 5 s
+- **Permisos:** ejecutar **solo** con `service_role` o `postgres`
+- **RLS:** activo en tablas; la RPC es `SECURITY DEFINER` con rol interno
+- **Timeout caller recomendado:** 5 s
 
 ---
 
-## 3) Contrato de entrada (`v_input jsonb`)
+## 3) Entrada (`v_input jsonb`)
+Campos aceptados (lista blanca). Otros se ignoran.
 
-Campos aceptados (lista blanca). Cualquier otro campo será ignorado.
+| Campo              | Tipo                                                       | Req | Notas |
+|--------------------|------------------------------------------------------------|-----|------|
+| `request_id`       | `uuid` (v4)                                                | ✔︎  | Idempotencia por envío. |
+| `type`             | `"contact_form" \| "support" \| "complaint" \| "suggestion" \| "newsletter"` | ✔︎ | Catálogo validado en DB. |
+| `email`            | `text`                                                     | ✔︎  | Normalizado a lowercase (`citext` en DB). |
+| `full_name`        | `text`                                                     | –   | Truncado a 128 chars si excede (normalizador). |
+| `marketing_opt_in` | `boolean`                                                  | –   | Para `newsletter` el default efectivo es `true` si falta. |
+| `payload`          | `jsonb`                                                    | –   | **`contact_form` requiere `{ "message": "..." }`**. |
+| `utm`              | `jsonb`                                                    | –   | Metadatos de campaña. |
+| `context`          | `jsonb`                                                    | –   | `{ path, url, referrer, ua, lang }` según caller. |
+| `source`           | `text`                                                     | ✔︎  | Catálogo: **`web_form`**, `checkout`, `import`, `api`. Variantes se normalizan. |
+| `metadata`         | `jsonb`                                                    | –   | Técnico `{ ip_hash, ip_class, request_ts, form_version }`. |
 
-| Campo              | Tipo             | Req | Notas |
-|--------------------|------------------|-----|-------|
-| `request_id`       | `uuid` (v4)      | ✔︎  | Clave de idempotencia por envío. |
-| `type`             | `"contact" \| "newsletter"` | ✔︎ | Discriminante de flujo. |
-| `email`            | `text`           | ✔︎  | Normalizado a lowercase. `citext` en DB. |
-| `full_name`        | `text`           | –   | Truncado a 128 chars si excede. |
-| `marketing_opt_in` | `boolean`        | –   | Default `true` para `newsletter` si no viene. |
-| `payload`          | `jsonb`          | –   | Para `contact`: `{ "message": "..." }` requerido. |
-| `utm`              | `jsonb`          | –   | Metadatos de campaña. |
-| `context`          | `jsonb`          | –   | `{ path, url, referrer, ua, lang }`. |
-| `source`           | `text`           | ✔︎  | Catálogo: `web_form_contact`, `web_form_footer`, `checkout`, `api`. |
-| `metadata`         | `jsonb`          | –   | Técnico: `{ ip_hash, ip_class, request_ts, form_version }`. |
+### Límites
+- **Aplicados en la RPC (DB):**
+  - `v_input` se valida por secciones con tope **64 KB** cada una (`utm`, `context`, `payload`, `metadata`, `tech_metrics` si existe).
+  - `type`, `source`, `email`, `request_id` validados (formato y catálogos).
+  - `contact_form` exige `payload.message` no vacío.
+- **Aplicados en el caller (Next.js) para endurecer:**
+  - `payload.message` ≤ **2 KB**.
+  - `utm`, `context`, `metadata` ≤ **2 KB** cada uno.
+  - `full_name` ≤ **128** chars.
 
-**Límites defensivos aplicados por la RPC:**
-- Tamaño total de `v_input`: ≤ 64 KB
-- `payload.message`: ≤ 2 KB (si excede se trunca y se agrega warning)
-- `utm`/`context`/`metadata`: ≤ 2 KB cada uno
+> Si el caller envía tamaños mayores, la RPC puede aceptarlos hasta 64 KB por sección; el caller es la “policía” de límites estrictos.
 
 ---
 
 ## 4) Comportamiento por `type`
 
-### 4.1) `type = "contact"`
-1. **Upsert de contacto** por `email`.  
-2. **Inserta `messages`** con `payload.message` y enlaza a `contact_id`.  
-3. Si `marketing_opt_in = true`, **log de `subscription_events`** (`opt_in`).  
-4. Devuelve `status:"ok"` o `status:"duplicate"` si `request_id` ya fue procesado.
+### 4.1) `contact_form` \| `support` \| `complaint` \| `suggestion`
+1. **Upsert `contacts`** por `email` (crea o enriquece `full_name`, `utm`, `tech_metrics`, `metadata`).
+2. **Inserta `messages`** con `payload.message` y enlaza `contact_id`.  
+   - Idempotencia por `request_id` en `messages.metadata.request_id`.
+3. Si `marketing_opt_in = true`, **registra `subscription_events`** con `event_type = 'opt_in'`.
+4. Devuelve `status: "ok"` o `"duplicate"` si ya se procesó ese `request_id`.
 
-### 4.2) `type = "newsletter"`
-1. **Upsert de contacto** por `email`.  
-2. Si `marketing_opt_in` es `true` (o vacío → default `true`), **log `subscription_events:opt_in`**.  
-3. **No crea `messages`** salvo que venga `payload` explícito (no requerido).  
-4. Devuelve `status:"ok"` o `duplicate`.
+### 4.2) `newsletter`
+1. **Upsert `contacts`** por `email`.
+2. `marketing_opt_in` faltante se considera `true` por convenio del caller.
+3. Si `marketing_opt_in = true`, **`subscription_events: 'opt_in'`**.
+4. No crea `messages` salvo que se reciba `payload` explícito.
+5. Devuelve `status: "ok"` o `"duplicate"`.
 
 ---
 
 ## 5) Idempotencia
-
-- Clave: `request_id` (UUID v4).  
-- La RPC es **idempotente**: segundo llamado con el mismo `request_id` devuelve `status:"duplicate"` y las mismas IDs previamente generadas cuando existan.
+- Clave: `request_id` (UUID v4).
+- Segundo llamado con el mismo `request_id` devuelve `status:"duplicate"` y referencias previas.
 
 ---
 
-## 6) Respuesta (`RETURNS jsonb`)
-
+## 6) Salida (`RETURNS jsonb`)
 ```json
 {
   "status": "ok | duplicate | error",
@@ -81,52 +86,44 @@ Campos aceptados (lista blanca). Cualquier otro campo será ignorado.
     "email": "string",
     "consent_status": "none | single_opt_in | double_opt_in"
   },
-  "message": {
-    "id": "uuid"
-  },
-  "subscription_event": {
-    "id": "uuid|null",
-    "event_type": "opt_in|double_opt_in|unsubscribe|bounce|complaint|null"
-  },
-  "submission_id": "uuid",   // igual a request_id
+  "message": { "id": "uuid|null" },
+  "subscription_event": { "id": "uuid|null", "event_type": "opt_in|double_opt_in|unsubscribe|bounce|complaint|null" },
+  "submission_id": "uuid",
   "version": "v1",
-  "warnings": ["source_normalized:web_form_footer", "truncated_field:payload.message"]
+  "warnings": ["source_normalized:web_form", "truncated_field:full_name"]
 }
 ````
 
 Notas:
 
-* En `newsletter` sin mensaje no habrá `message.id`.
-* `subscription_event.id` puede ser `null` si no aplica.
+* En `newsletter` sin mensaje: `"message": { "id": null }`.
+* `warnings[]` incluye claves estándar (`source_normalized:*`, `truncated_field:*`).
 
 ---
 
-## 7) Errores y mensajes
+## 7) Errores y mapeo
 
-La RPC devuelve `status:"error"` únicamente por fallos de negocio **no** relacionados a permisos.
-Errores de permisos o SQL graves suben como error del motor y deben mapearse a `500` en el caller.
+* La RPC retorna `"error"` solo por fallos de negocio internos; errores SQL escalan al motor.
+* El **endpoint Next.js** mapea:
 
-| Código interno | Causa típica                              | Acción caller                |
-| -------------- | ----------------------------------------- | ---------------------------- |
-| `error`        | Validación de negocio en DB (ej. tamaños) | 500 (db_error) con log       |
-| `duplicate`    | Idempotencia por `request_id`             | 200 con `status:"duplicate"` |
-| SQL exception  | Violación unique, permisos, otros         | 500 (db_error) con log       |
-
-> La clasificación `invalid_input`, `turnstile_invalid`, `rate_limited` se determina **antes** en el endpoint de Next.js. No son responsabilidad de esta RPC.
+  * 422 `invalid_input` (Zod)
+  * 403 `turnstile_invalid`
+  * 429 `rate_limited`
+  * 500 `db_error|server_error`
 
 ---
 
 ## 8) Observabilidad
 
-Campos garantizados en output para correlación:
+Output siempre incluye:
 
 * `submission_id` = `request_id`
-* `warnings[]` con claves estándar (`source_normalized:*`, `truncated_field:*`)
 * `version` = `"v1"`
+* `warnings[]` cuando hubo normalizaciones o truncamientos
 
-Recomendación de logs en el caller:
+Log recomendado en el caller:
 
-* `request_id`, `status`, `contact_id`, `message_id`, `latency_ms_rpc`
+* `request_id`, `type`, `source`, `status`, `latency_ms_rpc`, `contact_id`, `message_id`
 
 ---
 
@@ -139,14 +136,14 @@ Recomendación de logs en el caller:
 ```json
 {
   "request_id": "111e4567-e89b-42d3-a456-426614174000",
-  "type": "contact",
+  "type": "contact_form",
   "email": "lead@example.com",
   "full_name": "Cliente Demo",
   "marketing_opt_in": false,
   "payload": { "message": "Quiero más información" },
   "utm": { "campaign": "launch" },
   "context": { "path": "/contacto", "lang": "es" },
-  "source": "web_form_contact",
+  "source": "web_form",
   "metadata": { "ip_hash": "…", "ip_class": "ipv4", "request_ts": "2025-09-28T10:00:00Z", "form_version": "v1" }
 }
 ```
@@ -175,7 +172,7 @@ Recomendación de logs en el caller:
   "type": "newsletter",
   "email": "user@example.com",
   "marketing_opt_in": true,
-  "source": "web_form_footer",
+  "source": "web_form",
   "context": { "path": "/", "lang": "es" },
   "metadata": { "ip_hash": "…", "ip_class": "ipv6", "request_ts": "2025-09-28T10:05:00Z", "form_version": "v1" }
 }
@@ -195,9 +192,9 @@ Recomendación de logs en el caller:
 }
 ```
 
-### 9.3) Reintento (idempotencia)
+### 9.3) Reintento
 
-**Entrada**: repetir el caso 9.1 con el mismo `request_id`.
+**Entrada:** repetir 9.1 con el mismo `request_id`.
 **Salida**
 
 ```json
@@ -214,21 +211,19 @@ Recomendación de logs en el caller:
 
 ---
 
-## 10) Compatibilidad y versión
+## 10) Versionado
 
-* **Alias estable:** `f_orch_contact_write` apunta a implementación `*_v1`.
-* Cambios que rompan contrato deberán publicar `*_v2` y mover el alias solo tras migración del caller.
-* No se modificarán claves de salida existentes en v1; solo se pueden **agregar** campos no disruptivos.
-
----
-
-## 11) Consideraciones de operación
-
-* **Reintentos del caller:** seguros por `request_id`.
-* **Rate limit:** externo a esta RPC (aplicado en el endpoint de Next.js).
-* **Backfills/importaciones:** usar `source:"import"` vía una RPC distinta o feature flag, no este endpoint público.
+* **Alias estable:** `f_orch_contact_write` → `*_v1`.
+* Cambios incompatibles publicarán `*_v2`; el alias se moverá tras migrar el caller.
+* En v1 solo se **agregan** campos; no se renombra ni elimina ninguno existente.
 
 ---
+
+## 11) Operación
+
+* **Reintentos** del caller seguros por `request_id`.
+* **Rate limit** fuera de la RPC (en el endpoint Next.js).
+* **Imports/backfills:** usar `source:"import"` con pipeline dedicado; evitar este entrypoint público para cargas masivas.
 
 ```
 ```

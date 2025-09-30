@@ -17,13 +17,15 @@ export const STRING_LIMITS = Object.freeze({
 });
 
 // ===== Catálogos permitidos =====
-export const ALLOWED_TYPES = ['contact', 'newsletter'] as const;
+// OJO: en SQL `f_contact_validate_v1` espera `contact_form` y `newsletter`.
+export const ALLOWED_TYPES = ['contact_form', 'newsletter'] as const;
 export type FormType = (typeof ALLOWED_TYPES)[number];
 
+// En SQL `f_contact_validate_v1` espera: web_form, checkout, import, api.
 export const ALLOWED_SOURCES = [
-  'web_form_contact',
-  'web_form_footer',
+  'web_form',
   'checkout',
+  'import',
   'api',
 ] as const;
 export type FormSource = (typeof ALLOWED_SOURCES)[number];
@@ -42,10 +44,12 @@ export const TURNSTILE_VERIFY_URL =
 // ===== Normalización de source =====
 // Mapeos tolerantes para variantes que puedan llegar desde el cliente.
 export const SOURCE_NORMALIZATION: Record<string, FormSource> = Object.freeze({
-  contact: 'web_form_contact',
-  'web-form-contact': 'web_form_contact',
-  footer: 'web_form_footer',
-  newsletter: 'web_form_footer',
+  contact: 'web_form',
+  'web_form_contact': 'web_form',
+  'web-form-contact': 'web_form',
+  footer: 'web_form',
+  'web_form_footer': 'web_form',
+  newsletter: 'web_form',
   pay: 'checkout',
   payment: 'checkout',
   external: 'api',

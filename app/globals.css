@@ -133,7 +133,7 @@ html {
   font-synthesis-weight: none;
 }
 
-/*html,
+html,
 body {
   margin: 0;
   padding: 0;
@@ -143,21 +143,7 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
-  padding-top: var(--header-h); /* reserva para header fijo: evita CLS */
-
-  html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
-  -webkit-text-size-adjust: 100%;
-  /*padding-top: var(--header-h); /* reserva para header fijo: evita CLS */
 }
-
 
 img,
 svg,
@@ -1981,9 +1967,7 @@ hr {
   width: 100%;
 }
 
-.c-form-control::placeholder {
-  color: rgba(255, 255, 255, .75);
-}
+.c-form-control::placeholder { color: rgba(255, 255, 255, .75); }
 
 input[type="submit"]:focus-visible,
 input[type="button"]:focus-visible {
@@ -2000,9 +1984,7 @@ input[type="button"]:focus-visible {
 }
 
 /* Tema claro */
-.section--light .c-form-control:focus-visible {
-  background-color: #fff;
-}
+.section--light .c-form-control:focus-visible { background-color: #fff; }
 
 .c-form-help {
   font-size: 12px;
@@ -2016,14 +1998,79 @@ input[type="button"]:focus-visible {
   margin-top: 6px;
 }
 
-/* Ajustes de formularios en tema claro */
-.section--light .c-form-help {
-  color: var(--text-muted-light);
+/* === SELECT en modo oscuro — alto contraste (tokens existentes) === */
+select.c-form-control,
+.c-form-control select {
+  color-scheme: dark;
+  background-color: var(--surface);
+  color: var(--fg);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+select.c-form-control:focus { outline-color: var(--primary-2); }
+
+/* Opciones de la lista desplegable */
+select.c-form-control option,
+select.c-form-control optgroup {
+  background-color: var(--surface) !important;
+  color: var(--fg) !important;
+}
+select.c-form-control option:hover,
+select.c-form-control option:checked,
+select.c-form-control option:focus {
+  background-color: var(--primary-2) !important;
+  color: #0A0A0A !important; /* alto contraste sobre verde */
+}
+select.c-form-control option:disabled {
+  color: var(--fg-70) !important;
+  background-color: var(--surface) !important;
 }
 
-.section--light .c-form-error {
-  color: #b00020; /* rojo accesible sobre fondo claro */
+/* Fix nativo Chrome/Edge */
+select.c-form-control::-webkit-listbox {
+  background-color: var(--surface) !important;
+  color: var(--fg) !important;
 }
+
+/* Fix nativo Firefox */
+select.c-form-control:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 var(--fg, #fff);
+}
+
+/* === Estado “formulario deshabilitado” tras éxito (gray out evidente) === */
+form.is-disabled {
+  position: relative;
+  filter: grayscale(100%) brightness(.75) contrast(.9);
+  opacity: .55;
+}
+form.is-disabled :is(input, select, textarea)[disabled],
+form.is-disabled label,
+form.is-disabled .c-form-help {
+  opacity: .6;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+}
+form.is-disabled .c-btn[disabled] {
+  opacity: .35;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+}
+/* Mantener activo el CTA “Enviar otro mensaje” */
+form.is-disabled .c-btn:not([disabled]) {
+  opacity: 1 !important;
+  filter: none !important;
+}
+/* Evitar focos en elementos deshabilitados */
+form.is-disabled :is(input, select, textarea)[disabled]:focus {
+  outline: none; box-shadow: none;
+}
+
+/* Ajustes de formularios en tema claro */
+.section--light .c-form-help { color: var(--text-muted-light); }
+.section--light .c-form-error { color: #b00020; }
+
 
 /* ===== 7) Temas ========================================================== */
 .section--dark {
