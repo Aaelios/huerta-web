@@ -161,13 +161,15 @@ El documento es detallado y auto-contenible para evitar reanálisis en el futuro
   "error_code": "invalid_input",
   "request_id": "uuid-v4",
   "issues": [
-    { "path": ["full_name"], "code": "too_small", "message": "Debe tener al menos 2 caracteres" },
-    { "path": ["payload","message"], "code": "too_small", "message": "Debe tener al menos 20 caracteres" }
+    { "path": "full_name", "code": "too_small", "message": "Debe tener al menos 2 caracteres" },
+    { "path": "payload.message", "code": "too_small", "message": "Debe tener al menos 20 caracteres" }
   ]
 }
 
+
 // 403 qa_forbidden
-{ "error_code": "qa_forbidden", "message": "Forbidden" }
+{ "error_code": "qa_forbidden", "message": "Acceso no permitido para QA." }
+
 
 // 403 turnstile_invalid
 { "error_code": "turnstile_invalid", "message": "Verificación fallida" }

@@ -103,6 +103,10 @@
   --bp-md: 768px;
   --bp-lg: 1024px;
   --bp-xl: 1280px;
+
+  /* ---- Señales semánticas (listas con icono) ---- */
+  --ok: var(--accent);          /* verde consistente con la marca */
+  --warn: #F7C948;              /* amarillo con contraste AA en fondo oscuro */
 }
 
 @media (min-width: 768px) {
@@ -368,6 +372,18 @@ p.small {
   max-width: 1440px;
   margin-inline: auto;
 }
+
+/* Elemento inline con dimensiones */
+.u-inline-block { display: inline-block; }
+
+/* Márgenes verticales estándar */
+.u-mt-3 { margin-top: var(--space-3); }
+.u-mt-6 { margin-top: var(--space-6); }
+.u-mb-3 { margin-bottom: var(--space-3); }
+
+/* Color de texto sutil (para ayudas bajo CTA) */
+.u-color-subtle { color: var(--fg-60); }
+
 
 /* ---- Aspect ratios para wrappers de imagen (evita CLS) ---- */
 .u-aspect-1-1,
@@ -1273,6 +1289,31 @@ hr {
   /* iconos IG/YT más grandes en desktop */
 }
 
+/* ---- List items con icono ---- */
+.c-li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);            /* ≈8px */
+}
+
+.c-li__icon {
+  line-height: 1;
+  margin-top: 2px;                /* alinea con la primera línea de texto */
+  min-width: 1.25rem;             /* ≈20px, reserva ancho estable */
+  text-align: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.c-li__icon--warn { color: var(--warn); }
+.c-li__icon--ok   { color: var(--ok); }
+
+.c-li__text {
+  display: inline-block;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ---- Cards genéricas ---- */
 .c-card,
 .c-card--benefit,
@@ -1899,6 +1940,22 @@ hr {
 .section--dark .list-check li::before {
   color: var(--accent);
 }
+
+/* ---- Nota compacta / callout ligero ---- */
+.c-note {
+  margin-inline: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border-dark-2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .04);
+}
+
+.section--light .c-note {
+  border-color: var(--border-light-2);
+  background: #fff;
+  color: var(--text-on-light);
+}
+
 
 /* ---- Citas ---- */
 .c-quote {

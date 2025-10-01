@@ -1,6 +1,7 @@
 // app/webinars/oct-2025-01/page.tsx
 import type { Metadata } from "next";
 import Hero from "@/components/webinars/Hero";
+import ClasePractica from "@/components/webinars/ClasePractica";
 import Transformacion from "@/components/webinars/Transformacion";
 
 // ---------- Metadata ----------
@@ -69,8 +70,8 @@ export default async function Page({
         }
         subtitle={
           <>
-            En 90 minutos sabrás exactamente cuánto ganas y qué funciona en tu
-            negocio. Decides con calma y certeza.
+            Clase práctica para registrar tus ingresos con una herramienta
+            personalizada que usarás desde el día 1.
           </>
         }
         dateLabel={EVENT_DATE_LABEL}
@@ -78,9 +79,39 @@ export default async function Page({
         imgSrc="/images/webinars/oct-2025-01/webinar-finanzas-lobra-oct-2025-roberto-huerta.jpg"
         imgAlt="Roberto Huerta, Webinar Finanzas LOBRÁ Octubre 2025"
         ctaHref={ctaHref}
-        ctaText="Quiero mi claridad financiera hoy"
+        ctaText="Reservar mi lugar en la clase"
         note="Empieza hoy con claridad y paz."
       />
+
+<ClasePractica
+  eyebrow="Taller interactivo"
+  title={
+    <>Aprende a poner en orden tus <span className="accent">ingresos</span> en una sola sesión</>
+  }
+  intro={
+    <>En vivo, <span className="accent">práctico</span> y aplicado a tu negocio. <span className="accent">No teoría</span>, resultados.</>
+  }
+  leftTitle={<>¿Te suena <span className="accent">familiar</span>?</>}
+  bullets={[
+    <>No sabes cuál es tu <span className="accent">venta promedio</span>.</>,
+    <>No tienes claro cuánto ganaste el <span className="accent">mes pasado</span>.</>,
+    <>No ves si tus ingresos van <span className="accent">subiendo</span> o bajando.</>,
+    <>No puedes decir quién es tu <span className="accent">mejor cliente</span>.</>,
+    <>Todo esto se resuelve con <span className="accent">5 min al día</span>.</>,
+  ]}
+  deliverableTitle={<>Lo que te <span className="accent">llevas</span></>}
+  deliverableBullets={[
+    <>Tu registro <span className="accent">listo</span> para usar desde mañana.</>,
+    <><span className="accent">Método simple</span> que te toma máximo 5 minutos al día.</>,
+    <><strong>Duración:</strong> 90 minutos.</>,
+    <><strong>Modalidad:</strong> En vivo por <strong>Zoom</strong> (sin Excel/Sheets también aplicas los conceptos).</>,
+  ]}
+  priceLine={<> <span className="accent">Hoy $490 MXN · Cupo limitado</span> </>}
+  guarantee={<> <strong>Garantía total:</strong> si no quedas conforme, reembolso. </>}
+  ctaHref={ctaHref}
+  ctaText="Reservar mi lugar ahora"
+/>
+
 
       <Transformacion ctaHref={ctaHref} />
     </main>
