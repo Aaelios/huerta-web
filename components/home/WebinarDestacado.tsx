@@ -1,8 +1,10 @@
-// components/home/WebinarDestacado.tsx
+// /components/home/WebinarDestacado.tsx
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { renderAccent } from "@/lib/ui/renderAccent";
 
 type Featured = {
   title?: string;
@@ -13,6 +15,8 @@ type Featured = {
   startAt?: string;          // ISO con zona o UTC
   imageUrl?: string;
   priceMXN?: number;
+  eyebrow?: string;
+  bullets?: string[];
 };
 
 export default function WebinarDestacado({ featured }: { featured?: Featured }) {
@@ -63,9 +67,18 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
       priceCurrency: "MXN",
       price: price,
       availability: "https://schema.org/InStock",
-      ...(dateISO ? { validFrom: dateISO } : {})
-    }
+      ...(dateISO ? { validFrom: dateISO } : {}),
+    },
   };
+
+  const bullets = f.bullets?.length
+    ? f.bullets
+    : [
+        "Claridad inmediata sobre tus ventas e ingresos.",
+        "Detecta qué productos y clientes sostienen tu negocio.",
+        "Reportes simples que muestran tu crecimiento real.",
+        "Decisiones basadas en datos, no en intuición.",
+      ];
 
   return (
     <section className="section section--surface featured" aria-labelledby="featured-webinar-title">
@@ -77,7 +90,9 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
               <span aria-hidden="true">●</span> EN VIVO
             </span>
 
-            <h2 id="featured-webinar-title">{title}</h2>
+            {f.eyebrow ? <p className="eyebrow">{f.eyebrow}</p> : null}
+
+            <h2 id="featured-webinar-title">{renderAccent(title as string)}</h2>
 
             <p className="featured-meta small">
               {dateHuman ? (
@@ -90,13 +105,12 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
               )}
             </p>
 
-            <p id="featured-webinar-desc" className="u-small">{summary}</p>
+            <p id="featured-webinar-desc" className="u-small">{renderAccent(summary as string)}</p>
 
             <ul className="list-check" role="list">
-              <li>Claridad inmediata sobre tus ventas e ingresos.</li>
-              <li>Detecta qué productos y clientes sostienen tu negocio.</li>
-              <li>Reportes simples que muestran tu crecimiento real.</li>
-              <li>Decisiones basadas en datos, no en intuición.</li>
+              {bullets.map((b, i) => (
+                <li key={i}>{renderAccent(b)}</li>
+              ))}
             </ul>
 
             {/* Fila de precio + CTA */}
@@ -106,7 +120,7 @@ export default function WebinarDestacado({ featured }: { featured?: Featured }) 
                 href={href}
                 className="c-btn c-btn--solid c-btn--pill"
                 onClick={() => track("featured_webinar")}
-                aria-label={`${cta}: ${title}`}
+                aria-label={`${cta}: ${typeof title === "string" ? title : "Evento"}`}
               >
                 {cta}
               </Link>

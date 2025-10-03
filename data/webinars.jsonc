@@ -11,7 +11,11 @@
       "whatsAppSupport": { "enabled": false },
       "calendar": { "mode": "generated" },
       "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
-      "flags": { "showReplay": false, "replayUrl": null },
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": true // NUEVO: si es true y startAt > ahora, usar este en Home
+      },
       "pricing": {
         "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
         "amountCents": 49000,

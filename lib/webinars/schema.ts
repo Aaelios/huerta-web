@@ -50,6 +50,7 @@ export const SharedSchema = z.object({
   flags: z.object({
     showReplay: z.boolean(),
     replayUrl: z.string().url().nullable(),
+    featuredHome: z.boolean().optional(),
   }),
   pricing: PricingSchema,
 });
