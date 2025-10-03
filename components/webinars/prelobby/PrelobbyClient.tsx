@@ -18,17 +18,19 @@ export default function PrelobbyClient({ webinar }: Props) {
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
+  // key por slug
   useEffect(() => {
     try {
-      const k = `prelobby-entitlement-${webinar.slug}`;
+      const k = `prelobby-entitlement-${webinar.shared.slug}`;
       const v = window.sessionStorage.getItem(k);
       if (v === "true") setHasEntitlement(true);
     } catch {}
-  }, [webinar.slug]);
+  }, [webinar.shared.slug]);
 
+  // temporizador por fecha y duración
   useEffect(() => {
-    const start = new Date(webinar.startAt).getTime();
-    const end = start + webinar.durationMin * 60_000;
+    const start = new Date(webinar.shared.startAt).getTime();
+    const end = start + webinar.shared.durationMin * 60_000;
 
     const tick = () => {
       const now = Date.now();
@@ -55,7 +57,7 @@ export default function PrelobbyClient({ webinar }: Props) {
     tick();
     const id = window.setInterval(tick, 1_000);
     return () => window.clearInterval(id);
-  }, [webinar.startAt, webinar.durationMin]);
+  }, [webinar.shared.startAt, webinar.shared.durationMin]);
 
   const handleValidate = async () => {
     setError(null);
@@ -63,12 +65,12 @@ export default function PrelobbyClient({ webinar }: Props) {
       const res = await fetch("/api/prelobby/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: webinar.slug, email }),
+        body: JSON.stringify({ slug: webinar.shared.slug, email }),
       });
       const data = await res.json();
       if (data?.ok && data?.hasEntitlement) {
         setHasEntitlement(true);
-        window.sessionStorage.setItem(`prelobby-entitlement-${webinar.slug}`, "true");
+        window.sessionStorage.setItem(`prelobby-entitlement-${webinar.shared.slug}`, "true");
       } else {
         setHasEntitlement(false);
         setError("El correo no tiene acceso a este evento.");
@@ -79,7 +81,6 @@ export default function PrelobbyClient({ webinar }: Props) {
     }
   };
 
-// Textos refinados
   const helperByState: Record<UiState, string> = {
     MUY_TEMPRANO: "Vuelve más cerca de la hora del evento.",
     TEMPRANO: "Revisa los pasos de preparación antes de unirte.",
@@ -88,7 +89,6 @@ export default function PrelobbyClient({ webinar }: Props) {
     FINALIZADO: "Gracias por participar.",
   };
 
-// CTA por estado con labels optimizados
   const getCta = (): Cta => {
     switch (uiState) {
       case "MUY_TEMPRANO":
@@ -97,14 +97,14 @@ export default function PrelobbyClient({ webinar }: Props) {
         return { label: "Ver checklist", url: "#preparacion", enabled: true };
       case "PRE_LOBBY": {
         if (!hasEntitlement) return { label: "Valida tu correo", url: null, enabled: false };
-        if (webinar.zoomJoinUrl)
-          return { label: "Conectarme al webinar", url: webinar.zoomJoinUrl, enabled: true };
+        if (webinar.shared.zoomJoinUrl)
+          return { label: "Conectarme al webinar", url: webinar.shared.zoomJoinUrl, enabled: true };
         return { label: "Enlace disponible en minutos", url: null, enabled: false };
       }
       case "EN_VIVO": {
         if (!hasEntitlement) return { label: "Valida tu correo", url: null, enabled: false };
-        if (webinar.zoomJoinUrl)
-          return { label: "Entrar ahora", url: webinar.zoomJoinUrl, enabled: true };
+        if (webinar.shared.zoomJoinUrl)
+          return { label: "Entrar ahora", url: webinar.shared.zoomJoinUrl, enabled: true };
         return { label: "Enlace no disponible", url: null, enabled: false };
       }
       case "FINALIZADO":
@@ -116,11 +116,10 @@ export default function PrelobbyClient({ webinar }: Props) {
 
   const cta = getCta();
 
-  // --- helpers
   const normalizeExternal = (u: string) => {
     if (/^https?:\/\//i.test(u)) return u;
-    if (u.startsWith("#")) return u; // hash local
-    return `https://${u.replace(/^\/+/, "")}`; // www.dominio.com → https://www.dominio.com
+    if (u.startsWith("#")) return u;
+    return `https://${u.replace(/^\/+/, "")}`;
   };
 
   const handleCtaClick = () => {

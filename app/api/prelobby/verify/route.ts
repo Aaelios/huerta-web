@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const webinars = await loadWebinars();
     const webinar = webinars[normSlug];
     if (!webinar) return j({ ok: true, hasEntitlement: false }, 404, "webinar no encontrado");
-    const sku = webinar.sku;
+    const sku = webinar.shared.sku;
 
     // 1) Dominio permitido (acepta "lobra.net", "@lobra.net" o subdominios)
     const testDomainRaw = (process.env.PRELOBBY_TEST_DOMAIN || "").toLowerCase().trim();

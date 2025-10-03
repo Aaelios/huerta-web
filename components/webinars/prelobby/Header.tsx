@@ -1,21 +1,13 @@
 // components/webinars/prelobby/Header.tsx
-
 "use client";
 
 import React from "react";
 import type { Webinar } from "@/lib/types/webinars";
 
-type Props = {
-  webinar: Webinar;
-};
+type Props = { webinar: Webinar };
 
-/**
- * Header
- * Muestra título del webinar y la fecha/hora formateada en CDMX.
- * Los datos ahora provienen de webinar.shared.
- */
 export default function Header({ webinar }: Props) {
-  const shared = (webinar as any)?.shared ?? webinar;
+  const { shared } = webinar;
   const [whenText, setWhenText] = React.useState<string>("");
 
   React.useEffect(() => {

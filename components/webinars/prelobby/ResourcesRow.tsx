@@ -1,20 +1,12 @@
 // components/webinars/prelobby/ResourcesRow.tsx
-
 "use client";
 
 import React from "react";
 import type { Webinar } from "@/lib/types/webinars";
 
-/**
- * ResourcesRow
- * Botones secundarios y nota discreta debajo.
- */
 export default function ResourcesRow({ webinar }: { webinar: Webinar }) {
-  // Nueva estructura: datos en webinar.shared
-  const shared = (webinar as any)?.shared ?? webinar;
-  const template = shared?.template ?? null;
-  const calendar = shared?.calendar ?? null;
-  const slug: string = shared?.slug ?? "";
+  const { shared } = webinar;
+  const { template, calendar, slug } = shared;
 
   const handleCalendar = () => {
     if (!calendar) return;

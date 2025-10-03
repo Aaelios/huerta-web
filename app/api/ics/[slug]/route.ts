@@ -5,7 +5,7 @@ import { loadWebinars } from "@/lib/webinars/loadWebinars";
 
 /**
  * GET /api/ics/[slug]
- * Genera un archivo .ics con hora CDMX basado en startAt y durationMin del webinar.
+ * Genera un archivo .ics con hora CDMX basado en shared.startAt y shared.durationMin del webinar.
  * Incluye título y enlace de prelobby; si existe zoomJoinUrl lo añade como URL.
  */
 export async function GET(
@@ -19,8 +19,8 @@ export async function GET(
     return new NextResponse("Webinar no encontrado", { status: 404 });
   }
 
-  const start = new Date(webinar.startAt);
-  const end = new Date(start.getTime() + webinar.durationMin * 60000);
+  const start = new Date(webinar.shared.startAt);
+  const end = new Date(start.getTime() + webinar.shared.durationMin * 60000);
 
   const dtStart = toICSDate(start);
   const dtEnd = toICSDate(end);
@@ -31,15 +31,15 @@ export async function GET(
     "PRODID:-//Huerta Consulting//Prelobby//ES",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${webinar.slug}@huerta.consulting`,
+    `UID:${webinar.shared.slug}@huerta.consulting`,
     `DTSTAMP:${toICSDate(new Date())}`,
     `DTSTART;TZID=America/Mexico_City:${dtStart}`,
     `DTEND;TZID=America/Mexico_City:${dtEnd}`,
-    `SUMMARY:${escapeICS(webinar.title)}`,
-    `DESCRIPTION:Accede al prelobby: https://huerta.consulting/webinars/${webinar.slug}/prelobby`,
-    webinar.zoomJoinUrl
-      ? `URL:${webinar.zoomJoinUrl}`
-      : `URL:https://huerta.consulting/webinars/${webinar.slug}/prelobby`,
+    `SUMMARY:${escapeICS(webinar.shared.title)}`,
+    `DESCRIPTION:Accede al prelobby: https://huerta.consulting/webinars/${webinar.shared.slug}/prelobby`,
+    webinar.shared.zoomJoinUrl
+      ? `URL:${webinar.shared.zoomJoinUrl}`
+      : `URL:https://huerta.consulting/webinars/${webinar.shared.slug}/prelobby`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
@@ -50,7 +50,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename=${webinar.slug}.ics`,
+      "Content-Disposition": `attachment; filename=${webinar.shared.slug}.ics`,
     },
   });
 }
