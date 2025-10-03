@@ -1,8 +1,3 @@
-Perfecto. Te armo un archivo **consolidado y auto-contenido** en formato `.md` con toda la información de **formularios, contactos, mensajes y eventos de suscripción**.
-Esto incluye: tablas, índices, constraints, triggers, funciones, RPCs, validaciones, contratos y seguridad.
-
----
-
 ````markdown
 # 📄 Documentación Consolidada — Formularios, Contactos y Suscripciones
 

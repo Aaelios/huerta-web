@@ -60,7 +60,7 @@ const trackCTA = () => {
               Qué es LOBRÁ
             </Link>
             <Link
-              href="/webinars/oct-2025-01"
+              href="/webinars"
               className={`c-link--nav ${isActive('/webinars') ? 'is-active' : ''}`}
             >
               Webinars
@@ -98,7 +98,7 @@ const trackCTA = () => {
 
             {/* CTA principal */}
             <Link
-              href="/webinars/oct-2025-01"
+              href="/webinars/2025-10-14-2030"
               className="c-btn c-btn--solid c-btn--pill"
               onClick={trackCTA}
             >

@@ -14,7 +14,7 @@ const FEATURED = {
   title: "Taller de tranquilidad financiera",
   summary:
     "Taller de tranquilidad financiera, claridad inmediata sobre tus ingresos. Sesión en vivo por Zoom.",
-  href: "webinars/oct-2025-01",
+  href: "webinars/2025-10-14-2030",
   ctaLabel: "Quiero mi lugar",
   type: "webinar" as const,
   startAt: "2025-10-07T20:30:00-06:00", // martes 07 Octubre, 8:30 PM CDMX

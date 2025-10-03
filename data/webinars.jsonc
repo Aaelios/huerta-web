@@ -1,0 +1,73 @@
+{
+  "2025-10-14-2030": {
+    "shared": {
+      "slug": "2025-10-14-2030",
+      "title": "Taller de Tranquilidad Financiera",
+      "startAt": "2025-10-14T20:30:00-06:00",
+      "durationMin": 90,
+      "zoomJoinUrl": null,
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": false },
+      "calendar": { "mode": "generated" },
+      "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
+      "flags": { "showReplay": false, "replayUrl": null },
+      "pricing": {
+        "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
+        "amountCents": 49000,
+        "currency": "MXN",
+        "interval": "one_time",
+        "stripePriceId": "price_1S97ubQ8dpmAG0o28zqhJkTP",
+        "stripeProductId": "prod_T5IVV5Nyf0v1oQ"
+      }
+    },
+    "sales": {
+      "seo": {
+        "title": "Taller de Tranquilidad Financiera · Webinar 14 oct 2025 (CDMX)",
+        "description": "En 90 minutos sabrás cuánto realmente ganas y qué funciona en tu negocio. Claridad y confianza para decidir.",
+        "canonical": "https://lobra.net/webinars/2025-10-14-2030"
+      },
+      "hero": {
+        "eyebrow": "Taller de Tranquilidad Financiera",
+        "title": "Claridad de tus [[ingresos]], [[tranquilidad]] y [[confianza]].",
+        "subtitle": "Clase práctica para registrar tus [[ingresos]] con una herramienta personalizada que usarás desde el [[día 1]].",
+        "note": "Empieza hoy con claridad y paz.",
+        "ctaText": "Reservar mi lugar en la clase",
+        "heroImageSrc": "/images/webinars/2025-10-14-2030/hero.jpg",
+        "heroImageAlt": "Roberto Huerta, Webinar Finanzas LOBRÁ Octubre 2025"
+      },
+      "clasePractica": {
+        "eyebrow": "Taller interactivo",
+        "title": "Aprende a poner en orden tus [[ingresos]] en una sola sesión",
+        "intro": "En vivo, [[práctico]] y aplicado a tu negocio. [[No teoría]], resultados.",
+        "leftTitle": "¿Te suena [[familiar]]?",
+        "bullets": [
+          "No sabes cuál es tu [[venta promedio]].",
+          "No tienes claro cuánto ganaste el [[mes pasado]].",
+          "No ves si tus ingresos van [[subiendo]] o bajando.",
+          "No puedes decir quién es tu [[mejor cliente]].",
+          "Todo esto se resuelve con [[5 min al día]]."
+        ],
+        "deliverableTitle": "Lo que te [[llevas]]",
+        "deliverableBullets": [
+          "Tu registro [[listo]] para usar desde mañana.",
+          "[[Método simple]] que te toma máximo 5 minutos al día.",
+          "Duración: 90 minutos.",
+          "Modalidad: En vivo por Zoom (sin Excel/Sheets también aplicas los conceptos)."
+        ],
+        "priceLine": "Hoy $490 MXN · Cupo limitado",
+        "guarantee": "si no quedas conforme, reembolso.",
+        "ctaText": "Reservar mi lugar ahora"
+      }
+    },
+    "prelobby": {
+      "labels": {
+        "tooEarly": "Aún no abrimos la sala, vuelve más tarde.",
+        "early": "Faltan pocos minutos, prepara tu conexión.",
+        "open": "Ya puedes entrar al prelobby.",
+        "live": "El webinar está en vivo.",
+        "ended": "Este webinar ha finalizado."
+      }
+    }
+  }
+}
