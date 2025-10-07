@@ -19,7 +19,8 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "scripts/**",
-      "playground*.ts"
+      "playground*.ts",
+      "app/dev/test-webinars/**"
     ],
   },
   {

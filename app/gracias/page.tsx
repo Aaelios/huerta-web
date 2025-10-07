@@ -1,241 +1,224 @@
 // app/gracias/page.tsx
-import Stripe from 'stripe';
-import Link from 'next/link';
-import { headers } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import React from "react";
+import Link from "next/link";
+import Script from "next/script";
+import { notFound } from "next/navigation";
+import Stripe from "stripe";
+import { resolveNextStep } from "@/lib/postpurchase/resolveNextStep";
+import { getWebinarBySku } from "@/lib/webinars/getWebinarBySku";
+import type { Webinar } from "@/lib/webinars/schema";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+// ==== Tipos locales estrictos ====
+type Variant = "prelobby" | "bundle" | "download" | "schedule" | "community" | "generic" | "none";
 
-type SearchParams = Record<string, string | string[] | undefined>;
-type PageProps = { searchParams?: Promise<SearchParams> };
+type NextStepItem = { href: string; label?: string };
+type NextStep = {
+  variant: Variant;
+  href?: string;
+  label?: string;
+  items?: NextStepItem[];
+};
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+type WebinarThankyou = { title?: string; body_md?: string };
+type WebinarShared = { supportEmail?: string };
+type WebinarExtra = Partial<{ thankyou: WebinarThankyou; shared: WebinarShared }>;
 
-// Supabase SOLO para copy opcional (RLS SELECT público)
-const supabase = createClient(
-  process.env.SUPABASE_URL as string,
-  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY) as string,
-  { auth: { persistSession: false } }
-);
+const COPY_BY_VARIANT: Record<Variant, { title: string; lead: string; ctaLabel: string }> = {
+  prelobby: {
+    title: "¡Pago confirmado, ya eres parte del webinar!",
+    lead: "En minutos recibirás tu correo de acceso. En el lobby tendrás checklist y materiales previos.",
+    ctaLabel: "Ir al prelobby",
+  },
+  bundle: {
+    title: "Pago confirmado, tu módulo está activo",
+    lead: "Revisa las clases incluidas y entra al prelobby de cada una.",
+    ctaLabel: "Ver accesos",
+  },
+  download: {
+    title: "Pago confirmado, tus descargas están listas",
+    lead: "Guarda los archivos y revisa las notas de uso.",
+    ctaLabel: "Descargar",
+  },
+  schedule: {
+    title: "Pago confirmado, agenda tu sesión",
+    lead: "Elige fecha y hora para tu 1-a-1.",
+    ctaLabel: "Agendar sesión",
+  },
+  community: {
+    title: "Pago confirmado, ya puedes entrar a la comunidad",
+    lead: "Sigue las instrucciones para unirte al canal.",
+    ctaLabel: "Entrar a la comunidad",
+  },
+  generic: {
+    title: "Pago confirmado",
+    lead: "Tu acceso está listo.",
+    ctaLabel: "Continuar",
+  },
+  none: {
+    title: "Pago confirmado",
+    lead: "Tu acceso está listo.",
+    ctaLabel: "Continuar",
+  },
+};
 
-function isString(x: unknown): x is string {
-  return typeof x === 'string' && x.length > 0;
+// ==== Stripe helpers ====
+async function fetchSession(sessionId: string) {
+  const key = process.env.STRIPE_SECRET_KEY || "";
+  if (!key) throw new Error("STRIPE_SECRET_KEY missing");
+  const stripe = new Stripe(key);
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    // No expandimos *.metadata; solo line_items y product
+    expand: ["line_items", "line_items.data.price.product"],
+  });
+  return session;
 }
-function safeSlug(x: unknown): string | null {
-  if (!isString(x)) return null;
-  return x.replace(/[^a-z0-9\-_/]/gi, '');
+
+function extractSkuFulfillmentSuccess(session: Stripe.Checkout.Session) {
+  const first = session.line_items?.data?.[0];
+  const priceMeta = (first?.price?.metadata ?? {}) as Record<string, string | undefined>;
+
+  const sku = (session.metadata?.sku ?? priceMeta.sku) as string | undefined;
+  const fulfillment_type = (session.metadata?.fulfillment_type ?? priceMeta.fulfillment_type) as
+    | string
+    | undefined;
+  const success_slug = (session.metadata?.success_slug ?? priceMeta.success_slug) as
+    | string
+    | undefined;
+
+  return { sku, fulfillment_type, success_slug };
 }
-function maskEmail(email: string | null | undefined): string | null {
-  if (!email) return null;
-  const [user, dom] = email.split('@');
-  if (!user || !dom) return email;
-  const shown = user.slice(0, 2);
-  return `${shown}${user.length > 2 ? '***' : ''}@${dom}`;
-}
-async function detectLocaleCountry(): Promise<{ locale: string; country: string | null }> {
-  const h = await headers();
-  const al = h.get('accept-language') || '';
-  const first = al.split(',')[0]?.trim() || '';
-  if (/^[a-z]{2}-[A-Z]{2}$/.test(first)) {
-    const [lang, region] = first.split('-');
-    return { locale: `${lang}-${region}`, country: region };
+
+function getSupportEmail(w: Webinar | (Webinar & WebinarExtra) | null): string {
+  if (w && (w as WebinarExtra).shared?.supportEmail) {
+    return (w as WebinarExtra).shared!.supportEmail || "soporte@lobra.net";
   }
-  if (first.startsWith('es')) return { locale: 'es-MX', country: 'MX' };
-  if (first.startsWith('en')) return { locale: 'en-US', country: 'US' };
-  return { locale: 'es-MX', country: 'MX' };
+  return "soporte@lobra.net";
 }
 
-// Tipos y helper tipado para Stripe session
-type GetSessionOk = { ok: true; s: Stripe.Checkout.Session };
-type GetSessionErr = { ok: false; error: string };
-type GetSessionResp = GetSessionOk | GetSessionErr;
-
-async function getSession(sessionId: string): Promise<GetSessionResp> {
-  try {
-    const s = await stripe.checkout.sessions.retrieve(sessionId);
-    return { ok: true, s };
-  } catch (e: unknown) {
-    return { ok: false, error: e instanceof Error ? e.message : 'SESSION_FETCH_ERROR' };
-  }
+function applyThankyouOverrides(
+  base: { title: string; lead: string },
+  w: Webinar | (Webinar & WebinarExtra) | null
+): { title: string; lead: string } {
+  const extra = (w as WebinarExtra) || {};
+  const t = extra.thankyou;
+  if (!t) return base;
+  return {
+    title: t.title || base.title,
+    lead: t.body_md || base.lead,
+  };
 }
 
-type TYCopy = { title: string; body_md: string; cta_label: string; cta_slug: string };
-async function fetchThankYouCopy(sku: string, locale: string, country: string | null): Promise<TYCopy | null> {
-  try {
-    if (country) {
-      const { data } = await supabase
-        .from('thankyou_copy')
-        .select('title,body_md,cta_label,cta_slug')
-        .eq('sku', sku).eq('locale', locale).eq('country', country).maybeSingle();
-      if (data) return data as TYCopy;
-    }
-    const { data: data2 } = await supabase
-      .from('thankyou_copy')
-      .select('title,body_md,cta_label,cta_slug')
-      .eq('sku', sku).eq('locale', locale).is('country', null).maybeSingle();
-    return (data2 as TYCopy) || null;
-  } catch {
-    return null;
-  }
-}
+// ==== Página ====
+export default async function GraciasPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const sessionId =
+    typeof sp.session_id === "string" ? sp.session_id : Array.isArray(sp.session_id) ? sp.session_id[0] : undefined;
+  if (!sessionId) return notFound();
 
-export default async function Page({ searchParams }: PageProps) {
-  const sp = searchParams ? await searchParams : undefined;
-  const session_id = isString(sp?.session_id) ? sp!.session_id : '';
-  const debugOn = process.env.NEXT_PUBLIC_DEBUG === '1';
+  const session = await fetchSession(sessionId);
+  const { sku, fulfillment_type, success_slug } = extractSkuFulfillmentSuccess(session);
+  if (!sku || !fulfillment_type) return notFound();
 
-  if (!session_id) {
-    return (
-      <main className="container py-10">
-        <section className="section--surface">
-          <div className="c-card stack-3">
-            <h1 className="h2">Falta confirmar el pago</h1>
-            <p className="u-small text-weak">No recibimos el identificador de la sesión de pago.</p>
-            <Link href="/checkout" className="c-btn w-fit">Volver al checkout</Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  const resp = await getSession(session_id);
-  if (!resp.ok) {
-    return (
-      <main className="container py-10">
-        <section className="section--surface">
-          <div className="c-card stack-3">
-            <h1 className="h2">No pudimos validar tu pago</h1>
-            <p className="u-small text-weak">Detalle: {resp.error}</p>
-            <Link href="/checkout" className="c-btn w-fit">Intentar de nuevo</Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
-  const s = resp.s;
-
-  const status = s.status;
-  const payment_status = s.payment_status;
-  const md = (s.metadata || {}) as Record<string, string | undefined>;
-  const sku = md.sku || '';
-  const mode = s.mode || '';
-
-  const success_slug_md = safeSlug(md.success_slug) || 'gracias';
-  const lobby_slug_md = safeSlug(md.lobby_slug) || 'lobby/webinar';
-
-  const paid =
-    status === 'complete' ||
-    payment_status === 'paid' ||
-    payment_status === 'no_payment_required';
-
-  const { locale, country } = await detectLocaleCountry();
-  const copyDB = sku ? await fetchThankYouCopy(sku, locale, country) : null;
-
-  const title = copyDB?.title || '¡Pago confirmado, ya eres parte del webinar!';
-  const body =
-    copyDB?.body_md ||
-    'En minutos recibirás un correo con tu acceso. En el lobby encontrarás una checklist de preparación (pruebas técnicas, Zoom y materiales) para que entres sin contratiempos el día del evento.';
-
-  const cta_label = 'Ir al lobby del webinar';
-  const lobbyHref = `/${lobby_slug_md}`; // siempre activo
-
-  // Datos para soporte
-  const amount = ((s.amount_total ?? 0) / 100).toFixed(2);
-  const currency = (s.currency || 'mxn').toUpperCase();
-  const email = s.customer_details?.email || '';
-  const emailMasked = maskEmail(email);
-  const mailSubject = encodeURIComponent('Ayuda compra webinar');
-  const mailBody = encodeURIComponent(
-    [
-      'No recibí el correo de acceso.',
-      '',
-      `Email: ${email || '(desconocido)'}`,
-      `Stripe session: ${s.id}`,
-      `SKU: ${sku || '(sin sku)'}`,
-      `Monto: ${amount} ${currency}`,
-      `Estado: ${payment_status || '(sin estado)'}`
-    ].join('\n')
-  );
-  const mailtoHref = `mailto:soporte@lora.net?subject=${mailSubject}&body=${mailBody}`;
-
-  // Métrica purchase
-  const dl = {
-    event: 'purchase',
-    stripe_session_id: s.id,
-    mode,
-    currency: s.currency,
-    value: (s.amount_total ?? 0) / 100,
+  // Resolver siguiente paso
+  const nextRaw = await resolveNextStep({
+    fulfillment_type,
     sku,
+    success_slug: success_slug || undefined,
+  });
+
+  // Normalizamos a NextStep sin usar any
+  const next: NextStep = {
+    variant: (nextRaw as NextStep).variant || "generic",
+    href: (nextRaw as NextStep).href,
+    label: (nextRaw as NextStep).label,
+    items: Array.isArray((nextRaw as NextStep).items)
+      ? ((nextRaw as NextStep).items || []).filter((x): x is NextStepItem => !!x && typeof x.href === "string")
+      : undefined,
   };
 
+  const copy = COPY_BY_VARIANT[next.variant] || COPY_BY_VARIANT.generic;
+  let title = copy.title;
+  let lead = copy.lead;
+  const ctaLabel = copy.ctaLabel;
+
+  // Overrides desde JSONC solo para live_class
+  let supportEmail = "soporte@lobra.net";
+  if (fulfillment_type === "live_class") {
+    const webinar = (await getWebinarBySku(sku)) || null;
+    supportEmail = getSupportEmail(webinar);
+    const over = applyThankyouOverrides({ title, lead }, webinar);
+    title = over.title;
+    lead = over.lead;
+  }
+
+  if (process.env.NEXT_PUBLIC_DEBUG === "1") {
+    console.log("[/gracias]", { variant: next.variant, sku, href: next.href || null });
+  }
+
+  const gaValue = typeof session.amount_total === "number" ? session.amount_total / 100 : undefined;
+  const gaCurrency = session.currency?.toUpperCase();
+
   return (
-    <main className="container py-10">
-      <section className="section--surface">
-        <div className="c-card stack-4">
-          {paid ? (
-            <>
-              <h1 className="h2">{title}</h1>
-              <p className="u-small text-weak">{body}</p>
+    <main className="container u-py-8">
+      {/* GTM purchase event (opcional) */}
+      {process.env.NEXT_PUBLIC_GTM_ID && (
+        <Script id="gracias-purchase" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+              event: 'purchase',
+              ecommerce: {
+                transaction_id: '${session.id}',
+                value: ${gaValue ?? "undefined"},
+                currency: '${gaCurrency ?? ""}',
+                items: [{
+                  item_id: '${sku}',
+                  item_name: '${sku}',
+                  item_category: '${fulfillment_type}',
+                  price: ${gaValue ?? "undefined"},
+                  quantity: 1
+                }]
+              }
+            });
+          `}
+        </Script>
+      )}
 
-              <Link href={lobbyHref} className="c-btn c-btn--solid">
-                {cta_label}
+      <section className="l-stack-6 u-text-center">
+        <h1 className="h2">{title}</h1>
+        <p className="u-lead">{lead}</p>
+
+        {/* CTA dinámico */}
+        {next.variant === "bundle" && next.items && next.items.length > 0 ? (
+          <div className="l-stack-4 u-center">
+            {next.items.map((it, i) => (
+              <Link key={i} href={it.href} className="c-btn c-btn--solid" prefetch={false}>
+                {it.label || "Abrir"}
               </Link>
+            ))}
+          </div>
+        ) : next.variant !== "none" && next.href ? (
+          <Link href={next.href} className="c-btn c-btn--solid" prefetch={false}>
+            {next.label || ctaLabel}
+          </Link>
+        ) : null}
 
-              {/* Troubleshoot corto */}
-              <div className="stack-2 mt-4">
-                <h2 className="h5">¿No llegó tu correo?</h2>
-                <ul className="u-small text-weak list-disc pl-5">
-                  <li>Espera 5 minutos.</li>
-                  <li>Revisa Spam y Promociones.</li>
-                  <li>Confirma que usaste el correo correcto{emailMasked ? ` (${emailMasked})` : ''}.</li>
-                  <li>Busca “LOBRÁ” o “Stripe”.</li>
-                </ul>
-                <p className="u-small">
-                  Si sigues con problemas, escríbenos a <a className="link" href={mailtoHref}>soporte@lora.net</a>.
-                </p>
-              </div>
-            </>
-          ) : status === 'open' ? (
-            <>
-              <h1 className="h2">Tu pago está en proceso</h1>
-              <p className="u-small text-weak">Si pagaste con OXXO o SPEI puede tardar. Recibirás un correo cuando se confirme.</p>
-              <Link href="/checkout" className="c-btn w-fit">Volver al inicio</Link>
-            </>
-          ) : (
-            <>
-              <h1 className="h2">Sesión expirada o cancelada</h1>
-              <p className="u-small text-weak">Vuelve a intentar el pago para completar tu compra.</p>
-              <Link href="/checkout" className="c-btn w-fit">Volver al checkout</Link>
-            </>
-          )}
+        {/* Nota de correo */}
+        <div className="c-note u-mt-6">
+          <h2 className="h5">¿No llegó tu correo?</h2>
+          <ul className="u-list">
+            <li>Revisa spam o promociones.</li>
+            <li>Busca el remitente “LOBRÁ &lt;no-reply@mail.lobra.net&gt;”.</li>
+            <li>
+              Si no lo encuentras, escribe a <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+            </li>
+          </ul>
         </div>
       </section>
-
-      {/* purchase event */}
-      {paid ? (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push(${JSON.stringify(dl)});
-            `,
-          }}
-        />
-      ) : null}
-
-      {/* Panel técnico solo en debug */}
-      {debugOn && (
-        <section className="mt-6">
-          <div className="u-small text-weak">
-            <div>Ref: {s.id}</div>
-            <div>Estado: {String(status)} / {String(payment_status)}</div>
-            <div>success_slug: {success_slug_md}</div>
-            <div>lobby_slug: {lobby_slug_md}</div>
-            <div>Email: {email || '(no disponible)'}</div>
-          </div>
-        </section>
-      )}
     </main>
   );
 }

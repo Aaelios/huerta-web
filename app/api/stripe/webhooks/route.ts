@@ -1,4 +1,6 @@
+// Huerta Consulting — v6+resolveNextStep — 2025-10-06
 // app/api/stripe/webhooks/route.ts
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -19,19 +21,22 @@ import f_refetchInvoice from '@/lib/stripe/f_refetchInvoice';
 // Orquestador DB (usa SECURITY DEFINER en Supabase)
 import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 
+// Resolver dinámico postcompra
+import { resolveNextStep } from '@/lib/postpurchase/resolveNextStep';
+
 // --- env ---
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY || '');
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
 
-// dominio base para el CTA del correo (producción)
-// const BASE_URL = 'https://lobra.net';
 const BASE_URL = (process.env.APP_URL || '').trim();
 
 export async function POST(req: Request) {
-  const version = 'route.v5+receipt';
+  const version = 'route.v6+resolveNextStep';
   const sig = req.headers.get('stripe-signature');
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -51,9 +56,16 @@ export async function POST(req: Request) {
   try {
     const existing = await f_webhookEvents_getByStripeId(event.id);
     if (existing) {
-      return Response.json({ ok: true, replay: true, id: event.id, type: event.type }, { status: 200 });
+      return Response.json(
+        { ok: true, replay: true, id: event.id, type: event.type },
+        { status: 200 }
+      );
     }
-    await f_webhookEvents_markReceived({ stripeEventId: event.id, type: event.type, payload: raw });
+    await f_webhookEvents_markReceived({
+      stripeEventId: event.id,
+      type: event.type,
+      payload: raw,
+    });
   } catch {}
 
   // 3) refetch canónico
@@ -78,12 +90,21 @@ export async function POST(req: Request) {
       }
     } else if (event.type === 'payment_intent.succeeded') {
       const piId =
-        (typeof obj?.id === 'string' && obj.id.startsWith('pi_')) ? obj.id :
-        (typeof obj?.payment_intent === 'string' ? obj.payment_intent : null);
+        typeof obj?.id === 'string' && obj.id.startsWith('pi_')
+          ? obj.id
+          : typeof obj?.payment_intent === 'string'
+          ? obj.payment_intent
+          : null;
       if (piId) {
-        payment_intent = await stripe.paymentIntents.retrieve(piId, { expand: ['charges.data.balance_transaction'] });
+        payment_intent = await stripe.paymentIntents.retrieve(piId, {
+          expand: ['charges.data.balance_transaction'],
+        });
         try {
-          const sessList = await stripe.checkout.sessions.list({ payment_intent: piId, limit: 1, expand: ['data.line_items'] });
+          const sessList = await stripe.checkout.sessions.list({
+            payment_intent: piId,
+            limit: 1,
+            expand: ['data.line_items'],
+          });
           const sess = sessList?.data?.[0] ?? null;
           if (sess?.id) session = await f_refetchSession(sess.id);
         } catch {}
@@ -103,7 +124,7 @@ export async function POST(req: Request) {
       id: event.id,
       session: session?.id ?? null,
       invoice: invoice?.id ?? null,
-      payment_intent: payment_intent?.id ?? null
+      payment_intent: payment_intent?.id ?? null,
     };
     console.log('[webhook]', version, 'L1', l1);
   } catch {}
@@ -127,13 +148,18 @@ export async function POST(req: Request) {
 
       try {
         if (result?.outcome === 'processed') {
-          await f_webhookEvents_markProcessed({ stripeEventId: event.id, orderId: linkedOrderId ?? undefined });
+          await f_webhookEvents_markProcessed({
+            stripeEventId: event.id,
+            orderId: linkedOrderId ?? undefined,
+          });
         } else if (result?.outcome === 'ignored') {
           await f_webhookEvents_markIgnored({ stripeEventId: event.id });
         }
       } catch {}
     } else {
-      try { await f_webhookEvents_markIgnored({ stripeEventId: event.id }); } catch {}
+      try {
+        await f_webhookEvents_markIgnored({ stripeEventId: event.id });
+      } catch {}
     }
   } catch (e) {
     console.error('[webhook]', version, 'orchestrate error', (e as any)?.message ?? e);
@@ -144,69 +170,140 @@ export async function POST(req: Request) {
     // Regla: enviar SOLO en checkout.session.completed y cuando está pagado
     const paid =
       Boolean(session) &&
-      (session!.payment_status === 'paid' || session!.payment_status === 'no_payment_required');
+      (session!.payment_status === 'paid' ||
+        session!.payment_status === 'no_payment_required');
 
+    // --- inicio mod dinámico ---
     if (event.type === 'checkout.session.completed' && session && paid) {
-      const sessionId = session.id;
-      const email =
-        session.customer_details?.email ||
-        (typeof session.customer_email === 'string' ? session.customer_email : null);
+      if (process.env.SEND_RECEIPTS !== '1') {
+        console.log('[webhook]', version, 'SEND_RECEIPTS=0 → skipping email');
+      } else {
+        const sessionId = session.id;
+        const email =
+          session.customer_details?.email ||
+          (typeof session.customer_email === 'string'
+            ? session.customer_email
+            : null);
 
-      const md = (session.metadata || {}) as Record<string, string | undefined>;
-      const success_slug = (md.success_slug || 'mi-cuenta')!.replace(/[^a-z0-9\-_/]/gi, '');
-      const sku = md.sku || '';
+        // Metadata base + fallbacks desde price/product
+        const md = (session.metadata || {}) as Record<string, string | undefined>;
+        const li0 = session.line_items?.data?.[0] as any;
+        const priceMd = (li0?.price?.metadata || {}) as Record<string, string | undefined>;
+        const productMd =
+          (typeof li0?.price?.product === 'object' && li0?.price?.product
+            ? ((li0.price.product as any).metadata || {})
+            : {}) as Record<string, string | undefined>;
 
-      if (email) {
-        // Claim atómico: solo 1 proceso puede "tomar" el envío
-        const { data: claimed, error: claimErr } = await supabase
-          .from('order_headers')
-          .update({ receipt_sent_at: new Date().toISOString() })
-          .eq('stripe_session_id', sessionId)
-          .is('receipt_sent_at', null)
-          .select('id,user_id')
-          .single();
+        const sku =
+          md.sku ||
+          priceMd.sku ||
+          productMd.sku ||
+          '';
 
-        if (claimErr && (claimErr as any).code !== 'PGRST116') {
-          console.error('[webhook]', version, 'receipt claim error', claimErr);
-        }
+        const fulfillment_type =
+          md.fulfillment_type ||
+          priceMd.fulfillment_type ||
+          productMd.fulfillment_type ||
+          '';
 
-        if (claimed?.id) {
-          // Enviar correo
-          const subject = 'Tu compra está confirmada';
-          const href = `${BASE_URL}/${success_slug}`;
-          const html = `
-            <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
-              <h1>Pago confirmado</h1>
-              <p>Gracias por tu compra${sku ? ` (${sku})` : ''}.</p>
-              <p>Tu acceso está listo.</p>
-              <p><a href="${href}" style="display:inline-block;padding:12px 16px;background:#000;color:#fff;text-decoration:none;border-radius:8px">Continuar</a></p>
-              <p style="color:#666;font-size:12px;margin-top:24px">Si el botón no funciona, copia y pega: ${href}</p>
-            </div>
-          `;
+        const success_slug = (
+          md.success_slug ||
+          priceMd.success_slug ||
+          productMd.success_slug ||
+          'mi-cuenta'
+        )!.replace(/[^a-z0-9\-_/]/gi, '');
 
-          const from = 'LOBRÁ <no-reply@mail.lobra.net>';
-          const send = await resend.emails.send({ from, to: email, subject, html });
+        if (email) {
+          // Claim atómico: solo 1 proceso puede "tomar" el envío
+          const { data: claimed, error: claimErr } = await supabase
+            .from('order_headers')
+            .update({ receipt_sent_at: new Date().toISOString() })
+            .eq('stripe_session_id', sessionId)
+            .is('receipt_sent_at', null)
+            .select('id,user_id')
+            .single();
 
-          if (send.data?.id) {
-            await supabase
-              .from('order_headers')
-              .update({ receipt_provider_id: send.data.id })
-              .eq('id', claimed.id);
-          } else if (send.error) {
-            console.error('[webhook]', version, 'resend error', send.error);
+          if (claimErr && (claimErr as any).code !== 'PGRST116') {
+            console.error('[webhook]', version, 'receipt claim error', claimErr);
+          }
+
+          if (claimed?.id) {
+            // Resolver siguiente paso dinámico
+            const next = await resolveNextStep({
+              fulfillment_type,
+              sku,
+              success_slug,
+            });
+
+            // --- corrección tipado NextStep ---
+            const label = 'label' in next && next.label ? next.label : 'Continuar';
+            const rel =
+              'href' in next && next.href
+                ? next.href
+                : `/${success_slug || 'mi-cuenta'}`;
+            const href = rel.startsWith('http')
+              ? rel
+              : `${BASE_URL.replace(/\/+$/, '')}${rel}`;
+            // --- fin corrección tipado NextStep ---
+
+            console.log('[receipt]', {
+              session_id: sessionId,
+              email,
+              sku,
+              fulfillment_type,
+              variant: next.variant,
+              href,
+            });
+
+            const subject = 'Tu compra está confirmada';
+            const html = `
+              <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
+                <h1>Pago confirmado</h1>
+                <p>Gracias por tu compra${sku ? ` (${sku})` : ''}.</p>
+                <p>Tu acceso está listo.</p>
+                <p><a href="${href}" style="display:inline-block;padding:12px 16px;background:#000;color:#fff;text-decoration:none;border-radius:8px">${label}</a></p>
+                <p style="color:#666;font-size:12px;margin-top:24px">Si el botón no funciona, copia y pega: ${href}</p>
+              </div>
+            `;
+
+            const from = 'LOBRÁ <no-reply@mail.lobra.net>';
+            const send = await resend.emails.send({
+              from,
+              to: email,
+              subject,
+              html,
+            });
+
+            if (send.data?.id) {
+              await supabase
+                .from('order_headers')
+                .update({ receipt_provider_id: send.data.id })
+                .eq('id', claimed.id);
+            } else if (send.error) {
+              console.error('[webhook]', version, 'resend error', send.error);
+            }
+          } else {
+            console.log(
+              '[webhook]',
+              version,
+              'receipt already sent or no matching order for session',
+              sessionId
+            );
           }
         } else {
-          console.log('[webhook]', version, 'receipt already sent or no matching order for session', sessionId);
+          console.warn('[webhook]', version, 'no customer email on session', sessionId);
         }
-      } else {
-        console.warn('[webhook]', version, 'no customer email on session', sessionId);
       }
     }
+    // --- fin mod dinámico ---
   } catch (e) {
     console.error('[webhook]', version, 'receipt block error', (e as any)?.message ?? e);
   }
 
   // 6) fin
-  console.log('[webhook]', version, 'done', event.type, event.id, { processed, linkedOrderId });
+  console.log('[webhook]', version, 'done', event.type, event.id, {
+    processed,
+    linkedOrderId,
+  });
   return new Response('ok', { status: 200 });
 }
