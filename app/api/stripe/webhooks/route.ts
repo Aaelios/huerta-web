@@ -1,5 +1,5 @@
-// Huerta Consulting — v6+resolveNextStep — 2025-10-06
 // app/api/stripe/webhooks/route.ts
+// Huerta Consulting — v7 renderers — 2025-10-07
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,9 @@ import h_stripe_webhook_process from '@/lib/orch/h_stripe_webhook_process';
 // Resolver dinámico postcompra
 import { resolveNextStep } from '@/lib/postpurchase/resolveNextStep';
 
+// Renderers de email
+import { renderEmail } from '@/lib/emails/renderers';
+
 // --- env ---
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY || '');
@@ -36,7 +39,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const BASE_URL = (process.env.APP_URL || '').trim();
 
 export async function POST(req: Request) {
-  const version = 'route.v6+resolveNextStep';
+  const version = 'route.v7+renderers';
   const sig = req.headers.get('stripe-signature');
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -173,7 +176,6 @@ export async function POST(req: Request) {
       (session!.payment_status === 'paid' ||
         session!.payment_status === 'no_payment_required');
 
-    // --- inicio mod dinámico ---
     if (event.type === 'checkout.session.completed' && session && paid) {
       if (process.env.SEND_RECEIPTS !== '1') {
         console.log('[webhook]', version, 'SEND_RECEIPTS=0 → skipping email');
@@ -235,8 +237,7 @@ export async function POST(req: Request) {
               success_slug,
             });
 
-            // --- corrección tipado NextStep ---
-            const label = 'label' in next && next.label ? next.label : 'Continuar';
+            // Normaliza label y href relativo → absoluto
             const rel =
               'href' in next && next.href
                 ? next.href
@@ -244,7 +245,6 @@ export async function POST(req: Request) {
             const href = rel.startsWith('http')
               ? rel
               : `${BASE_URL.replace(/\/+$/, '')}${rel}`;
-            // --- fin corrección tipado NextStep ---
 
             console.log('[receipt]', {
               session_id: sessionId,
@@ -255,20 +255,21 @@ export async function POST(req: Request) {
               href,
             });
 
-            const subject = 'Tu compra está confirmada';
-            const html = `
-              <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
-                <h1>Pago confirmado</h1>
-                <p>Gracias por tu compra${sku ? ` (${sku})` : ''}.</p>
-                <p>Tu acceso está listo.</p>
-                <p><a href="${href}" style="display:inline-block;padding:12px 16px;background:#000;color:#fff;text-decoration:none;border-radius:8px">${label}</a></p>
-                <p style="color:#666;font-size:12px;margin-top:24px">Si el botón no funciona, copia y pega: ${href}</p>
-              </div>
-            `;
+            // Render centralizado
+            const { subject, html, from } = renderEmail(
+              // fusiona el next del resolver con href absoluto para el correo
+              { ...(next as any), href },
+              {
+                appUrl: BASE_URL,
+                supportEmail: 'soporte@lobra.net',
+                from: process.env.RESEND_FROM || 'LOBRÁ <no-reply@mail.lobra.net>',
+                subjectPrefix: process.env.EMAIL_SUBJECT_PREFIX || null,
+              }
+            );
 
-            const from = 'LOBRÁ <no-reply@mail.lobra.net>';
+            // Envío
             const send = await resend.emails.send({
-              from,
+              from: from || 'LOBRÁ <no-reply@mail.lobra.net>',
               to: email,
               subject,
               html,
@@ -295,7 +296,6 @@ export async function POST(req: Request) {
         }
       }
     }
-    // --- fin mod dinámico ---
   } catch (e) {
     console.error('[webhook]', version, 'receipt block error', (e as any)?.message ?? e);
   }
