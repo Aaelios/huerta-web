@@ -1,55 +1,38 @@
-// app/checkout/page.tsx
+// app/checkout/[slug]/CheckoutClient.tsx
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import type { Webinar } from '@/lib/webinars/schema';
+import type { CheckoutUI } from '@/lib/ui_checkout/buildCheckoutUI';
+import type { SessionPayload } from '@/lib/ui_checkout/buildSessionPayload';
+import { renderAccent } from '@/lib/ui/renderAccent';
 
-type CreateSessionOk = { client_secret: string; session_id?: string };
+type Props = {
+  slug: string;
+  webinar: Webinar;
+  ui: CheckoutUI;
+  sessionPayload: SessionPayload;
+  query?: Record<string, string | string[] | undefined>;
+};
+
+type CreateSessionOk = { client_secret: string; session_id?: string; unit_amount?: number };
 type CreateSessionErr = { error?: string; code?: string };
 type CreateSessionResp = CreateSessionOk | CreateSessionErr;
 
-function hasMessage(e: unknown): e is { message: string } {
-  return !!e && typeof e === 'object' && 'message' in e && typeof (e as { message: unknown }).message === 'string';
-}
-function getErrorMessage(e: unknown): string {
-  return hasMessage(e) ? e.message : typeof e === 'string' ? e : 'Error desconocido';
-}
-function makeIdempotencyKey(): string {
-  const rnd =
-    typeof crypto !== 'undefined' && 'getRandomValues' in crypto
-      ? Array.from(crypto.getRandomValues(new Uint8Array(8)))
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('')
-      : Math.random().toString(16).slice(2);
-  return `chk-${Date.now()}-${rnd}`;
-}
-function clampText(v: string | null, max: number): string | null {
-  if (!v) return null;
-  const s = v.trim().slice(0, max);
-  return s.length ? s : null;
-}
-
-// Tipos mínimos para Stripe
 type StripeEmbedded = { mount: (selector: string) => void };
 type StripeLike = { initEmbeddedCheckout: (opts: { clientSecret: string }) => Promise<StripeEmbedded> };
 type StripeFactory = (pk: string) => StripeLike;
 
-// dataLayer tipado
-type DataLayerEvent = Record<string, unknown>;
 declare global {
   interface Window {
-    dataLayer?: DataLayerEvent[];
+    dataLayer?: Record<string, unknown>[];
     Stripe?: StripeFactory;
   }
 }
-function pushDL(ev: DataLayerEvent) {
-  if (typeof window === 'undefined') return;
-  window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push(ev);
-}
 
-export default function CheckoutPage() {
+export default function CheckoutClient(props: Props) {
   return (
     <Suspense
       fallback={
@@ -62,12 +45,12 @@ export default function CheckoutPage() {
         </main>
       }
     >
-      <CheckoutPageInner />
+      <Inner {...props} />
     </Suspense>
   );
 }
 
-function CheckoutPageInner() {
+function Inner({ webinar, ui, sessionPayload }: Props) {
   const [mounted, setMounted] = useState(false);
   const [stripeReady, setStripeReady] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -77,7 +60,6 @@ function CheckoutPageInner() {
   const [mountedProgrammatic, setMountedProgrammatic] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
 
-  const searchParams = useSearchParams();
   const router = useRouter();
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
   const debugOn = process.env.NEXT_PUBLIC_DEBUG === '1';
@@ -86,45 +68,32 @@ function CheckoutPageInner() {
 
   useEffect(() => setMounted(true), []);
 
-  // ---- Parámetros de UI desde la página anterior (presentación, no cobro) ----
-  const ui = useMemo(() => {
-    const title = clampText(searchParams.get('title'), 90);
-    const desc = clampText(searchParams.get('desc'), 160);
-    const priceDisplay = clampText(searchParams.get('price_display'), 32);
+  useEffect(() => {
+    try {
+      const value =
+        typeof webinar?.shared?.pricing?.amountCents === 'number'
+          ? webinar.shared.pricing.amountCents / 100
+          : undefined;
+      window.dataLayer = window.dataLayer ?? [];
+      window.dataLayer.push({
+        event: 'begin_checkout',
+        sku: sessionPayload.sku,
+        price_id: sessionPayload.price_id,
+        product_id: sessionPayload.product_id,
+        mode: sessionPayload.mode,
+        currency: sessionPayload.currency,
+        value,
+        ui_title: ui.title,
+        ui_price_display: ui.priceDisplay,
+      });
+    } catch {
+      // noop
+    }
+  }, [sessionPayload, webinar, ui.title, ui.priceDisplay]);
 
-    return {
-      title: title || 'Webinar en vivo — Octubre 2025',
-      desc: desc || 'Finanzas para pequeños negocios. Sesión interactiva en Zoom.',
-      priceDisplay: priceDisplay || 'MX$490',
-    };
-  }, [searchParams]);
-
-  // Body para crear sesión (fuente de verdad del cobro)
-  const body = useMemo(() => {
-    const payload: Record<string, string> = {};
-    const keys = [
-      'sku',
-      'mode',
-      'price_id',
-      'priceId',
-      'price_list',
-      'interval',
-      'success_slug',
-      'currency',
-      'product_id',
-    ];
-    keys.forEach((k) => {
-      const v = searchParams.get(k);
-      if (v) payload[k] = v;
-    });
-    return payload;
-  }, [searchParams]);
-
-  // Crear sesión
   useEffect(() => {
     let cancelled = false;
-
-    async function createSession() {
+    async function createSession(): Promise<void> {
       if (!publishableKey) {
         setError('Falta configuración: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY');
         setLoading(false);
@@ -138,7 +107,7 @@ function CheckoutPageInner() {
         const res = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemRef.current },
-          body: Object.keys(body).length ? JSON.stringify(body) : '{}',
+          body: JSON.stringify(sessionPayload),
           cache: 'no-store',
         });
         if (!res.ok) {
@@ -150,36 +119,19 @@ function CheckoutPageInner() {
         if ('error' in data && data.error) throw new Error(data.error);
         if (!('client_secret' in data) || !data.client_secret) throw new Error('Falta client_secret');
 
-        if (!cancelled) {
-          setClientSecret(data.client_secret);
-
-          // Métrica
-          pushDL({
-            event: 'begin_checkout',
-            stripe_session_id: 'session_id' in data ? data.session_id || null : null,
-            sku: body.sku || null,
-            price_id: (body.price_id || body.priceId) ?? null,
-            product_id: body.product_id || null,
-            mode: body.mode || 'payment',
-            currency: body.currency || 'MXN',
-            ui_title: ui.title,
-            ui_price_display: ui.priceDisplay,
-          });
-        }
-      } catch (e) {
+        if (!cancelled) setClientSecret(data.client_secret);
+      } catch (e: unknown) {
         if (!cancelled) setError(getErrorMessage(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
-
     createSession();
     return () => {
       cancelled = true;
     };
-  }, [attempt, body, publishableKey, ui.title, ui.priceDisplay]);
+  }, [attempt, publishableKey, sessionPayload]);
 
-  // Montaje programático
   useEffect(() => {
     const stripeFactory: StripeFactory | undefined =
       typeof window !== 'undefined' ? window.Stripe : undefined;
@@ -195,20 +147,19 @@ function CheckoutPageInner() {
         embedded.mount('#stripe-embed');
         mountOnceRef.current = true;
         setMountedProgrammatic(true);
-      } catch (e) {
+      } catch (e: unknown) {
         setError(getErrorMessage(e));
       }
     })();
   }, [mounted, stripeReady, clientSecret, publishableKey]);
 
-  // Fallback si no monta en 8s
   useEffect(() => {
     if (mountedProgrammatic || loading) return;
     const t = setTimeout(() => setShowFallback(true), 8000);
     return () => clearTimeout(t);
   }, [mountedProgrammatic, loading]);
 
-  const retry = () => {
+  const retry = (): void => {
     idemRef.current = makeIdempotencyKey();
     setMountedProgrammatic(false);
     setShowFallback(false);
@@ -243,15 +194,14 @@ function CheckoutPageInner() {
             <h2 id="resumen-heading" className="h4">Resumen de tu compra</h2>
 
             <div className="stack-1">
-              <p className="text-strong">{ui.title}</p>
-              <p className="u-small text-weak">{ui.desc}</p>
+              <p className="text-strong">{renderAccent(ui.title)}</p>
+              <p className="u-small text-weak">{renderAccent(ui.desc)}</p>
             </div>
 
             <ul className="list-check u-small">
-              <li>Acceso al evento en vivo</li>
-              <li>Acceso a la grabación durante 7 días</li>
-              <li>Plantilla práctica de apoyo</li>
-              <li>Soporte por email</li>
+              {(ui.bullets || []).map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
             </ul>
 
             <div className="stack-1">
@@ -263,14 +213,14 @@ function CheckoutPageInner() {
               </div>
               <p className="u-small text-weak">Sin cargos ocultos.</p>
               <p className="u-small text-weak">
-                Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.
+                {ui.refundLine || 'Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.'}
               </p>
             </div>
 
             <p className="u-small">
               ¿Necesitas ayuda?{' '}
-              <a href="mailto:soporte@lobra.net" className="link text-weak">
-                roberto@huerta.consulting
+              <a href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`} className="link text-weak">
+                {ui.supportEmail || 'soporte@lobra.net'}
               </a>
             </p>
           </div>
@@ -278,7 +228,6 @@ function CheckoutPageInner() {
 
         {/* Stripe */}
         <div className="section--surface">
-          {/* Estados */}
           {loading && (
             <div className="c-card">
               <p className="u-small animate-pulse">Preparando checkout…</p>
@@ -292,7 +241,7 @@ function CheckoutPageInner() {
                 <p className="u-small break-words">{error}</p>
                 <div className="stack-row gap-2">
                   <button className="c-btn" onClick={retry}>Reintentar</button>
-                  <a className="c-btn c-btn--ghost" href="mailto:soporte@lobra.net">Pedir ayuda</a>
+                  <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>Pedir ayuda</a>
                 </div>
               </div>
             </div>
@@ -314,14 +263,13 @@ function CheckoutPageInner() {
                   <p className="mb-2">Si el formulario no aparece, intenta de nuevo o contáctanos.</p>
                   <div className="stack-row gap-2">
                     <button className="c-btn" onClick={retry}>Reintentar</button>
-                    <a className="c-btn c-btn--ghost" href="mailto:soporte@lobra.net">Soporte por email</a>
+                    <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>Soporte por email</a>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Legal */}
           <footer className="u-small text-weak mt-3">
             Al continuar aceptas los Términos de Stripe y nuestras{' '}
             <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="link">
@@ -334,15 +282,11 @@ function CheckoutPageInner() {
             .
           </footer>
 
-          {/* Debug */}
           {mounted && debugOn && (
             <div className="u-small text-weak mt-4">
               <p>
                 Estado: pk {publishableKey ? 'ok' : 'faltante'} · script {stripeReady ? 'ok' : 'cargando'} · client_secret{' '}
                 {clientSecret ? 'ok' : 'pendiente'} · modo {mountedProgrammatic ? 'programático' : 'pendiente'}
-              </p>
-              <p>
-                URL params p. ej. <code>?title=...&amp;desc=...&amp;price_display=MX%24490&amp;price_id=...</code>
               </p>
             </div>
           )}
@@ -350,4 +294,22 @@ function CheckoutPageInner() {
       </section>
     </main>
   );
+}
+
+/* ------------ utils ------------ */
+
+function hasMessage(e: unknown): e is { message: string } {
+  return !!e && typeof e === 'object' && 'message' in e && typeof (e as { message: unknown }).message === 'string';
+}
+function getErrorMessage(e: unknown): string {
+  return hasMessage(e) ? e.message : typeof e === 'string' ? e : 'Error desconocido';
+}
+function makeIdempotencyKey(): string {
+  const rnd =
+    typeof crypto !== 'undefined' && 'getRandomValues' in crypto
+      ? Array.from(crypto.getRandomValues(new Uint8Array(8)))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('')
+      : Math.random().toString(16).slice(2);
+  return `chk-${Date.now()}-${rnd}`;
 }

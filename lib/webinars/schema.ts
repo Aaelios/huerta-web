@@ -8,12 +8,12 @@ import { z } from "zod";
 
 const TemplateSchema = z.object({
   mode: z.enum(["email", "link"]),
-  url: z.string().url().optional(), // requerido si mode = link, validación extra opcional
+  url: z.string().url().optional(),
 });
 
 const CalendarSchema = z.object({
   mode: z.enum(["generated", "static"]),
-  url: z.string().url().optional(), // requerido si mode = static
+  url: z.string().url().optional(),
 });
 
 const WhatsAppSupportSchema = z.object({
@@ -39,7 +39,7 @@ export const SharedSchema = z.object({
   slug: z.string(),
   title: z.string(),
   subtitle: z.string().nullable().optional(),
-  startAt: z.string(), // podemos validar ISO más adelante
+  startAt: z.string(),
   durationMin: z.number().int(),
   zoomJoinUrl: z.string().url().nullable(),
   supportEmail: z.string().email(),
@@ -107,6 +107,21 @@ export const PrelobbySchema = z.object({
 });
 
 // ---------------------------
+// Checkout (nuevo, opcional)
+// ---------------------------
+
+export const CheckoutSchema = z.object({
+  bullets: z.array(z.string()).optional(),
+  refundLine: z.string().optional(),
+  legalLinks: z
+    .object({
+      privacySlug: z.string().optional(),
+      refundSlug: z.string().optional(),
+    })
+    .optional(),
+});
+
+// ---------------------------
 // Webinar completo
 // ---------------------------
 
@@ -114,6 +129,7 @@ export const WebinarSchema = z.object({
   shared: SharedSchema,
   sales: SalesSchema.optional(),
   prelobby: PrelobbySchema.optional(),
+  checkout: CheckoutSchema.optional(),
 });
 
 // Mapa de webinars (clave = slug, valor = Webinar)

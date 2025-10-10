@@ -3,67 +3,84 @@
 import { NextResponse } from "next/server";
 import { loadWebinars } from "@/lib/webinars/loadWebinars";
 
-/**
- * GET /api/ics/[slug]
- * Genera un archivo .ics con hora CDMX basado en shared.startAt y shared.durationMin del webinar.
- * Incluye título y enlace de prelobby; si existe zoomJoinUrl lo añade como URL.
- */
 export async function GET(
   req: Request,
-  { params }: { params: { slug: string } }
+  ctx: { params: Promise<{ slug: string }> }
 ) {
+  const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+  const CANON = process.env.CANONICAL_BASE_URL ?? "https://lobra.net";
+  const HOST = new URL(CANON).host;
+  const TZ = process.env.SITE_TZ ?? "America/Mexico_City";
+  const BRAND = process.env.COMPANY_NAME ?? "LOBRA";
+
+  const { slug } = await ctx.params;
   const webinars = await loadWebinars();
-  const webinar = webinars[params.slug];
+  const webinar = webinars[slug];
+  if (!webinar) return new NextResponse("Webinar no encontrado", { status: 404 });
 
-  if (!webinar) {
-    return new NextResponse("Webinar no encontrado", { status: 404 });
-  }
+  const { shared } = webinar;
+  const start = new Date(shared.startAt);
+  const end = new Date(start.getTime() + shared.durationMin * 60000);
 
-  const start = new Date(webinar.shared.startAt);
-  const end = new Date(start.getTime() + webinar.shared.durationMin * 60000);
+  // LOCAL para DTSTART/DTEND, UTC para DTSTAMP
+  const dtStart = toICSLocal(start, TZ);
+  const dtEnd = toICSLocal(end, TZ);
+  const dtStamp = toICSUtc(new Date());
 
-  const dtStart = toICSDate(start);
-  const dtEnd = toICSDate(end);
+  const prelobbyUrl = `${CANON}/webinars/${shared.slug}/prelobby`;
+  const joinUrl = shared.zoomJoinUrl || prelobbyUrl;
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Huerta Consulting//Prelobby//ES",
+    `PRODID:-//${BRAND}//Prelobby//ES`,
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${webinar.shared.slug}@huerta.consulting`,
-    `DTSTAMP:${toICSDate(new Date())}`,
-    `DTSTART;TZID=America/Mexico_City:${dtStart}`,
-    `DTEND;TZID=America/Mexico_City:${dtEnd}`,
-    `SUMMARY:${escapeICS(webinar.shared.title)}`,
-    `DESCRIPTION:Accede al prelobby: https://huerta.consulting/webinars/${webinar.shared.slug}/prelobby`,
-    webinar.shared.zoomJoinUrl
-      ? `URL:${webinar.shared.zoomJoinUrl}`
-      : `URL:https://huerta.consulting/webinars/${webinar.shared.slug}/prelobby`,
+    `UID:${shared.slug}@${HOST}`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART;TZID=${TZ}:${dtStart}`,
+    `DTEND;TZID=${TZ}:${dtEnd}`,
+    `SUMMARY:${escapeICS(shared.title)}`,
+    `DESCRIPTION:Accede al prelobby: ${prelobbyUrl}`,
+    `URL:${joinUrl}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
 
-  const body = lines.join("\r\n");
-
-  return new NextResponse(body, {
+  return new NextResponse(lines.join("\r\n"), {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename=${webinar.shared.slug}.ics`,
+      "Content-Disposition": `attachment; filename=${shared.slug}.ics`,
     },
   });
 }
 
 // ---- Helpers
 
-function toICSDate(d: Date): string {
-  // YYYYMMDDTHHmmss
-  return d
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d{3}Z$/, "Z")
-    .slice(0, 15);
+function toICSLocal(d: Date, timeZone: string): string {
+  // YYYYMMDDTHHMMSS en la zona indicada
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(d)
+      .map((p) => [p.type, p.value])
+  ) as Record<string, string>;
+
+  return `${parts.year}${parts.month}${parts.day}T${parts.hour}${parts.minute}${parts.second}`;
+}
+
+function toICSUtc(d: Date): string {
+  // YYYYMMDDTHHMMSSZ en UTC
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
 function escapeICS(s: string): string {

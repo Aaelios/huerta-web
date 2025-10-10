@@ -1,10 +1,11 @@
- // app/webinars/[slug]/page.tsx
+// app/webinars/[slug]/page.tsx
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getWebinar } from "@/lib/webinars/load";
 import SalesHero from "@/components/webinars/SalesHero";
 import SalesClase from "@/components/webinars/SalesClase";
+import { getCheckoutUrl } from "@/lib/ui_checkout/getCheckoutUrl";
 
 // ---- Helpers
 
@@ -33,20 +34,6 @@ function formatPriceLabel(amountCents: number, currency: string): string {
     currency,
     maximumFractionDigits: 0,
   }).format(amount);
-}
-
-function buildCtaHref(opts: {
-  mode?: "payment" | "subscription";
-  sku: string;
-  stripePriceId?: string;
-  stripeProductId?: string;
-}): string {
-  const params = new URLSearchParams();
-  params.set("mode", opts.mode ?? "payment");
-  if (opts.stripePriceId) params.set("price_id", opts.stripePriceId);
-  if (opts.stripeProductId) params.set("product_id", opts.stripeProductId);
-  if (opts.sku) params.set("sku", opts.sku);
-  return `/checkout?${params.toString()}`;
 }
 
 function capitalize(s: string) {
@@ -90,11 +77,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   const dateLabel = formatDateLabel(shared.startAt);
   const priceLabel = formatPriceLabel(shared.pricing.amountCents, shared.pricing.currency);
-  const ctaHref = buildCtaHref({
+
+  // CTA → /checkout/[slug] con modo opcional si es recurrente
+  const ctaHref = getCheckoutUrl(shared.slug, {
     mode: shared.pricing.interval === "recurring" ? "subscription" : "payment",
-    sku: shared.pricing.sku || shared.sku,
-    stripePriceId: shared.pricing.stripePriceId,
-    stripeProductId: shared.pricing.stripeProductId,
   });
 
   return (

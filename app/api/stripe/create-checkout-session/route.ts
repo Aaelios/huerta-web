@@ -29,13 +29,22 @@ export async function POST(req: NextRequest) {
     }
 
     // ---- 1) Inputs ---------------------------------------------------------
-    const raw = await req.json().catch(() => ({} as any));
+    const raw = (await req.json().catch(() => ({}))) as {
+      sku?: string;
+      price_id?: string;
+      priceId?: string;
+      currency?: string;
+      mode?: 'payment' | 'subscription';
+      metadata?: Record<string, string>;
+      coupon?: string;
+      utm?: Record<string, string | undefined>;
+    };
+
     const priceIdInput: string | undefined = raw.price_id ?? raw.priceId ?? undefined;
     const modeInput: 'payment' | 'subscription' | undefined =
       raw.mode && (raw.mode === 'subscription' || raw.mode === 'payment') ? raw.mode : undefined;
 
-    // Para compatibilidad con catálogo:
-    // si NO viene price_id, usamos f_parseInput (sku + currency) y resolvemos price en BD.
+    // Compat: si NO viene price_id, resolvemos con catálogo (sku + currency)
     let sku: string | undefined;
     let currency: string | undefined;
     let priceId: string;
@@ -44,6 +53,7 @@ export async function POST(req: NextRequest) {
     let interval = '';
     let pmeta: Record<string, string> = {};
     let prodId: string = '';
+    let unit_amount: number | undefined;
 
     if (priceIdInput) {
       // ---- 2A) Camino con price_id directo ---------------------------------
@@ -57,6 +67,7 @@ export async function POST(req: NextRequest) {
       pmeta = price.metadata || {};
       interval = (price.type === 'recurring' ? price.recurring?.interval : null) ?? ('' as string);
       prodId = typeof price.product === 'string' ? price.product : price.product.id;
+      unit_amount = typeof price.unit_amount === 'number' ? price.unit_amount : undefined;
 
       console.log(
         JSON.stringify({
@@ -95,6 +106,7 @@ export async function POST(req: NextRequest) {
         (price.type === 'recurring' ? price.recurring?.interval : null) ??
         (rowMeta.interval ?? '');
       prodId = typeof price.product === 'string' ? price.product : price.product.id;
+      unit_amount = typeof price.unit_amount === 'number' ? price.unit_amount : undefined;
 
       console.log(
         JSON.stringify({
@@ -111,9 +123,25 @@ export async function POST(req: NextRequest) {
     }
 
     // ---- 3) Crear sesión Embedded -----------------------------------------
-    const returnUrl = f_buildReturnUrl(); // construye usando APP_URL
+    const returnUrl = f_buildReturnUrl(); // /gracias?session_id=...
     const idempotencyKey =
       req.headers.get('idempotency-key') || `chk_${reqId}_${priceId}_${Date.now()}`;
+
+    // Metadata consolidada: prioridad al payload del cliente si viene, luego Price.metadata
+    const metaClient = raw.metadata || {};
+    const metadata: Record<string, string> = {
+      sku: String(metaClient.sku ?? pmeta.sku ?? sku ?? ''),
+      fulfillment_type: String(metaClient.fulfillment_type ?? pmeta.fulfillment_type ?? ''),
+      success_slug: String(metaClient.success_slug ?? pmeta.success_slug ?? ''),
+      price_list: String(metaClient.price_list ?? pmeta.price_list ?? price_list ?? ''),
+      interval: String(metaClient.interval ?? pmeta.interval ?? interval ?? ''),
+      price_id: priceId,
+      product_id: prodId,
+      // UTM passthrough en metadata para trazabilidad (opcional)
+      ...(normalizeUtm(raw.utm)),
+      // Cupón opcional como nota (el canje real no se aplica aquí; allowPromotionCodes = true)
+      ...(raw.coupon ? { coupon_hint: String(raw.coupon) } : {}),
+    };
 
     const tStripe0 = Date.now();
     const session = await f_createStripeEmbeddedSession({
@@ -125,16 +153,8 @@ export async function POST(req: NextRequest) {
       // Flags MVP
       allowPromotionCodes: true,
       phoneEnabled: true,
-      // Dejar customFields undefined para usar el dropdown de opt-in por defecto en el helper
-      metadata: {
-        sku: String(pmeta.sku ?? sku ?? ''),
-        fulfillment_type: pmeta.fulfillment_type ?? '',
-        success_slug: pmeta.success_slug ?? '',
-        price_list: price_list ?? '',
-        interval: interval ?? '',
-        price_id: priceId,
-        product_id: prodId,
-      },
+      // Si tu helper soporta customFields/consent, se añade allí; dejamos undefined para el default actual.
+      metadata,
     });
     const stripe_ms = Date.now() - tStripe0;
 
@@ -152,7 +172,14 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    return json({ client_secret: session.client_secret, session_id: session.sessionId }, 200);
+    return json(
+      {
+        client_secret: session.client_secret,
+        session_id: session.sessionId,
+        unit_amount, // centavos reales del Price para alinear UI del cliente
+      },
+      200
+    );
   } catch (e: any) {
     // Validación propia
     if (e?.code === 'BAD_REQUEST') {
@@ -211,4 +238,16 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({ code: 'METHOD_NOT_ALLOWED' }, { status: 405 });
+}
+
+/* --------------------------- utils --------------------------- */
+
+function normalizeUtm(utm: Record<string, string | undefined> | undefined) {
+  if (!utm) return {};
+  const allow = new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']);
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(utm)) {
+    if (allow.has(k) && typeof v === 'string' && v.trim().length) out[k] = v.trim();
+  }
+  return Object.keys(out).length ? { ...out } : {};
 }

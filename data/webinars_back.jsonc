@@ -1,0 +1,229 @@
+{
+  "2025-10-14-2030": {
+    "shared": {
+      "slug": "2025-10-14-2030",
+      "title": "Taller de Tranquilidad Financiera",
+      "startAt": "2025-10-14T20:30:00-06:00",
+      "durationMin": 90,
+      "zoomJoinUrl": null,
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": false },
+      "calendar": { "mode": "generated" },
+      "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": true // NUEVO: si es true y startAt > ahora, usar este en Home
+      },
+      "pricing": {
+        "sku": "liveclass-huerta-mkt-webinar-oct2025-v001",
+        "amountCents": 49000,
+        "currency": "MXN",
+        "interval": "one_time",
+        "stripePriceId": "price_1S97ubQ8dpmAG0o28zqhJkTP",
+        "stripeProductId": "prod_T5IVV5Nyf0v1oQ"
+      }
+    },
+    "sales": {
+      "seo": {
+        "title": "Taller de Tranquilidad Financiera · Webinar 14 oct 2025 (CDMX)",
+        "description": "En 90 minutos sabrás cuánto realmente ganas y qué funciona en tu negocio. Claridad y confianza para decidir.",
+        "canonical": "https://lobra.net/webinars/2025-10-14-2030"
+      },
+      "hero": {
+        "eyebrow": "Taller de Tranquilidad Financiera",
+        "title": "Claridad de tus [[ingresos]], [[tranquilidad]] y [[confianza]].",
+        "subtitle": "Clase práctica para registrar tus [[ingresos]] con una herramienta personalizada que usarás desde el [[día 1]].",
+        "note": "Empieza hoy con claridad y paz.",
+        "ctaText": "Reservar mi lugar en la clase",
+        "heroImageSrc": "/images/webinars/2025-10-14-2030/hero.jpg",
+        "heroImageAlt": "Roberto Huerta, Webinar Finanzas LOBRÁ Octubre 2025"
+      },
+      "clasePractica": {
+        "eyebrow": "Taller interactivo",
+        "title": "Aprende a poner en orden tus [[ingresos]] en una sola sesión",
+        "intro": "En vivo, [[práctico]] y aplicado a tu negocio. [[No teoría]], resultados.",
+        "leftTitle": "¿Te suena [[familiar]]?",
+        "bullets": [
+          "No sabes cuál es tu [[venta promedio]].",
+          "No tienes claro cuánto ganaste el [[mes pasado]].",
+          "No ves si tus ingresos van [[subiendo]] o bajando.",
+          "No puedes decir quién es tu [[mejor cliente]].",
+          "Todo esto se resuelve con [[5 min al día]]."
+        ],
+        "deliverableTitle": "Lo que te [[llevas]]",
+        "deliverableBullets": [
+          "Tu registro [[listo]] para usar desde mañana.",
+          "[[Método simple]] que te toma máximo 5 minutos al día.",
+          "Duración: 90 minutos.",
+          "Modalidad: En vivo por Zoom (sin Excel/Sheets también aplicas los conceptos)."
+        ],
+        "priceLine": "Hoy $490 MXN · Cupo limitado",
+        "guarantee": "si no quedas conforme, reembolso.",
+        "ctaText": "Reservar mi lugar ahora"
+      }
+    },
+    "prelobby": {
+      "labels": {
+        "tooEarly": "Aún no abrimos la sala, vuelve más tarde.",
+        "early": "Faltan pocos minutos, prepara tu conexión.",
+        "open": "Ya puedes entrar al prelobby.",
+        "live": "El webinar está en vivo.",
+        "ended": "Este webinar ha finalizado."
+      }
+    }
+  },
+
+  // ====== PRUEBA 1: live_class — Ingresos ======
+  "2025-10-21-2000": {
+    "shared": {
+      "slug": "2025-10-21-2000",
+      "title": "Ingresos ordenados en 90 minutos",
+      "startAt": "2025-10-21T20:00:00-06:00",
+      "durationMin": 90,
+      "zoomJoinUrl": null,
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": false },
+      "calendar": { "mode": "generated" },
+      "sku": "liveclass-huerta-fin-ingresos-oct2025-v001",
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": false
+      },
+      "pricing": {
+        "sku": "liveclass-huerta-fin-ingresos-oct2025-v001",
+        "amountCents": 49000,
+        "currency": "MXN",
+        "interval": "one_time",
+        "stripePriceId": "price_TEST_INGRESOS",
+        "stripeProductId": "prod_TEST_INGRESOS"
+      }
+    },
+    "sales": {
+      "seo": {
+        "title": "Ingresos ordenados en 90 minutos · 21 oct 2025 (CDMX)",
+        "description": "Aprende a registrar ingresos con claridad y constancia en una sola sesión práctica.",
+        "canonical": "https://lobra.net/webinars/2025-10-21-2000"
+      },
+      "hero": {
+        "eyebrow": "Finanzas para emprendedores",
+        "title": "Tu flujo de [[ingresos]] sin confusión",
+        "subtitle": "Sesión práctica para dejar listo tu registro desde mañana.",
+        "note": "Material de apoyo incluido.",
+        "ctaText": "Apartar lugar",
+        "heroImageSrc": "/images/webinars/2025-10-21-2000/hero.jpg",
+        "heroImageAlt": "Clase en vivo de ingresos"
+      },
+      "clasePractica": {
+        "eyebrow": "Aplicado a tu negocio",
+        "title": "Todo listo en una sesión",
+        "intro": "Aprende y configura paso a paso con guía en vivo.",
+        "leftTitle": "Evita errores comunes",
+        "bullets": [
+          "Duplicar capturas",
+          "Categorías confusas",
+          "No medir venta promedio",
+          "Datos sin seguimiento"
+        ],
+        "deliverableTitle": "Te llevas",
+        "deliverableBullets": [
+          "Registro listo para usar",
+          "Plantilla base para ajustes",
+          "Checklist de 5 minutos diarios",
+          "Sesión de 90 minutos por Zoom"
+        ],
+        "priceLine": "Precio de introducción $490 MXN",
+        "guarantee": "Garantía de satisfacción",
+        "ctaText": "Reservar"
+      }
+    },
+    "prelobby": {
+      "labels": {
+        "tooEarly": "Aún no abrimos la sala.",
+        "early": "Faltan pocos minutos.",
+        "open": "Prelobby disponible.",
+        "live": "Clase en vivo.",
+        "ended": "Sesión finalizada."
+      }
+    }
+  },
+
+  // ====== PRUEBA 2: live_class — Egresos ======
+  "2025-10-28-2000": {
+    "shared": {
+      "slug": "2025-10-28-2000",
+      "title": "Control de egresos sin complicaciones",
+      "startAt": "2025-10-28T20:00:00-06:00",
+      "durationMin": 90,
+      "zoomJoinUrl": null,
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": false },
+      "calendar": { "mode": "generated" },
+      "sku": "liveclass-huerta-fin-egresos-oct2025-v001",
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": false
+      },
+      "pricing": {
+        "sku": "liveclass-huerta-fin-egresos-oct2025-v001",
+        "amountCents": 49000,
+        "currency": "MXN",
+        "interval": "one_time",
+        "stripePriceId": "price_TEST_EGRESOS",
+        "stripeProductId": "prod_TEST_EGRESOS"
+      }
+    },
+    "sales": {
+      "seo": {
+        "title": "Control de egresos sin complicaciones · 28 oct 2025 (CDMX)",
+        "description": "Gasta con intención y visibilidad. Aprende a controlar egresos sin fricción.",
+        "canonical": "https://lobra.net/webinars/2025-10-28-2000"
+      },
+      "hero": {
+        "eyebrow": "Finanzas para emprendedores",
+        "title": "Ordena tus [[egresos]] y respira",
+        "subtitle": "Define categorías útiles y consolida tu flujo de salida.",
+        "note": "Incluye guía paso a paso.",
+        "ctaText": "Reservar lugar",
+        "heroImageSrc": "/images/webinars/2025-10-28-2000/hero.jpg",
+        "heroImageAlt": "Clase en vivo de egresos"
+      },
+      "clasePractica": {
+        "eyebrow": "Aplicado a tu negocio",
+        "title": "Gasto claro desde el día 1",
+        "intro": "Evita fugas y clasifica bien desde el principio.",
+        "leftTitle": "Problemas típicos",
+        "bullets": [
+          "Categorías redundantes",
+          "No separar fijo vs variable",
+          "Falta de evidencia",
+          "Cierres de mes tardíos"
+        ],
+        "deliverableTitle": "Te llevas",
+        "deliverableBullets": [
+          "Plantilla de egresos optimizada",
+          "Lista de categorías sugeridas",
+          "Checklist semanal",
+          "Sesión en vivo por Zoom"
+        ],
+        "priceLine": "Precio de introducción $490 MXN",
+        "guarantee": "Garantía de satisfacción",
+        "ctaText": "Reservar"
+      }
+    },
+    "prelobby": {
+      "labels": {
+        "tooEarly": "Aún no abrimos la sala.",
+        "early": "Faltan pocos minutos.",
+        "open": "Prelobby disponible.",
+        "live": "Clase en vivo.",
+        "ended": "Sesión finalizada."
+      }
+    }
+  }
+}
