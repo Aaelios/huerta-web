@@ -47,6 +47,14 @@ export function middleware(req: NextRequest) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
+  // --- No-index para entorno Preview ---
+  const host = req.headers.get("host") || "";
+  if (host.includes("preview.lobra.net")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex,nofollow");
+    return res;
+  }
+
   // Respuesta normal para el resto
   return NextResponse.next();
 }
