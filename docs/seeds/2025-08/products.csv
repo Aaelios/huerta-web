@@ -1,7 +1,83 @@
-sku,name,description,status,visibility,product_type,fulfillment_type,is_subscription,stripe_product_id,tax_code,allow_discounts,commissionable,commission_rate_pct,inventory_qty,weight_grams,available_from,available_until,metadata,created_at,updated_at
-course-rh-fin-basico-v001,Curso Finanzas para Emprender v001,"Versión previa. Conserva historial para QA.",sunsetting,public,digital,course,false,,,true,true,0.20,,,,,"{""success_slug"":""curso-finanzas"",""markets"":[""MX"",""US""]}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
-course-rh-fin-basico-v002,Curso Finanzas para Emprender v002,"Curso digital con casos prácticos.",active,public,digital,course,false,,,true,true,0.20,,,,,"{""success_slug"":""curso-finanzas"",""markets"":[""MX"",""US""]}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
-course-rh-produc-esencial-v001,Curso Productividad Esencial,"Método práctico para foco y ejecución.",active,public,digital,course,false,,,true,true,0.15,,,,,"{""success_slug"":""curso-productividad""}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
-template-rh-mkt-propuesta-v001,Plantilla Propuesta Comercial,"Documento editable para propuestas.",active,public,digital,template,false,,,true,true,0.15,,,,,"{""success_slug"":""plantilla-propuesta""}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
-sub-rh-gen-pro-01m-v001,Membresía Pro Mensual,"Acceso a comunidad y recursos por 1 mes.",active,public,subscription_grant,subscription_grant,true,,,false,false,,,,,,"{""success_slug"":""membership-pro"",""tier"":""pro"",""interval"":""month""}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
-liveclass-rh-mkt-estrategia-sep2025-v001,Clase en Vivo · Estrategia de Marketing (Sep 2025),"Sesión en vivo con Q&A.",planned,hidden,digital,live_class,false,,,true,false,,,,2025-09-15T18:00:00Z,,"{""success_slug"":""clase-mkt-sep2025"",""schedule_url"":""<pendiente>"",""zoom_topic"":""Estrategia de Marketing Sep 2025""}",2025-08-26T16:30:00Z,2025-08-26T16:30:00Z
+INSERT INTO public.products (
+  sku, name, description, status, visibility,
+  product_type, fulfillment_type, is_subscription,
+  stripe_product_id, tax_code, allow_discounts, commissionable, commission_rate_pct,
+  inventory_qty, weight_grams, available_from, available_until,
+  metadata, created_at, updated_at
+)
+VALUES
+-- 1) Bundle
+('course-lobra-rhd-fin-finanzas-v001',
+ 'Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada',
+ 'Accede al recorrido completo para dominar tus finanzas: Ingresos, Egresos, Reportes, Planeación y una sesión 1:1.',
+ 'active','public','digital','bundle', false,
+ 'prod_TCofkc2XPAkMbh', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"course-lobra-rhd-fin-finanzas-v001","bundle_id":"finanzas-v1","fulfillment_type":"bundle"}'::jsonb,
+ now(), now()),
+
+-- 2) Liveclasses
+('liveclass-lobra-rhd-fin-egresos-v001',
+ 'Workshop “Controla tus Egresos” · Aprende a reducir fugas sin vivir limitado',
+ 'Identifica gastos innecesarios y diseña un sistema realista para cuidar tu flujo de efectivo.',
+ 'active','public','digital','live_class', false,
+ 'prod_TCoVKJyjCmGw1C', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"liveclass-lobra-rhd-fin-egresos-v001","fulfillment_type":"live_class"}'::jsonb,
+ now(), now()),
+
+('liveclass-lobra-rhd-fin-ingresos-v001',
+ 'Workshop “Domina tus Ingresos” · Estrategias para cobrar mejor y vender con claridad',
+ 'Aprende a estructurar tus ingresos, cobrar con seguridad y crear bases sólidas para tu rentabilidad.',
+ 'active','public','digital','live_class', false,
+ 'prod_TCoI05wHivveWv', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"liveclass-lobra-rhd-fin-ingresos-v001","fulfillment_type":"live_class"}'::jsonb,
+ now(), now()),
+
+('liveclass-lobra-rhd-fin-planeacion-v001',
+ 'Workshop “Planea tu 2025” · Convierte tus finanzas en decisiones claras',
+ 'Construye tu plan financiero anual con objetivos claros, proyecciones y prioridades reales.',
+ 'active','public','digital','live_class', false,
+ 'prod_TCocVuS7NjkQ6p', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"liveclass-lobra-rhd-fin-planeacion-v001","fulfillment_type":"live_class"}'::jsonb,
+ now(), now()),
+
+('liveclass-lobra-rhd-fin-reportes-v001',
+ 'Workshop “Entiende tus Números” · Crea tu tablero de rentabilidad en tiempo real',
+ 'Aprende a leer tus resultados y medir la rentabilidad con reportes simples y accionables.',
+ 'active','public','digital','live_class', false,
+ 'prod_TCoZfevgJpTIoh', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"liveclass-lobra-rhd-fin-reportes-v001","fulfillment_type":"live_class"}'::jsonb,
+ now(), now()),
+
+-- 3) One to One
+('one2one-lobra-rhd-030m-v001',
+ 'Asesoría 1:1 “Sesión de Claridad” · 30 min para resolver tu mayor duda de negocio',
+ 'Una sesión individual en la que resolverás tu duda principal y definirás un plan de acción inmediato.',
+ 'active','public','service','one_to_one', false,
+ 'prod_TCojyw1YiET2QK', NULL, true, false, NULL,
+ NULL, NULL, NULL, NULL,
+ '{"sku":"one2one-lobra-rhd-030m-v001","fulfillment_type":"one_to_one"}'::jsonb,
+ now(), now())
+ON CONFLICT (sku) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  status = EXCLUDED.status,
+  visibility = EXCLUDED.visibility,
+  product_type = EXCLUDED.product_type,
+  fulfillment_type = EXCLUDED.fulfillment_type,
+  is_subscription = EXCLUDED.is_subscription,
+  stripe_product_id = EXCLUDED.stripe_product_id,
+  tax_code = EXCLUDED.tax_code,
+  allow_discounts = EXCLUDED.allow_discounts,
+  commissionable = EXCLUDED.commissionable,
+  commission_rate_pct = EXCLUDED.commission_rate_pct,
+  inventory_qty = EXCLUDED.inventory_qty,
+  weight_grams = EXCLUDED.weight_grams,
+  available_from = EXCLUDED.available_from,
+  available_until = EXCLUDED.available_until,
+  metadata = EXCLUDED.metadata,
+  updated_at = EXCLUDED.updated_at;

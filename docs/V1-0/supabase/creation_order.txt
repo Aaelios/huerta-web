@@ -1,0 +1,33 @@
+4. Public — CITEXT wrappers
+
+
+20. public.regexp_match(citext, text)
+21. public.regexp_matches(citext, text)
+22. public.regexp_replace(citext, text, text, text)
+23. public.replace(citext, text, text)
+24. public.split_part(citext, text, integer)
+25. public.strpos(citext, text)
+26. public.translate(citext, text, text)
+27. public.texticlike(citext, text)
+28. public.texticnlike(citext, text)
+29. public.texticregexeq(citext, text)
+30. public.texticregexne(citext, text)
+
+
+
+5. App — catálogo y parsing Stripe
+
+6. Public — órdenes y pagos
+
+7. Public — entitlements
+
+8. Public — webhooks
+
+9. Public — orquestadores
+
+10. Public — debug y rate limit
+
+51. public.f_debug_payments no existe,   public.f_debug_get_payments_by_order
+52. public.f_debug_entitlements
+
+¿Quieres que también te indique las dependencias críticas (por tabla o función previa) antes de crear cada bloque?

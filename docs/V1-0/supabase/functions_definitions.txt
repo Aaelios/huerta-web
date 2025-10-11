@@ -1,0 +1,309 @@
+-- 4.6.b — Definición completa solo de funciones propias (no agregados)
+SELECT pg_get_functiondef(p.oid) AS function_ddl
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.prokind = 'f'      -- solo funciones
+ORDER BY p.proname;
+
+function_ddl                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+CREATE OR REPLACE FUNCTION public.citext(boolean)
+ RETURNS citext
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$booltext$function$
+
+CREATE OR REPLACE FUNCTION public.citext(inet)
+ RETURNS citext
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$network_show$function$
+
+CREATE OR REPLACE FUNCTION public.citext(character)
+ RETURNS citext
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$rtrim1$function$
+
+CREATE OR REPLACE FUNCTION public.citext_cmp(citext, citext)
+ RETURNS integer
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_cmp$function$
+
+CREATE OR REPLACE FUNCTION public.citext_eq(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_eq$function$
+
+CREATE OR REPLACE FUNCTION public.citext_ge(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_ge$function$
+
+CREATE OR REPLACE FUNCTION public.citext_gt(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_gt$function$
+
+CREATE OR REPLACE FUNCTION public.citext_hash(citext)
+ RETURNS integer
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_hash$function$
+
+CREATE OR REPLACE FUNCTION public.citext_hash_extended(citext, bigint)
+ RETURNS bigint
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_hash_extended$function$
+
+CREATE OR REPLACE FUNCTION public.citext_larger(citext, citext)
+ RETURNS citext
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_larger$function$
+
+CREATE OR REPLACE FUNCTION public.citext_le(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_le$function$
+
+CREATE OR REPLACE FUNCTION public.citext_lt(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_lt$function$
+
+CREATE OR REPLACE FUNCTION public.citext_ne(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_ne$function$
+
+CREATE OR REPLACE FUNCTION public.citext_pattern_cmp(citext, citext)
+ RETURNS integer
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_pattern_cmp$function$
+
+CREATE OR REPLACE FUNCTION public.citext_pattern_ge(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_pattern_ge$function$
+
+CREATE OR REPLACE FUNCTION public.citext_pattern_gt(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_pattern_gt$function$
+
+CREATE OR REPLACE FUNCTION public.citext_pattern_le(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_pattern_le$function$
+
+CREATE OR REPLACE FUNCTION public.citext_pattern_lt(citext, citext)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_pattern_lt$function$
+
+CREATE OR REPLACE FUNCTION public.citext_smaller(citext, citext)
+ RETURNS citext
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/citext', $function$citext_smaller$function$
+
+CREATE OR REPLACE FUNCTION public.citextin(cstring)
+ RETURNS citext
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$textin$function$
+
+CREATE OR REPLACE FUNCTION public.citextout(citext)
+ RETURNS cstring
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$textout$function$
+
+CREATE OR REPLACE FUNCTION public.citextrecv(internal)
+ RETURNS citext
+ LANGUAGE internal
+ STABLE PARALLEL SAFE STRICT
+AS $function$textrecv$function$
+
+CREATE OR REPLACE FUNCTION public.citextsend(citext)
+ RETURNS bytea
+ LANGUAGE internal
+ STABLE PARALLEL SAFE STRICT
+AS $function$textsend$function$
+
+CREATE OR REPLACE FUNCTION public.regexp_match(citext, citext)
+ RETURNS text[]
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_match( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+CREATE OR REPLACE FUNCTION public.regexp_matches(citext, citext, text)
+ RETURNS SETOF text[]
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT ROWS 10
+AS $function$
+    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 |'i' ELSE $3 END );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+CREATE OR REPLACE FUNCTION public.regexp_matches(citext, citext)
+ RETURNS SETOF text[]
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT ROWS 1
+AS $function$
+    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+CREATE OR REPLACE FUNCTION public.regexp_replace(citext, citext, text, text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, CASE WHEN pg_catalog.strpos($4, 'c') = 0 THEN  $4 |'i' ELSE $4 END);
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+CREATE OR REPLACE FUNCTION public.regexp_replace(citext, citext, text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, 'i');
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+CREATE OR REPLACE FUNCTION public.regexp_split_to_array(citext, citext, text)
+ RETURNS text[]
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 |'i' ELSE $3 END );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+CREATE OR REPLACE FUNCTION public.regexp_split_to_array(citext, citext)
+ RETURNS text[]
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+CREATE OR REPLACE FUNCTION public.regexp_split_to_table(citext, citext, text)
+ RETURNS SETOF text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 |'i' ELSE $3 END );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+CREATE OR REPLACE FUNCTION public.regexp_split_to_table(citext, citext)
+ RETURNS SETOF text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+CREATE OR REPLACE FUNCTION public.replace(citext, citext, citext)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\1', 'g'), $3::pg_catalog.text, 'gi' );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+CREATE OR REPLACE FUNCTION public.split_part(citext, citext, integer)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT (pg_catalog.regexp_split_to_array( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\1', 'g'), 'i'))[$3];
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+CREATE OR REPLACE FUNCTION public.strpos(citext, citext)
+ RETURNS integer
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.strpos( pg_catalog.lower( $1::pg_catalog.text ), pg_catalog.lower( $2::pg_catalog.text ) );
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+CREATE OR REPLACE FUNCTION public.texticlike(citext, text)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticlike$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+CREATE OR REPLACE FUNCTION public.texticlike(citext, citext)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticlike$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+CREATE OR REPLACE FUNCTION public.texticnlike(citext, citext)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticnlike$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+CREATE OR REPLACE FUNCTION public.texticnlike(citext, text)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticnlike$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+CREATE OR REPLACE FUNCTION public.texticregexeq(citext, citext)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticregexeq$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+CREATE OR REPLACE FUNCTION public.texticregexeq(citext, text)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticregexeq$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+CREATE OR REPLACE FUNCTION public.texticregexne(citext, text)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticregexne$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+CREATE OR REPLACE FUNCTION public.texticregexne(citext, citext)
+ RETURNS boolean
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$texticregexne$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+CREATE OR REPLACE FUNCTION public.tg_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  new.updated_at := now();
+  return new;
+end$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+CREATE OR REPLACE FUNCTION public.translate(citext, citext, text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT pg_catalog.translate( pg_catalog.translate( $1::pg_catalog.text, pg_catalog.lower($2::pg_catalog.text), $3), pg_catalog.upper($2::pg_catalog.text), $3);
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              

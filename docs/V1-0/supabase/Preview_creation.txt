@@ -1,0 +1,1146 @@
+-- Paso 1 — Crear schema `app` y permisos mínimos
+-- 1.a Crear schema si no existe
+CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION postgres;
+
+-- 1.b Seguridad del schema
+REVOKE ALL ON SCHEMA app FROM PUBLIC;
+GRANT USAGE ON SCHEMA app TO anon, authenticated, service_role;
+
+-- 1.c Permisos por defecto para funciones que crearemos en `app`
+-- Nota: Debe ejecutarlo el dueño del schema (postgres).
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA app
+  GRANT EXECUTE ON FUNCTIONS TO authenticated, service_role;
+-- Anon solo si alguna función será pública:
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA app
+  GRANT EXECUTE ON FUNCTIONS TO anon;
+
+  -- Paso 2 — Tipos enum en schema public
+
+-- 2.a entitlement_event_type
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'entitlement_event_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.entitlement_event_type AS ENUM
+      ('grant','renew','revoke','expire','restore');
+  END IF;
+END$$;
+
+-- 2.b entitlement_source_type
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'entitlement_source_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.entitlement_source_type AS ENUM
+      ('order','subscription','manual','promo','migration');
+  END IF;
+END$$;
+
+-- Paso 3 — Tablas (tanda 1)
+
+-- 3.1 products
+CREATE TABLE IF NOT EXISTS public.products (
+  sku                text PRIMARY KEY,
+  name               text        NOT NULL,
+  description        text,
+  status             text        NOT NULL,
+  visibility         text        NOT NULL DEFAULT 'public',
+  product_type       text        NOT NULL,
+  fulfillment_type   text        NOT NULL,
+  is_subscription    boolean     NOT NULL DEFAULT false,
+  stripe_product_id  text,
+  tax_code           text,
+  allow_discounts    boolean     NOT NULL DEFAULT true,
+  commissionable     boolean     NOT NULL DEFAULT false,
+  commission_rate_pct numeric,
+  inventory_qty      integer,
+  weight_grams       integer,
+  available_from     timestamptz,
+  available_until    timestamptz,
+  metadata           jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz
+);
+
+-- 3.2 exclusivity_sets
+CREATE TABLE IF NOT EXISTS public.exclusivity_sets (
+  set_key    text        PRIMARY KEY,
+  name       text        NOT NULL,
+  rule       text        NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- 3.3 contacts
+CREATE TABLE IF NOT EXISTS public.contacts (
+  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email            citext      NOT NULL,
+  user_id          uuid,
+  status           text        NOT NULL,
+  consent_status   text        NOT NULL,
+  consent_source   text,
+  consent_at       timestamptz,
+  double_opt_in_at timestamptz,
+  segment          text,
+  utm              jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  tech_metrics     jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  metadata         jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz,
+  full_name        text
+);
+
+-- 3.4 order_headers
+CREATE TABLE IF NOT EXISTS public.order_headers (
+  id                       uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                  uuid        NOT NULL,
+  total_cents              integer     NOT NULL,
+  currency                 text        NOT NULL,
+  status                   text        NOT NULL,
+  stripe_session_id        text,
+  stripe_payment_intent_id text,
+  stripe_invoice_id        text,
+  stripe_subscription_id   text,
+  stripe_customer_id       text,
+  metadata                 jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at               timestamptz NOT NULL DEFAULT now(),
+  updated_at               timestamptz,
+  fulfillment_status       text        NOT NULL DEFAULT 'pending',
+  invoice_status           text        NOT NULL DEFAULT 'none',
+  order_number             text        NOT NULL,
+  receipt_sent_at          timestamptz,
+  receipt_provider_id      text
+);
+
+-- 3.5 payments
+CREATE TABLE IF NOT EXISTS public.payments (
+  id                      uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                 uuid        NOT NULL,
+  order_id                uuid,
+  total_cents             integer     NOT NULL,
+  currency                text        NOT NULL,
+  status                  text        NOT NULL,
+  stripe_invoice_id       text,
+  stripe_payment_intent_id text,
+  stripe_subscription_id  text,
+  stripe_customer_id      text,
+  stripe_charge_id        text,
+  period_start            timestamptz,
+  period_end              timestamptz,
+  metadata                jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at              timestamptz NOT NULL DEFAULT now(),
+  updated_at              timestamptz
+);
+
+-- 3.6 order_items
+CREATE TABLE IF NOT EXISTS public.order_items (
+  id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id       uuid        NOT NULL,
+  sku            text        NOT NULL,
+  product_type   text        NOT NULL,
+  amount_cents   integer     NOT NULL,
+  quantity       integer     NOT NULL DEFAULT 1,
+  metadata       jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  updated_at     timestamptz,
+  line_number    integer     NOT NULL
+);
+
+-- 3.7 order_documents
+CREATE TABLE IF NOT EXISTS public.order_documents (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id      uuid        NOT NULL,
+  order_item_id uuid,
+  doc_type      text        NOT NULL,
+  provider      text        NOT NULL DEFAULT 'stripe',
+  external_id   text,
+  url           text,
+  metadata      jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz
+);
+
+-- 3.8 order_events
+CREATE TABLE IF NOT EXISTS public.order_events (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id   uuid        NOT NULL,
+  type       text        NOT NULL,
+  actor      text        NOT NULL DEFAULT 'system',
+  payload    jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- 3.9 webhook_events
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  stripe_event_id text        NOT NULL,
+  type            text        NOT NULL,
+  payload         jsonb       NOT NULL,
+  received_at     timestamptz NOT NULL DEFAULT now(),
+  processed_at    timestamptz,
+  order_id        uuid
+);
+
+-- 3.10 product_prices
+CREATE TABLE IF NOT EXISTS public.product_prices (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  sku             text        NOT NULL,
+  amount_cents    integer     NOT NULL,
+  currency        text        NOT NULL,
+  price_list      text        NOT NULL DEFAULT 'default',
+  "interval"      text        NOT NULL DEFAULT 'one_time',
+  valid_from      timestamptz,
+  valid_until     timestamptz,
+  active          boolean     NOT NULL DEFAULT true,
+  stripe_price_id text,
+  metadata        jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz
+);
+
+-- 3.11 bundles
+CREATE TABLE IF NOT EXISTS public.bundles (
+  bundle_sku text PRIMARY KEY,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- 3.12 bundle_items
+CREATE TABLE IF NOT EXISTS public.bundle_items (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  bundle_sku text        NOT NULL,
+  child_sku  text        NOT NULL,
+  qty        integer     NOT NULL DEFAULT 1,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- 3.13 exclusivity_members
+CREATE TABLE IF NOT EXISTS public.exclusivity_members (
+  set_key    text        NOT NULL,
+  sku        text        NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz,
+  PRIMARY KEY (set_key, sku)
+);
+
+-- 3.14 incompatibilities
+CREATE TABLE IF NOT EXISTS public.incompatibilities (
+  sku_a text NOT NULL,
+  sku_b text NOT NULL,
+  PRIMARY KEY (sku_a, sku_b)
+);
+
+-- 3.15 entitlements
+CREATE TABLE IF NOT EXISTS public.entitlements (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid        NOT NULL,
+  sku             text        NOT NULL,
+  fulfillment_type text       NOT NULL,
+  source_type     public.entitlement_source_type NOT NULL,
+  source_id       text,
+  active          boolean     NOT NULL DEFAULT true,
+  valid_until     timestamptz,
+  revoked_at      timestamptz,
+  metadata        jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz
+);
+
+-- 3.16 entitlement_events
+CREATE TABLE IF NOT EXISTS public.entitlement_events (
+  id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  entitlement_id uuid        NOT NULL,
+  type           public.entitlement_event_type NOT NULL,
+  actor          text        NOT NULL DEFAULT 'system',
+  payload        jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  updated_at     timestamptz NOT NULL DEFAULT now()
+);
+
+-- 3.17 messages
+CREATE TABLE IF NOT EXISTS public.messages (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact_id        uuid        NOT NULL,
+  source            text        NOT NULL,
+  payload           jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  utm               jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  context           jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  processing_status text        NOT NULL DEFAULT 'received',
+  metadata          jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz
+);
+
+-- 3.18 subscription_events
+CREATE TABLE IF NOT EXISTS public.subscription_events (
+  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact_id       uuid        NOT NULL,
+  event_type       text        NOT NULL,
+  source           text        NOT NULL,
+  reason           text,
+  campaign_id      text,
+  idempotency_key  text,
+  metadata         jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  occurred_at      timestamptz NOT NULL DEFAULT now(),
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz
+);
+
+-- 3.19 thankyou_copy
+CREATE TABLE IF NOT EXISTS public.thankyou_copy (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  sku        text        NOT NULL,
+  locale     text        NOT NULL,
+  country    text,
+  title      text        NOT NULL,
+  body_md    text        NOT NULL,
+  cta_label  text        NOT NULL,
+  cta_slug   text        NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- 3.20 rate_limits
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+  scope             text        NOT NULL,
+  type              text        NOT NULL,
+  bucket            text        NOT NULL,
+  key_hash          text        NOT NULL,
+  window_started_at timestamptz NOT NULL,
+  count             integer     NOT NULL DEFAULT 0,
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (scope, type, bucket, key_hash, window_started_at)
+);
+
+-- 4.1 — FOREIGN KEYS
+
+ALTER TABLE public.bundle_items
+  ADD CONSTRAINT bundle_items_bundle_sku_fkey
+  FOREIGN KEY (bundle_sku) REFERENCES public.bundles(bundle_sku)
+  ON UPDATE NO ACTION ON DELETE CASCADE;
+
+ALTER TABLE public.bundle_items
+  ADD CONSTRAINT bundle_items_child_sku_fkey
+  FOREIGN KEY (child_sku) REFERENCES public.products(sku)
+  ON UPDATE NO ACTION ON DELETE CASCADE;
+
+ALTER TABLE public.bundles
+  ADD CONSTRAINT bundles_bundle_sku_fkey
+  FOREIGN KEY (bundle_sku) REFERENCES public.products(sku)
+  ON UPDATE NO ACTION ON DELETE CASCADE;
+
+ALTER TABLE public.entitlement_events
+  ADD CONSTRAINT entitlement_events_entitlement_id_fkey
+  FOREIGN KEY (entitlement_id) REFERENCES public.entitlements(id)
+  ON UPDATE NO ACTION ON DELETE CASCADE;
+
+ALTER TABLE public.entitlements
+  ADD CONSTRAINT entitlements_sku_fkey
+  FOREIGN KEY (sku) REFERENCES public.products(sku)
+  ON UPDATE NO ACTION ON DELETE RESTRICT;
+
+ALTER TABLE public.exclusivity_members
+  ADD CONSTRAINT exclusivity_members_set_key_fkey
+  FOREIGN KEY (set_key) REFERENCES public.exclusivity_sets(set_key)
+  ON UPDATE NO ACTION ON DELETE CASCADE;
+
+ALTER TABLE public.exclusivity_members
+  ADD CONSTRAINT exclusivity_members_sku_fkey
+  FOREIGN KEY (sku) REFERENCES public.products(sku);
+
+ALTER TABLE public.incompatibilities
+  ADD CONSTRAINT incompatibilities_sku_a_fkey
+  FOREIGN KEY (sku_a) REFERENCES public.products(sku);
+
+ALTER TABLE public.incompatibilities
+  ADD CONSTRAINT incompatibilities_sku_b_fkey
+  FOREIGN KEY (sku_b) REFERENCES public.products(sku);
+
+ALTER TABLE public.messages
+  ADD CONSTRAINT fk_messages__contact
+  FOREIGN KEY (contact_id) REFERENCES public.contacts(id)
+  ON DELETE RESTRICT;
+
+ALTER TABLE public.order_documents
+  ADD CONSTRAINT order_documents_order_id_fkey
+  FOREIGN KEY (order_id) REFERENCES public.order_headers(id)
+  ON DELETE CASCADE;
+
+ALTER TABLE public.order_documents
+  ADD CONSTRAINT order_documents_order_item_id_fkey
+  FOREIGN KEY (order_item_id) REFERENCES public.order_items(id)
+  ON DELETE SET NULL;
+
+ALTER TABLE public.order_events
+  ADD CONSTRAINT order_events_order_id_fkey
+  FOREIGN KEY (order_id) REFERENCES public.order_headers(id)
+  ON DELETE CASCADE;
+
+ALTER TABLE public.order_items
+  ADD CONSTRAINT order_items_order_id_fkey
+  FOREIGN KEY (order_id) REFERENCES public.order_headers(id)
+  ON DELETE CASCADE;
+
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT product_prices_sku_fkey
+  FOREIGN KEY (sku) REFERENCES public.products(sku)
+  ON DELETE CASCADE;
+
+ALTER TABLE public.subscription_events
+  ADD CONSTRAINT fk_subscription_events__contact
+  FOREIGN KEY (contact_id) REFERENCES public.contacts(id)
+  ON DELETE RESTRICT;
+
+ALTER TABLE public.thankyou_copy
+  ADD CONSTRAINT thankyou_copy_sku_fkey
+  FOREIGN KEY (sku) REFERENCES public.products(sku)
+  ON UPDATE CASCADE ON DELETE CASCADE;
+
+  -- 4.2 — CHECK CONSTRAINTS
+
+-- bundle_items
+ALTER TABLE public.bundle_items
+  ADD CONSTRAINT bundle_items_qty_check CHECK (qty > 0);
+ALTER TABLE public.bundle_items
+  ADD CONSTRAINT ck_bundle_items_no_self CHECK (child_sku <> bundle_sku);
+
+-- contacts
+ALTER TABLE public.contacts
+  ADD CONSTRAINT ck_contacts__consent_source
+  CHECK (consent_source IS NULL OR consent_source IN ('web_form','checkout','import','api'));
+ALTER TABLE public.contacts
+  ADD CONSTRAINT ck_contacts__consent_status
+  CHECK (consent_status IN ('none','single_opt_in','double_opt_in'));
+ALTER TABLE public.contacts
+  ADD CONSTRAINT ck_contacts__status
+  CHECK (status IN ('active','unsubscribed','bounced','blocked'));
+
+-- entitlement_events (redundante con el ENUM, se replica)
+ALTER TABLE public.entitlement_events
+  ADD CONSTRAINT ck_entitlement_events_type
+  CHECK (type IN ('grant','renew','revoke','expire','restore'));
+
+-- entitlements
+ALTER TABLE public.entitlements
+  ADD CONSTRAINT entitlements_fulfillment_type_check
+  CHECK (fulfillment_type IN ('course','template','live_class','one_to_one','subscription_grant'));
+
+-- exclusivity_sets
+ALTER TABLE public.exclusivity_sets
+  ADD CONSTRAINT ck_exclusivity_sets_set_key_format
+  CHECK (char_length(set_key) <= 60 AND set_key ~ '^[a-z0-9_-]+$');
+ALTER TABLE public.exclusivity_sets
+  ADD CONSTRAINT exclusivity_sets_rule_check
+  CHECK (rule IN ('mutually_exclusive','single_selection'));
+
+-- incompatibilities
+ALTER TABLE public.incompatibilities
+  ADD CONSTRAINT ck_incompat_order CHECK (sku_a < sku_b);
+
+-- messages
+ALTER TABLE public.messages
+  ADD CONSTRAINT ck_messages__processing_status
+  CHECK (processing_status IN ('received','queued','sent_to_crm','discarded'));
+ALTER TABLE public.messages
+  ADD CONSTRAINT ck_messages__source
+  CHECK (source IN ('web_form','checkout','import','api'));
+
+-- order_documents
+ALTER TABLE public.order_documents
+  ADD CONSTRAINT order_documents_doc_type_check
+  CHECK (doc_type IN ('invoice','ticket','receipt','credit_note'));
+
+-- order_events
+ALTER TABLE public.order_events
+  ADD CONSTRAINT ck_order_events_type
+  CHECK (type IN ('created','paid','fulfilled','scheduled','refunded','canceled'));
+
+-- order_headers
+ALTER TABLE public.order_headers
+  ADD CONSTRAINT ck_order_headers_order_number_format
+  CHECK (order_number ~ '^ORD-[0-9]{6}$');
+ALTER TABLE public.order_headers
+  ADD CONSTRAINT order_headers_fulfillment_status_check
+  CHECK (fulfillment_status IN ('pending','fulfilled','revoked'));
+ALTER TABLE public.order_headers
+  ADD CONSTRAINT order_headers_invoice_status_check
+  CHECK (invoice_status IN ('none','invoiced','credit_issued'));
+ALTER TABLE public.order_headers
+  ADD CONSTRAINT order_headers_status_check
+  CHECK (status IN ('paid','refunded','canceled','unpaid'));
+
+-- order_items
+ALTER TABLE public.order_items
+  ADD CONSTRAINT ck_order_items_line_number_pos CHECK (line_number > 0);
+ALTER TABLE public.order_items
+  ADD CONSTRAINT order_items_product_type_check
+  CHECK (product_type IN ('course','template','live_class','one_to_one','subscription_grant','bundle'));
+ALTER TABLE public.order_items
+  ADD CONSTRAINT order_items_quantity_check CHECK (quantity > 0);
+
+-- payments
+ALTER TABLE public.payments
+  ADD CONSTRAINT payments_currency_check CHECK (currency ~ '^[a-z]{3}$');
+ALTER TABLE public.payments
+  ADD CONSTRAINT payments_status_check
+  CHECK (status IN ('paid','refunded','failed','canceled'));
+ALTER TABLE public.payments
+  ADD CONSTRAINT payments_total_cents_check CHECK (total_cents >= 0);
+
+-- product_prices
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT ck_product_prices_amount_positive CHECK (amount_cents > 0);
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT ck_product_prices_currency CHECK (currency IN ('MXN','USD'));
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT ck_product_prices_list CHECK (price_list IN ('default','launch'));
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT ck_product_prices_valid_window
+  CHECK (valid_until IS NULL OR valid_from IS NULL OR valid_until > valid_from);
+ALTER TABLE public.product_prices
+  ADD CONSTRAINT product_prices_interval_check
+  CHECK ("interval" IN ('one_time','month','year'));
+
+-- products
+ALTER TABLE public.products
+  ADD CONSTRAINT ck_products_sku_format CHECK (sku ~ '^[a-z0-9-]+-v[0-9]{3}$');
+ALTER TABLE public.products
+  ADD CONSTRAINT ck_products_visibility CHECK (visibility IN ('public','private','hidden'));
+ALTER TABLE public.products
+  ADD CONSTRAINT products_fulfillment_type_check
+  CHECK (fulfillment_type IN ('course','template','live_class','one_to_one','subscription_grant','bundle'));
+ALTER TABLE public.products
+  ADD CONSTRAINT products_product_type_check
+  CHECK (product_type IN ('digital','physical','service','subscription_grant'));
+ALTER TABLE public.products
+  ADD CONSTRAINT products_status_check
+  CHECK (status IN ('planned','active','sunsetting','discontinued'));
+
+-- rate_limits
+ALTER TABLE public.rate_limits
+  ADD CONSTRAINT rate_limits_bucket_check CHECK (bucket IN ('burst','sustained'));
+
+-- thankyou_copy
+ALTER TABLE public.thankyou_copy
+  ADD CONSTRAINT thankyou_copy_country_chk
+  CHECK (country IS NULL OR (char_length(country) = 2 AND country = upper(country)));
+ALTER TABLE public.thankyou_copy
+  ADD CONSTRAINT thankyou_copy_cta_slug_no_spaces CHECK (cta_slug !~ '\s');
+ALTER TABLE public.thankyou_copy
+  ADD CONSTRAINT thankyou_copy_cta_slug_no_url CHECK (cta_slug !~* 'https?://');
+
+  -- Índices no implícitos (incluye únicos y parciales)
+
+-- bundle_items
+CREATE UNIQUE INDEX IF NOT EXISTS ux_bundle_items_pair ON public.bundle_items (bundle_sku, child_sku);
+
+-- contacts
+CREATE INDEX IF NOT EXISTS idx_contacts__consent_status ON public.contacts (consent_status);
+CREATE INDEX IF NOT EXISTS idx_contacts__created_at ON public.contacts (created_at);
+CREATE INDEX IF NOT EXISTS idx_contacts__status ON public.contacts (status);
+CREATE INDEX IF NOT EXISTS idx_contacts__user_id ON public.contacts (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_contacts__email ON public.contacts (email);
+
+-- entitlement_events
+CREATE INDEX IF NOT EXISTS idx_entitlement_events_created_at ON public.entitlement_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_entitlement_events_entitlement_id ON public.entitlement_events (entitlement_id);
+
+-- entitlements
+CREATE INDEX IF NOT EXISTS idx_entitlements_active ON public.entitlements (active);
+CREATE INDEX IF NOT EXISTS idx_entitlements_sku ON public.entitlements (sku);
+CREATE INDEX IF NOT EXISTS idx_entitlements_sku_active ON public.entitlements (sku, active);
+CREATE INDEX IF NOT EXISTS idx_entitlements_user_active ON public.entitlements (user_id, active);
+CREATE INDEX IF NOT EXISTS idx_entitlements_user_id ON public.entitlements (user_id);
+CREATE INDEX IF NOT EXISTS idx_entitlements_valid_until ON public.entitlements (valid_until);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_entitlements_active_one ON public.entitlements (user_id, sku) WHERE (active IS TRUE);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_entitlements_idem ON public.entitlements (user_id, sku, source_type, source_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_entitlements_user_sku_active ON public.entitlements (user_id, sku) WHERE (active = true);
+
+-- messages
+CREATE INDEX IF NOT EXISTS idx_messages__contact_id ON public.messages (contact_id);
+CREATE INDEX IF NOT EXISTS idx_messages__created_at ON public.messages (created_at);
+CREATE INDEX IF NOT EXISTS idx_messages__processing_status ON public.messages (processing_status);
+CREATE INDEX IF NOT EXISTS idx_messages__source ON public.messages (source);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_messages_contact_request
+  ON public.messages (contact_id, (metadata->>'request_id'))
+  WHERE (metadata->>'request_id') IS NOT NULL;
+
+-- order_documents
+CREATE INDEX IF NOT EXISTS idx_order_documents_order_id ON public.order_documents (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_documents_type ON public.order_documents (doc_type);
+
+-- order_events
+CREATE INDEX IF NOT EXISTS idx_order_events_order_id ON public.order_events (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_events_type ON public.order_events (type);
+
+-- order_headers
+CREATE INDEX IF NOT EXISTS idx_order_headers_created_at ON public.order_headers (created_at);
+CREATE INDEX IF NOT EXISTS idx_order_headers_fulfillment_status ON public.order_headers (fulfillment_status);
+CREATE INDEX IF NOT EXISTS idx_order_headers_invoice_status ON public.order_headers (invoice_status);
+CREATE INDEX IF NOT EXISTS idx_order_headers_status ON public.order_headers (status);
+CREATE INDEX IF NOT EXISTS idx_order_headers_user_created_at ON public.order_headers (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_order_headers_user_id ON public.order_headers (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS order_headers_stripe_session_id_key ON public.order_headers (stripe_session_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_order_headers_invoice ON public.order_headers (stripe_invoice_id) WHERE stripe_invoice_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_order_headers_order_number ON public.order_headers (order_number);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_order_headers_payment_intent ON public.order_headers (stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_order_headers_stripe_subscription_id ON public.order_headers (stripe_subscription_id) WHERE stripe_subscription_id IS NOT NULL;
+
+-- order_items
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_sku ON public.order_items (sku);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_order_items_order_line ON public.order_items (order_id, line_number);
+
+-- payments
+CREATE INDEX IF NOT EXISTS idx_payments_created_at ON public.payments (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON public.payments (order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_spi ON public.payments (stripe_payment_intent_id);
+CREATE INDEX IF NOT EXISTS idx_payments_subscription_id ON public.payments (stripe_subscription_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON public.payments (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_invoice_id ON public.payments (stripe_invoice_id) WHERE stripe_invoice_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_payment_intent_id ON public.payments (stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;
+
+-- product_prices
+CREATE INDEX IF NOT EXISTS idx_pp_rank_helper ON public.product_prices (sku, currency, "interval", price_list, created_at DESC) WHERE active = true;
+CREATE INDEX IF NOT EXISTS idx_product_prices_active ON public.product_prices (active) WHERE active = true;
+CREATE INDEX IF NOT EXISTS idx_product_prices_currency ON public.product_prices (currency);
+CREATE INDEX IF NOT EXISTS idx_product_prices_list ON public.product_prices (price_list);
+CREATE INDEX IF NOT EXISTS idx_product_prices_sku ON public.product_prices (sku);
+CREATE INDEX IF NOT EXISTS idx_product_prices_sku_active ON public.product_prices (sku) WHERE active = true;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_product_prices_sku_cur_list_interval ON public.product_prices (sku, currency, price_list, "interval");
+CREATE UNIQUE INDEX IF NOT EXISTS ux_product_prices_stripe ON public.product_prices (stripe_price_id) WHERE stripe_price_id IS NOT NULL;
+
+-- products
+CREATE INDEX IF NOT EXISTS idx_products_status ON public.products (status);
+CREATE INDEX IF NOT EXISTS idx_products_visibility ON public.products (visibility);
+
+-- rate_limits
+CREATE INDEX IF NOT EXISTS rate_limits_updated_at_idx ON public.rate_limits (updated_at);
+
+-- subscription_events
+CREATE INDEX IF NOT EXISTS idx_subscription_events__contact_id ON public.subscription_events (contact_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_events__event_type ON public.subscription_events (event_type);
+CREATE INDEX IF NOT EXISTS idx_subscription_events__occurred_at ON public.subscription_events (occurred_at);
+CREATE UNIQUE INDEX IF NOT EXISTS subscription_events_idempotency_key_key ON public.subscription_events (idempotency_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_subscription_events_idem ON public.subscription_events (idempotency_key) WHERE idempotency_key IS NOT NULL;
+
+-- thankyou_copy
+CREATE INDEX IF NOT EXISTS ix_thankyou_copy_locale ON public.thankyou_copy (locale);
+CREATE INDEX IF NOT EXISTS ix_thankyou_copy_sku ON public.thankyou_copy (sku);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_thankyou_copy_sku_locale_country
+  ON public.thankyou_copy (sku, locale, COALESCE(country, '*'::text));
+
+-- webhook_events
+CREATE INDEX IF NOT EXISTS idx_webhook_events_order_id ON public.webhook_events (order_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_received_at ON public.webhook_events (received_at);
+CREATE UNIQUE INDEX IF NOT EXISTS webhook_events_stripe_event_id_key ON public.webhook_events (stripe_event_id);
+
+aqui se crean las funciones, ver archivo function_creation.txt
+
+-- 6.3 — Endurecer SECURITY DEFINER: fijar search_path seguro
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT n.nspname AS schema, p.proname, pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public','app') AND p.prosecdef
+  LOOP
+    EXECUTE format('ALTER FUNCTION %I.%I(%s) SET search_path = %I, pg_temp',
+                   r.schema, r.proname, r.args, r.schema);
+  END LOOP;
+END$$;
+
+-- Paso 7 — Triggers (drop + create)
+
+-- bundle_items
+DROP TRIGGER IF EXISTS trg_bundle_items_updated_at ON public.bundle_items;
+CREATE TRIGGER trg_bundle_items_updated_at
+BEFORE UPDATE ON public.bundle_items
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- bundles
+DROP TRIGGER IF EXISTS trg_bundles_updated_at ON public.bundles;
+CREATE TRIGGER trg_bundles_updated_at
+BEFORE UPDATE ON public.bundles
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- contacts
+DROP TRIGGER IF EXISTS trg_contacts__touch_updated_at ON public.contacts;
+CREATE TRIGGER trg_contacts__touch_updated_at
+BEFORE UPDATE ON public.contacts
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_updated_at_only_update();
+
+DROP TRIGGER IF EXISTS trg_contacts__updated_at ON public.contacts;
+CREATE TRIGGER trg_contacts__updated_at
+BEFORE UPDATE ON public.contacts
+FOR EACH ROW EXECUTE FUNCTION app.f_audit_updated_at_only_update_v1();
+
+-- entitlement_events
+DROP TRIGGER IF EXISTS trg_entitlement_events_updated_at ON public.entitlement_events;
+CREATE TRIGGER trg_entitlement_events_updated_at
+BEFORE UPDATE ON public.entitlement_events
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- entitlements
+DROP TRIGGER IF EXISTS trg_entitlements_updated_at ON public.entitlements;
+CREATE TRIGGER trg_entitlements_updated_at
+BEFORE UPDATE ON public.entitlements
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- exclusivity_members
+DROP TRIGGER IF EXISTS trg_exclusivity_members_updated_at ON public.exclusivity_members;
+CREATE TRIGGER trg_exclusivity_members_updated_at
+BEFORE UPDATE ON public.exclusivity_members
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- exclusivity_sets
+DROP TRIGGER IF EXISTS trg_exclusivity_sets_updated_at ON public.exclusivity_sets;
+CREATE TRIGGER trg_exclusivity_sets_updated_at
+BEFORE UPDATE ON public.exclusivity_sets
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- messages
+DROP TRIGGER IF EXISTS trg_messages__touch_updated_at ON public.messages;
+CREATE TRIGGER trg_messages__touch_updated_at
+BEFORE UPDATE ON public.messages
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_updated_at_only_update();
+
+DROP TRIGGER IF EXISTS trg_messages__updated_at ON public.messages;
+CREATE TRIGGER trg_messages__updated_at
+BEFORE UPDATE ON public.messages
+FOR EACH ROW EXECUTE FUNCTION app.f_audit_updated_at_only_update_v1();
+
+-- order_documents
+DROP TRIGGER IF EXISTS trg_order_documents_updated_at ON public.order_documents;
+CREATE TRIGGER trg_order_documents_updated_at
+BEFORE UPDATE ON public.order_documents
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- order_events
+DROP TRIGGER IF EXISTS trg_order_events_updated_at ON public.order_events;
+CREATE TRIGGER trg_order_events_updated_at
+BEFORE UPDATE ON public.order_events
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- order_headers
+DROP TRIGGER IF EXISTS trg_order_headers_updated_at ON public.order_headers;
+CREATE TRIGGER trg_order_headers_updated_at
+BEFORE UPDATE ON public.order_headers
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- order_items
+DROP TRIGGER IF EXISTS trg_order_items_updated_at ON public.order_items;
+CREATE TRIGGER trg_order_items_updated_at
+BEFORE UPDATE ON public.order_items
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- product_prices
+DROP TRIGGER IF EXISTS trg_product_prices_updated_at ON public.product_prices;
+CREATE TRIGGER trg_product_prices_updated_at
+BEFORE UPDATE ON public.product_prices
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- products
+DROP TRIGGER IF EXISTS trg_products_updated_at ON public.products;
+CREATE TRIGGER trg_products_updated_at
+BEFORE UPDATE ON public.products
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_set_updated_at();
+
+-- subscription_events
+DROP TRIGGER IF EXISTS trg_subscription_events__block_ud ON public.subscription_events;
+CREATE TRIGGER trg_subscription_events__block_ud
+BEFORE DELETE OR UPDATE ON public.subscription_events
+FOR EACH ROW EXECUTE FUNCTION public.f_block_update_delete();
+
+DROP TRIGGER IF EXISTS trg_subscription_events__touch_updated_at ON public.subscription_events;
+CREATE TRIGGER trg_subscription_events__touch_updated_at
+BEFORE UPDATE ON public.subscription_events
+FOR EACH ROW EXECUTE FUNCTION public.f_audit_updated_at_only_update();
+
+DROP TRIGGER IF EXISTS trg_subscription_events__updated_at ON public.subscription_events;
+CREATE TRIGGER trg_subscription_events__updated_at
+BEFORE UPDATE ON public.subscription_events
+FOR EACH ROW EXECUTE FUNCTION app.f_audit_updated_at_only_update_v1();
+
+-- thankyou_copy
+DROP TRIGGER IF EXISTS trg_thankyou_copy_updated_at ON public.thankyou_copy;
+CREATE TRIGGER trg_thankyou_copy_updated_at
+BEFORE UPDATE ON public.thankyou_copy
+FOR EACH ROW EXECUTE FUNCTION public.tg_set_updated_at();
+
+-- Paso 8 — Vistas (CREATE OR REPLACE)
+
+-- 8.1 v_entitlements_active
+CREATE OR REPLACE VIEW public.v_entitlements_active AS
+SELECT
+  e.id,
+  e.user_id,
+  e.sku,
+  e.fulfillment_type,
+  e.source_type,
+  e.source_id,
+  e.active,
+  e.valid_until,
+  e.revoked_at,
+  e.metadata,
+  e.created_at,
+  e.updated_at
+FROM public.entitlements e
+WHERE e.active IS TRUE
+  AND e.revoked_at IS NULL
+  AND (e.valid_until IS NULL OR e.valid_until > now());
+
+-- 8.2 v_orders_with_payments
+CREATE OR REPLACE VIEW public.v_orders_with_payments AS
+WITH agg AS (
+  SELECT p.order_id,
+         count(*)::integer AS payments_count,
+         COALESCE(sum(CASE WHEN p.status = 'paid' THEN p.total_cents ELSE 0 END), 0)::integer AS total_paid_cents
+  FROM public.payments p
+  GROUP BY p.order_id
+),
+last_paid AS (
+  SELECT DISTINCT ON (p.order_id)
+         p.order_id,
+         p.id AS last_payment_id,
+         p.created_at AS last_paid_at
+  FROM public.payments p
+  WHERE p.status = 'paid'
+  ORDER BY p.order_id, p.created_at DESC
+)
+SELECT
+  oh.id AS order_id,
+  oh.user_id,
+  oh.order_number,
+  oh.total_cents AS order_total_cents,
+  lower(oh.currency) AS currency,
+  oh.status AS order_status,
+  oh.fulfillment_status,
+  oh.invoice_status,
+  oh.created_at AS order_created_at,
+  oh.stripe_session_id,
+  oh.stripe_payment_intent_id,
+  oh.stripe_invoice_id,
+  oh.stripe_subscription_id,
+  oh.stripe_customer_id,
+  COALESCE(agg.payments_count, 0) AS payments_count,
+  COALESCE(agg.total_paid_cents, 0) AS total_paid_cents,
+  COALESCE(agg.total_paid_cents, 0) >= oh.total_cents AS is_paid,
+  oh.total_cents - COALESCE(agg.total_paid_cents, 0) AS balance_cents,
+  last_paid.last_paid_at,
+  last_paid.last_payment_id
+FROM public.order_headers oh
+LEFT JOIN agg ON agg.order_id = oh.id
+LEFT JOIN last_paid ON last_paid.order_id = oh.id;
+
+-- 8.3 v_prices_vigente
+CREATE OR REPLACE VIEW public.v_prices_vigente AS
+SELECT
+  pp.id,
+  pp.sku,
+  pp.amount_cents,
+  pp.currency,
+  pp.price_list,
+  pp."interval",
+  pp.valid_from,
+  pp.valid_until,
+  pp.active,
+  pp.stripe_price_id,
+  pp.metadata,
+  pp.created_at,
+  pp.updated_at
+FROM public.product_prices pp
+WHERE pp.active = true
+  AND (pp.valid_from IS NULL OR pp.valid_from <= now())
+  AND (pp.valid_until IS NULL OR now() < pp.valid_until);
+
+-- 8.4 v_products_public  (depende de v_prices_vigente)
+CREATE OR REPLACE VIEW public.v_products_public AS
+WITH ranked AS (
+  SELECT
+    vpa.id,
+    vpa.sku,
+    vpa.currency,
+    vpa.price_list,
+    vpa."interval",
+    vpa.amount_cents,
+    vpa.valid_from,
+    vpa.valid_until,
+    vpa.active,
+    vpa.stripe_price_id,
+    vpa.metadata,
+    vpa.created_at,
+    vpa.updated_at,
+    row_number() OVER (
+      PARTITION BY vpa.sku, vpa.currency, vpa."interval"
+      ORDER BY
+        CASE vpa.price_list WHEN 'launch' THEN 1 WHEN 'default' THEN 2 ELSE 99 END,
+        vpa.created_at DESC
+    ) AS rn
+  FROM public.v_prices_vigente vpa
+),
+best_mxn AS (
+  SELECT r.sku,
+         r.amount_cents AS price_mxn_cents,
+         r."interval"   AS price_mxn_interval,
+         r.stripe_price_id AS price_mxn_stripe_price_id
+  FROM ranked r
+  WHERE r.currency = 'MXN' AND r.rn = 1
+),
+best_usd AS (
+  SELECT r.sku,
+         r.amount_cents AS price_usd_cents,
+         r."interval"   AS price_usd_interval,
+         r.stripe_price_id AS price_usd_stripe_price_id
+  FROM ranked r
+  WHERE r.currency = 'USD' AND r.rn = 1
+)
+SELECT
+  p.sku,
+  p.product_type,
+  p.name,
+  p.description,
+  p.status,
+  p.visibility,
+  p.metadata,
+  p.created_at,
+  p.updated_at,
+  mx.price_mxn_cents,
+  mx.price_mxn_interval,
+  mx.price_mxn_stripe_price_id,
+  us.price_usd_cents,
+  us.price_usd_interval,
+  us.price_usd_stripe_price_id
+FROM public.products p
+LEFT JOIN best_mxn mx ON mx.sku = p.sku
+LEFT JOIN best_usd us ON us.sku = p.sku
+WHERE p.status = 'active' AND p.visibility = 'public';
+
+-- Habilitar RLS en todas las tablas (como PROD)
+ALTER TABLE public.bundle_items        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bundles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contacts            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.entitlement_events  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.entitlements        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exclusivity_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exclusivity_sets    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.incompatibilities   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_documents     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_events        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_headers       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_prices      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rate_limits         ENABLE ROW LEVEL SECURITY;  -- sin policies en PROD
+ALTER TABLE public.subscription_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.thankyou_copy       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.webhook_events      ENABLE ROW LEVEL SECURITY;
+
+-- Limpieza defensiva
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT schemaname, tablename, policyname
+    FROM pg_policies
+    WHERE schemaname='public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', r.policyname, r.tablename);
+  END LOOP;
+END$$;
+
+-- bundle_items
+CREATE POLICY bundle_items_all_service_role ON public.bundle_items
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY bundle_items_select_public ON public.bundle_items
+  FOR SELECT TO anon, authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.bundles b
+    JOIN public.products p ON p.sku = b.bundle_sku
+    WHERE b.bundle_sku = bundle_items.bundle_sku
+      AND p.visibility = 'public' AND p.status = 'active'
+  ));
+
+-- bundles
+CREATE POLICY bundles_all_service_role ON public.bundles
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY bundles_select_public ON public.bundles
+  FOR SELECT TO anon, authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.products p
+    WHERE p.sku = bundles.bundle_sku
+      AND p.visibility = 'public' AND p.status = 'active'
+  ));
+
+-- contacts
+CREATE POLICY contacts_all_service_role ON public.contacts
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- entitlement_events
+CREATE POLICY entitlement_events_select_owner ON public.entitlement_events
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.entitlements e
+    WHERE e.id = entitlement_events.entitlement_id
+      AND e.user_id = public.current_user_id()
+  ));
+
+-- entitlements
+CREATE POLICY entitlements_select_owner ON public.entitlements
+  FOR SELECT TO authenticated USING (user_id = public.current_user_id());
+CREATE POLICY entitlements_write_service_role ON public.entitlements
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- exclusivity_members
+CREATE POLICY exclusivity_members_all_service_role ON public.exclusivity_members
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY exclusivity_members_none_auth ON public.exclusivity_members
+  FOR SELECT TO authenticated USING (false);
+
+-- exclusivity_sets
+CREATE POLICY exclusivity_sets_all_service_role ON public.exclusivity_sets
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY exclusivity_sets_none_auth ON public.exclusivity_sets
+  FOR SELECT TO authenticated USING (false);
+
+-- incompatibilities
+CREATE POLICY incompatibilities_all_service_role ON public.incompatibilities
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY incompatibilities_none_auth ON public.incompatibilities
+  FOR SELECT TO authenticated USING (false);
+
+-- messages
+CREATE POLICY messages_all_service_role ON public.messages
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- order_documents
+CREATE POLICY order_documents_select_owner ON public.order_documents
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.order_headers h
+    WHERE h.id = order_documents.order_id
+      AND h.user_id = public.current_user_id()
+  ));
+CREATE POLICY order_documents_write_service_role ON public.order_documents
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- order_events
+CREATE POLICY order_events_select_owner ON public.order_events
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.order_headers h
+    WHERE h.id = order_events.order_id
+      AND h.user_id = public.current_user_id()
+  ));
+CREATE POLICY order_events_write_service_role ON public.order_events
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- order_headers
+CREATE POLICY order_headers_select_owner ON public.order_headers
+  FOR SELECT TO authenticated USING (user_id = public.current_user_id());
+CREATE POLICY order_headers_write_service_role ON public.order_headers
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- order_items
+CREATE POLICY order_items_select_owner ON public.order_items
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.order_headers h
+    WHERE h.id = order_items.order_id
+      AND h.user_id = public.current_user_id()
+  ));
+CREATE POLICY order_items_write_service_role ON public.order_items
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- payments
+CREATE POLICY payments_select_owner ON public.payments
+  FOR SELECT TO authenticated USING (user_id = public.current_user_id());
+CREATE POLICY payments_write_service_role ON public.payments
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- product_prices
+CREATE POLICY product_prices_all_service_role ON public.product_prices
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY product_prices_select_public_active ON public.product_prices
+  FOR SELECT TO anon, authenticated USING (active = true);
+
+-- products
+CREATE POLICY products_all_service_role ON public.products
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY products_select_public ON public.products
+  FOR SELECT TO anon, authenticated USING (true);
+
+-- subscription_events
+CREATE POLICY subscription_events_insert_sr ON public.subscription_events
+  FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY subscription_events_select_sr ON public.subscription_events
+  FOR SELECT TO service_role USING (true);
+
+-- thankyou_copy  (RLS ON + lectura pública)
+CREATE POLICY thankyou_copy_select_public ON public.thankyou_copy
+  FOR SELECT USING (true);
+
+-- webhook_events
+CREATE POLICY webhook_events_all_service_role ON public.webhook_events
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY webhook_events_select_none ON public.webhook_events
+  FOR SELECT TO anon, authenticated USING (false);
+
+-- Paso 11 — GRANTs y defaults
+
+-- 11.1 Esquema
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- 11.2 Tablas y vistas existentes (RLS vigila acceso real)
+GRANT SELECT                ON ALL TABLES IN SCHEMA public TO anon;
+GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
+
+-- 11.3 Funciones existentes
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app    TO anon, authenticated, service_role;
+
+-- 11.4 Defaults futuros (objetos creados por postgres)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO anon;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role;
+
+-- (No usamos secuencias, pero no estorba dejarlo)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO authenticated, service_role;
+
+
+-- Ajuste de seguridad en vistas: evaluar con privilegios del invocador
+ALTER VIEW public.v_entitlements_active   SET (security_invoker = true);
+ALTER VIEW public.v_prices_vigente        SET (security_invoker = true);
+ALTER VIEW public.v_products_public       SET (security_invoker = true);
+ALTER VIEW public.v_orders_with_payments  SET (security_invoker = true);
+
+-- Mover citext fuera de public y dar permisos
+CREATE SCHEMA IF NOT EXISTS extensions;
+ALTER EXTENSION citext SET SCHEMA extensions;
+
+GRANT USAGE ON SCHEMA extensions TO anon, authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA extensions TO anon, authenticated, service_role;
+
+-- Verificación
+SELECT e.extname, n.nspname AS schema
+FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace
+WHERE e.extname = 'citext';

@@ -1,0 +1,7 @@
+-- DDL de todas las funciones del esquema app
+SELECT pg_get_functiondef(p.oid) AS function_ddl
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'app'
+  AND p.prokind = 'f'   -- solo funciones
+ORDER BY p.proname, pg_get_function_identity_arguments(p.oid);
