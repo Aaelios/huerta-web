@@ -1144,3 +1144,26 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA extensions TO anon, authenticated, serv
 SELECT e.extname, n.nspname AS schema
 FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace
 WHERE e.extname = 'citext';
+
+CREATE SEQUENCE public.order_number_seq START 1;
+CREATE SEQUENCE public.seq_order_headers_order_number START 1;
+
+
+-- A) Asegura esquema y permisos
+CREATE SCHEMA IF NOT EXISTS extensions;
+GRANT USAGE ON SCHEMA extensions TO PUBLIC;
+
+-- B) Fija search_path para la BD y roles típicos
+ALTER DATABASE postgres SET search_path = public, extensions;
+
+ALTER ROLE postgres      SET search_path = public, extensions;
+ALTER ROLE authenticated SET search_path = public, extensions;
+ALTER ROLE service_role  SET search_path = public, extensions;
+ALTER ROLE anon          SET search_path = public, extensions;
+
+-- C) Verifica (nuevas conexiones reflejan el cambio)
+SHOW search_path;
+
+SELECT rolname, rolconfig
+FROM pg_roles
+WHERE rolname IN ('postgres','authenticated','service_role','anon');

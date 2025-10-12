@@ -98,7 +98,7 @@
         "currency": "MXN",
         "interval": "one_time",
         "stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
-        "stripeProductId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk"
+        "stripeProductId": "prod_TCoI05wHivveWv"
       }
     },
     "sales": {

@@ -1,0 +1,54 @@
+Prod
+CREATE OR REPLACE FUNCTION public.f_webhooks_mark_processed(p_stripe_event_id text, p_order_id uuid DEFAULT NULL::uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ STRICT SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_rows int;
+begin
+  if coalesce(trim(p_stripe_event_id), '') = '' then
+    raise exception 'INVALID_STRIPE_EVENT_ID';
+  end if;
+
+  update public.webhook_events
+     set processed_at = coalesce(processed_at, now()),
+         order_id     = coalesce(p_order_id, order_id)
+   where stripe_event_id = p_stripe_event_id;
+
+  get diagnostics v_rows = row_count;
+  if v_rows = 0 then
+    raise exception 'STRIPE_EVENT_NOT_FOUND';
+  end if;
+end;
+$function$
+
+
+
+Preview
+
+CREATE OR REPLACE FUNCTION public.f_webhooks_mark_processed(p_stripe_event_id text, p_order_id uuid DEFAULT NULL::uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ STRICT SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_rows int;
+begin
+  if coalesce(trim(p_stripe_event_id), '') = '' then
+    raise exception 'INVALID_STRIPE_EVENT_ID';
+  end if;
+
+  update public.webhook_events
+     set processed_at = coalesce(processed_at, now()),
+         order_id     = coalesce(p_order_id, order_id)
+   where stripe_event_id = p_stripe_event_id;
+
+  get diagnostics v_rows = row_count;
+  if v_rows = 0 then
+    raise exception 'STRIPE_EVENT_NOT_FOUND';
+  end if;
+end;
+$function$

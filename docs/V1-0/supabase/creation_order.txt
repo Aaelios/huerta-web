@@ -1,6 +1,31 @@
+Orden ideal de creación (ya normalizado por dependencias y esquemas):
+
+1. App — helpers puros
+	1.	app.f_is_uuid_v4_v1
+	2.	app.f_sizeof_json_v1
+	3.	app.f_sha256_json_v1
+	4.	app.f_input_redact_v1
+	5.	app.f_json_merge_shallow_v1
+	6.	app.f_event_idempotency_key_v1
+
+2. App — contacto y eventos
+7. app.f_contact_normalize_v1
+8. app.f_contact_validate_v1
+9. app.f_contacts_apply_consent_v1
+10. app.f_contacts_upsert_v1
+11. app.f_messages_idempotent_v1
+12. app.f_subscription_events_log_v1
+
+3. Public — utilidades y auditoría
+13. public.current_user_id
+14. public.f_auth_get_user
+15. public.f_audit_set_updated_at
+16. public.f_audit_updated_at_only_update
+17. app.f_audit_updated_at_only_update_v1
+18. public.tg_set_updated_at
+19. public.f_block_update_delete
+
 4. Public — CITEXT wrappers
-
-
 20. public.regexp_match(citext, text)
 21. public.regexp_matches(citext, text)
 22. public.regexp_replace(citext, text, text, text)
@@ -13,21 +38,39 @@
 29. public.texticregexeq(citext, text)
 30. public.texticregexne(citext, text)
 
-
-
 5. App — catálogo y parsing Stripe
+31. public.f_bundles_expand_items
+32. public.f_catalog_price_by_sku
+33. public.f_orders_parse_keys
+34. public.f_orders_parse_payment
+35. public.f_orders_parse_metadata
+36. public.f_orders_resolve_user
 
 6. Public — órdenes y pagos
+37. public.f_orders_new_order_number
+38. public.f_order_headers_upsert
+39. public.f_payments_upsert
+40. public.f_payments_upsert_by_session
 
 7. Public — entitlements
+41. public.f_entitlements_grant
+42. public.f_entitlements_renew_subscription
+43. public.f_entitlements_apply
 
 8. Public — webhooks
+44. public.f_webhooks_log_event
+45. public.f_webhookevents_getbystripeid
+46. public.f_webhooks_mark_processed
 
 9. Public — orquestadores
+47. public.f_orch_contact_write_v1
+48. public.f_orch_contact_write
+49. public.f_orch_orders_upsert
 
 10. Public — debug y rate limit
-
-51. public.f_debug_payments no existe,   public.f_debug_get_payments_by_order
+50. public.f_debug_orders
+51. public.f_debug_payments
 52. public.f_debug_entitlements
+53. public.f_rate_limit_touch_v1
 
 ¿Quieres que también te indique las dependencias críticas (por tabla o función previa) antes de crear cada bloque?
