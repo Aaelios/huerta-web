@@ -1,165 +1,188 @@
 // lib/ui_checkout/buildSessionPayload.ts
 
-/**
- * Construye el payload que enviará el cliente a /api/stripe/create-checkout-session.
- * No arma URLs de retorno. Eso lo hace el endpoint en el servidor.
- *
- * Verdades:
- * - El cobro se define por Stripe Price (price_id).
- * - El modo para webinars es "payment".
- * - Metadata estándar: sku, fulfillment_type, product_id.
- *
- * Entradas:
- * - webinar: nodo ya cargado desde webinars.jsonc (no I/O aquí).
- * - overrides: permite price_id y mode solo con validación superficial en cliente.
- * - extras: coupon y utm* opcionales para passthrough.
- */
-
-type Pricing = {
-  currency: string;
-  stripePriceId?: string;
-  stripeProductId?: string;
-  interval?: 'one_time' | 'month' | 'year' | string;
-};
-
-type WebinarNode = {
-  shared: {
-    sku: string;
-    pricing: Pricing;
-    fulfillment_type?: 'live_class' | 'course' | 'template' | 'one_to_one' | 'subscription_grant';
-  };
-};
-
-export type BuildSessionOverrides = {
-  /** Forzar otro Price de Stripe. Validación fuerte se hace en el servidor. */
+// Request esperado por /api/stripe/create-checkout-session
+export type TCheckoutRequest = {
+  // Camino A (compat): usar un Price de Stripe directo
   price_id?: string;
-  /** Forzar modo ("payment" | "subscription"). Se ignora si no aplica. */
+
+  // Camino B: resolver vía Supabase por SKU
+  sku?: string;
+  currency?: 'MXN' | 'USD';
+  price_list?: string | null;
+
+  // Extras
   mode?: 'payment' | 'subscription';
-};
-
-export type BuildSessionExtras = {
-  /** Cupón opcional. No se usa hoy, pero se pasa al servidor. */
+  metadata?: Record<string, string>;
   coupon?: string;
-  /** Passthrough de utms. Ej: { utm_source, utm_medium, utm_campaign, utm_term, utm_content } */
-  utm?: Record<string, string | undefined>;
-};
+  utm?: Record<string, string>;
 
-export type SessionPayload = {
-  sku: string;
-  price_id: string;
+  // Compat para consumidores que esperan este campo en la UI
   product_id?: string;
-  currency: string;
-  mode: 'payment' | 'subscription';
-  /** Metadata mínima que exige el backend; el endpoint puede añadir más campos. */
-  metadata: {
-    sku: string;
-    fulfillment_type: NonNullable<WebinarNode['shared']['fulfillment_type']> | 'live_class';
-    product_id?: string;
-  };
-  /** Opcionales operativos */
-  coupon?: string;
-  utm?: Record<string, string | undefined>;
 };
 
-export function buildSessionPayload(
-  webinar: WebinarNode,
-  overrides: BuildSessionOverrides = {},
-  extras: BuildSessionExtras = {}
-): SessionPayload {
-  assertWebinarForSession(webinar);
+type TOverrides = Partial<TCheckoutRequest> & {
+  // Alias común en UI
+  priceId?: string;
+};
 
-  const sku = webinar.shared.sku;
-  const pricing = webinar.shared.pricing;
-
-  // price_id: preferimos override válido, si no el del JSONC
-  const price_id = pickPriceId(overrides.price_id, pricing.stripePriceId);
-
-  const mode =
-    pickMode(overrides.mode, pricing.interval) ?? 'payment';
-
-  const currency = safeCurrency(pricing.currency);
-
-  const product_id = pricing.stripeProductId || undefined;
-
-  const metadata = {
-    sku,
-    fulfillment_type: (webinar.shared.fulfillment_type || 'live_class') as SessionPayload['metadata']['fulfillment_type'],
-    product_id,
+type TWebinar = {
+  shared?: {
+    sku?: string;
+    title?: string;
+    pricing?: {
+      currency?: string;
+      interval?: string; // 'one_time' | 'month' | etc.
+      amountCents?: number;
+      // Compat legacy (si existe aún en JSONC, no es obligatorio):
+      stripePriceId?: string;
+      stripeProductId?: string;
+      price_list?: string | null;
+    };
+    metadata?: Record<string, unknown>;
   };
+};
 
-  const payload: SessionPayload = {
-    sku,
-    price_id,
-    product_id,
-    currency,
-    mode,
-    metadata,
-  };
-
-  if (extras.coupon) payload.coupon = extras.coupon;
-  if (extras.utm) payload.utm = filterUtm(extras.utm);
-
-  return payload;
+// Helpers seguros sin any
+function getString(obj: Record<string, unknown> | undefined, key: string): string | undefined {
+  if (!obj) return undefined;
+  const v = obj[key];
+  return typeof v === 'string' ? v : undefined;
+}
+function toCurrency(v: unknown): 'MXN' | 'USD' | undefined {
+  if (typeof v !== 'string') return undefined;
+  const up = v.toUpperCase();
+  return up === 'USD' ? 'USD' : up === 'MXN' ? 'MXN' : undefined;
+}
+function toModeFromInterval(interval?: string): 'payment' | 'subscription' | undefined {
+  if (!interval) return undefined;
+  return interval === 'one_time' ? 'payment' : 'subscription';
 }
 
-/* ------------------------ utilidades internas ------------------------ */
+function pickPriceId(fromOverrides?: TOverrides, fromJsonc?: TWebinar): string | undefined {
+  // Prioridad: override explícito → legacy JSONC (si aún existe)
+  const o = fromOverrides?.price_id ?? fromOverrides?.priceId;
+  if (typeof o === 'string' && o.length > 0) return o;
 
-function assertWebinarForSession(w: WebinarNode): void {
-  if (!w?.shared?.sku) throw new Error('buildSessionPayload: shared.sku requerido');
-  if (!w?.shared?.pricing)
-    throw new Error('buildSessionPayload: shared.pricing requerido');
-  if (typeof w.shared.pricing.currency !== 'string')
-    throw new Error('buildSessionPayload: pricing.currency requerido');
-  if (
-    !w.shared.pricing.stripePriceId &&
-    !w.shared.pricing.stripeProductId
-  ) {
-    // Permitimos que falte productId, pero priceId debe existir si no hay override
-    // La validación final ocurrirá en el servidor.
+  const priceIdLegacy = fromJsonc?.shared?.pricing?.stripePriceId;
+  if (typeof priceIdLegacy === 'string' && priceIdLegacy.length > 0) return priceIdLegacy;
+
+  // Sin price_id: modo por SKU
+  return undefined;
+}
+
+function pickSku(fromOverrides?: TOverrides, fromJsonc?: TWebinar): string | undefined {
+  const o = fromOverrides?.sku;
+  if (typeof o === 'string' && o.length > 0) return o;
+
+  const sku = fromJsonc?.shared?.sku;
+  if (typeof sku === 'string' && sku.length > 0) return sku;
+
+  return undefined;
+}
+
+function pickCurrency(fromOverrides?: TOverrides, fromJsonc?: TWebinar): 'MXN' | 'USD' | undefined {
+  const o = fromOverrides?.currency;
+  if (o === 'USD' || o === 'MXN') return o;
+
+  const c = toCurrency(fromJsonc?.shared?.pricing?.currency);
+  return c ?? 'MXN';
+}
+
+function pickPriceList(fromOverrides?: TOverrides, fromJsonc?: TWebinar): string | null | undefined {
+  // Permite forzar la lista desde override
+  if (typeof fromOverrides?.price_list === 'string') return fromOverrides.price_list;
+  if (fromOverrides?.price_list === null) return null;
+
+  // Si el JSONC trae una lista, úsala. Si no, no rellenes aquí. El server usará 'default'.
+  const fromJson = fromJsonc?.shared?.pricing?.price_list;
+  if (typeof fromJson === 'string' && fromJson.length > 0) return fromJson;
+
+  return undefined;
+}
+
+function buildMetadata(fromOverrides?: TOverrides, fromJsonc?: TWebinar): Record<string, string> {
+  const out: Record<string, string> = {};
+
+  // Metadata de JSONC (solo strings)
+  const meta = fromJsonc?.shared?.metadata;
+  if (meta) {
+    for (const [k, v] of Object.entries(meta)) {
+      if (typeof v === 'string') out[k] = v;
+    }
   }
-}
 
-function pickPriceId(override?: string, fromJsonc?: string): string {
-  const ov = normalizeId(override);
-  if (ov) return ov;
-  const base = normalizeId(fromJsonc);
-  if (base) return base;
-  throw new Error('buildSessionPayload: price_id no disponible (ni override ni jsonc)');
-}
-
-function pickMode(
-  override: 'payment' | 'subscription' | undefined,
-  interval: Pricing['interval'] | undefined
-): 'payment' | 'subscription' {
-  if (override === 'payment' || override === 'subscription') return override;
-  if (!interval || interval === 'one_time') return 'payment';
-  return 'subscription';
-}
-
-function safeCurrency(v: unknown): string {
-  if (typeof v === 'string' && v.length >= 3 && v.length <= 5) return v;
-  return 'MXN';
-}
-
-function normalizeId(v?: string): string | undefined {
-  if (!v || typeof v !== 'string') return undefined;
-  const s = v.trim();
-  return s.length ? s : undefined;
-}
-
-function filterUtm(
-  utm: Record<string, string | undefined>
-): Record<string, string | undefined> {
-  const allow = new Set([
-    'utm_source',
-    'utm_medium',
-    'utm_campaign',
-    'utm_term',
-    'utm_content',
-  ]);
-  const out: Record<string, string | undefined> = {};
-  for (const [k, val] of Object.entries(utm)) {
-    if (allow.has(k) && typeof val === 'string') out[k] = val;
+  // Overrides de metadata ganan prioridad
+  if (fromOverrides?.metadata) {
+    for (const [k, v] of Object.entries(fromOverrides.metadata)) {
+      if (typeof v === 'string') out[k] = v;
+    }
   }
+
+  // Buenas prácticas: pre-popular sku/currency si vienen en la UI
+  const sku = pickSku(fromOverrides, fromJsonc);
+  const currency = pickCurrency(fromOverrides, fromJsonc);
+  if (sku && !out.sku) out.sku = sku;
+  if (currency && !out.currency) out.currency = currency;
+
+  // El server añadirá fulfillment_type/price_list si no vienen
   return out;
 }
+
+/**
+ * Construye el payload para /api/stripe/create-checkout-session.
+ * Reglas:
+ * - Si hay price_id (override o legacy JSONC), usa camino A.
+ * - Si NO hay price_id → usa camino por SKU (no lanza error).
+ */
+export function buildSessionPayload(webinar: TWebinar, overrides?: TOverrides): TCheckoutRequest {
+  const priceId = pickPriceId(overrides, webinar);
+  const metadata = buildMetadata(overrides, webinar);
+  const coupon = overrides?.coupon;
+  const utm = overrides?.utm;
+
+  if (priceId) {
+    // Camino A: compat por Price ID
+    const modeOverride = overrides?.mode;
+    // Si UI tiene interval en JSONC, derivar modo para telemetría; el server revalidará
+    const interval = getString(webinar.shared?.pricing as Record<string, unknown>, 'interval');
+    const derivedMode = toModeFromInterval(interval);
+
+    return {
+      price_id: priceId,
+      mode: modeOverride ?? derivedMode,
+      metadata,
+      coupon,
+      utm,
+    };
+  }
+
+  // Camino B: por SKU (nuevo flujo). No lanzamos error si falta price_id.
+  const sku = pickSku(overrides, webinar);
+  if (!sku) {
+    // Si no hay SKU tampoco, devolver payload mínimo para que el caller lo valide.
+    return {
+      metadata,
+      coupon,
+      utm,
+    };
+  }
+
+  const currency = pickCurrency(overrides, webinar) ?? 'MXN';
+  const price_list = pickPriceList(overrides, webinar) ?? undefined;
+
+  // Derivar mode desde interval del JSONC si existe. El server decidirá de todos modos.
+  const interval = getString(webinar.shared?.pricing as Record<string, unknown>, 'interval');
+  const mode = overrides?.mode ?? toModeFromInterval(interval);
+
+  return {
+    sku,
+    currency,
+    price_list: price_list ?? 'default',
+    mode,
+    metadata,
+    coupon,
+    utm,
+  };
+}
+
+export type SessionPayload = TCheckoutRequest;

@@ -20,9 +20,9 @@
         "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
         "amountCents": 69000,
         "currency": "MXN",
-        "interval": "one_time",
-        "stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
-        "stripeProductId": "prod_TCoI05wHivveWv"
+        "interval": "one_time"
+        //"stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
+        //"stripeProductId": "prod_TCoI05wHivveWv"
       }
     },
     "sales": {
@@ -107,9 +107,9 @@
         "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
         "amountCents": 69000,
         "currency": "MXN",
-        "interval": "one_time",
-        "stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
-        "stripeProductId": "prod_TCoI05wHivveWv"
+        "interval": "one_time"
+        //"stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
+        //"stripeProductId": "prod_TCoI05wHivveWv"
       }
     },
     "sales": {
@@ -183,9 +183,9 @@
         "sku": "liveclass-lobra-rhd-fin-egresos-v001",
         "amountCents": 69000,
         "currency": "MXN",
-        "interval": "one_time",
-        "stripePriceId": "price_1SGOsrQ8dpmAG0o2YrvR2LV3",
-        "stripeProductId": "prod_TCoVKJyjCmGw1C"
+        "interval": "one_time"
+        //"stripePriceId": "price_1SGOsrQ8dpmAG0o2YrvR2LV3",
+        //"stripeProductId": "prod_TCoVKJyjCmGw1C"
       }
     },
     "sales": {
@@ -259,9 +259,9 @@
         "sku": "liveclass-lobra-rhd-fin-reportes-v001",
         "amountCents": 79000,
         "currency": "MXN",
-        "interval": "one_time",
-        "stripePriceId": "price_1SGOvtQ8dpmAG0o2mzvcK5WM",
-        "stripeProductId": "prod_TCoZfevgJpTIoh"
+        "interval": "one_time"
+        //"stripePriceId": "price_1SGOvtQ8dpmAG0o2mzvcK5WM",
+        //"stripeProductId": "prod_TCoZfevgJpTIoh"
       }
     },
     "sales": {
@@ -335,9 +335,9 @@
         "sku": "liveclass-lobra-rhd-fin-planeacion-v001",
         "amountCents": 99000,
         "currency": "MXN",
-        "interval": "one_time",
-        "stripePriceId": "price_1SGOzfQ8dpmAG0o2Y0r2jdBw",
-        "stripeProductId": "prod_TCocVuS7NjkQ6p"
+        "interval": "one_time"
+        //"stripePriceId": "price_1SGOzfQ8dpmAG0o2Y0r2jdBw",
+        //"stripeProductId": "prod_TCocVuS7NjkQ6p"
       }
     },
     "sales": {

@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation';
 import { loadWebinars } from '../../../lib/webinars/loadWebinars';
 import type { Webinar } from '@/lib/webinars/schema';
 import { buildCheckoutUI, type CheckoutDefaults } from '../../../lib/ui_checkout/buildCheckoutUI';
-import { buildSessionPayload, type BuildSessionOverrides } from '../../../lib/ui_checkout/buildSessionPayload';
+import { buildSessionPayload } from '../../../lib/ui_checkout/buildSessionPayload';
 import checkoutDefaults from '../../../data/checkout.defaults.json';
 import CheckoutClient from './CheckoutClient';
 
 type PageProps = {
-  params: { slug: string };
-  searchParams?: Record<string, string | string[] | undefined>;
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export const dynamic = 'force-static';
@@ -22,29 +22,35 @@ export async function generateStaticParams() {
     .map((w) => ({ slug: String(w.shared.slug) }));
 }
 
-export default async function Page({ params, searchParams = {} }: PageProps) {
-  const { slug } = params;
+export default async function Page({ params, searchParams }: PageProps) {
+  const { slug } = await params;
+  const sp = (await searchParams) ?? {};
 
   const raw = await loadWebinars();
   const webinars = toArray(raw);
   const webinar = webinars.find((w) => w?.shared?.slug === slug);
   if (!webinar) return notFound();
 
-  const qp = normalizeSearchParams(searchParams);
+  const qp = normalizeSearchParams(sp);
 
-  const overrides: BuildSessionOverrides = {
+  // Normaliza UTM a Record<string,string>
+  const utmClean: Record<string, string> = Object.fromEntries(
+    Object.entries(qp.utm ?? {}).filter(([, v]) => typeof v === 'string')
+  ) as Record<string, string>;
+
+  const overrides = {
     price_id: qp.price_id,
     mode: qp.mode,
-  };
-
-  const extras = { coupon: qp.coupon, utm: qp.utm } as const;
+    coupon: qp.coupon,
+    utm: utmClean,
+  } as const;
 
   const ui = buildCheckoutUI(
     webinar,
     checkoutDefaults as unknown as CheckoutDefaults
   );
 
-  const sessionPayload = buildSessionPayload(webinar, overrides, extras);
+  const sessionPayload = buildSessionPayload(webinar, overrides);
 
   return (
     <CheckoutClient
