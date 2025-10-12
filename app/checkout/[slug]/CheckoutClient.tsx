@@ -59,6 +59,7 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
   const [attempt, setAttempt] = useState<number>(0);
   const [mountedProgrammatic, setMountedProgrammatic] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
+  const [localScheduleDisplay, setLocalScheduleDisplay] = useState<string>('');
 
   const router = useRouter();
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
@@ -68,6 +69,7 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
 
   useEffect(() => setMounted(true), []);
 
+  // Analytics: begin_checkout
   useEffect(() => {
     try {
       const value =
@@ -75,7 +77,7 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
           ? webinar.shared.pricing.amountCents / 100
           : undefined;
       window.dataLayer = window.dataLayer ?? [];
-      window.dataLayer.push({
+      const payload: Record<string, unknown> = {
         event: 'begin_checkout',
         sku: sessionPayload.sku,
         price_id: sessionPayload.price_id,
@@ -85,12 +87,16 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
         value,
         ui_title: ui.title,
         ui_price_display: ui.priceDisplay,
-      });
+      };
+      if (ui.schedule?.startISO) payload['start_at'] = ui.schedule.startISO;
+      if (ui.schedule?.endISO) payload['end_at'] = ui.schedule.endISO;
+      window.dataLayer.push(payload);
     } catch {
       // noop
     }
-  }, [sessionPayload, webinar, ui.title, ui.priceDisplay]);
+  }, [sessionPayload, webinar, ui.title, ui.priceDisplay, ui.schedule?.startISO, ui.schedule?.endISO]);
 
+  // Session creation
   useEffect(() => {
     let cancelled = false;
     async function createSession(): Promise<void> {
@@ -132,6 +138,7 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
     };
   }, [attempt, publishableKey, sessionPayload]);
 
+  // Mount Stripe Embedded
   useEffect(() => {
     const stripeFactory: StripeFactory | undefined =
       typeof window !== 'undefined' ? window.Stripe : undefined;
@@ -153,11 +160,27 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
     })();
   }, [mounted, stripeReady, clientSecret, publishableKey]);
 
+  // Fallback if SDK didn't mount
   useEffect(() => {
     if (mountedProgrammatic || loading) return;
     const t = setTimeout(() => setShowFallback(true), 8000);
     return () => clearTimeout(t);
   }, [mountedProgrammatic, loading]);
+
+  // Compute "local time" display on client
+  useEffect(() => {
+    if (!mounted) return;
+    if (!ui.schedule?.startISO) {
+      setLocalScheduleDisplay('');
+      return;
+    }
+    try {
+      const txt = formatLocalSchedule(ui.schedule.startISO, ui.schedule.endISO);
+      setLocalScheduleDisplay(txt);
+    } catch {
+      setLocalScheduleDisplay('');
+    }
+  }, [mounted, ui.schedule?.startISO, ui.schedule?.endISO]);
 
   const retry = (): void => {
     idemRef.current = makeIdempotencyKey();
@@ -189,42 +212,55 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
       {/* Grid */}
       <section className="grid-2 gap-6">
         {/* Resumen */}
-        <aside className="section--surface" role="complementary" aria-labelledby="resumen-heading">
-          <div className="c-card stack-4">
-            <h2 id="resumen-heading" className="h4">Resumen de tu compra</h2>
+          <aside className="section--surface" role="complementary" aria-labelledby="resumen-heading">
+            <div className="c-card stack-4">
+              <h2 id="resumen-heading" className="h4">Resumen de tu compra</h2>
 
-            <div className="stack-1">
-              <p className="text-strong">{renderAccent(ui.title)}</p>
-              <p className="u-small text-weak">{renderAccent(ui.desc)}</p>
-            </div>
-
-            <ul className="list-check u-small">
-              {(ui.bullets || []).map((b, i) => (
-                <li key={i}>{b}</li>
-              ))}
-            </ul>
-
-            <div className="stack-1">
-              <div className="flex-between">
-                <span className="u-small text-weak">
-                  <span className="sr-only">Total a pagar</span> Total
-                </span>
-                <strong className="price">{ui.priceDisplay}</strong>
+              {/* Título y descripción */}
+              <div className="stack-2">
+                <p className="text-strong">{renderAccent(ui.title)}</p>
+                <p className="u-small text-weak u-mt-1">{renderAccent(ui.desc)}</p>
               </div>
-              <p className="u-small text-weak">Sin cargos ocultos.</p>
-              <p className="u-small text-weak">
-                {ui.refundLine || 'Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.'}
+
+              {/* Fecha y horario */}
+              {ui.schedule && (
+                <div className="stack-2 u-mt-2 u-mb-1">
+                  <p className="u-small text-strong">Fecha y horario</p>
+                  <p className="u-small">{ui.schedule.tzDisplay.replace('GMT-6', '').trim()}</p>
+                  <p className="u-small text-weak">
+                    En tu hora local: {localScheduleDisplay || 'detectando…'}
+                  </p>
+                </div>
+              )}
+
+              {/* Bullets */}
+              <ul className="list-check u-small u-mt-2">
+                {(ui.bullets || []).map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+
+              {/* Precio y garantía */}
+              <div className="stack-2 u-mt-3">
+                <div className="flex-between">
+                  <span className="u-small text-strong">Total </span>
+                  <strong className="price accent">{ui.priceDisplay}</strong>
+                </div>
+                <p className="u-small text-weak">Sin cargos ocultos.</p>
+                <p className="u-small text-weak">
+                  {ui.refundLine || 'Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.'}
+                </p>
+              </div>
+
+              {/* Soporte */}
+              <p className="u-small u-mt-2 u-mb-3">
+                ¿Necesitas ayuda?{' '}
+                <a href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`} className="link text-weak">
+                  {ui.supportEmail || 'soporte@lobra.net'}
+                </a>
               </p>
             </div>
-
-            <p className="u-small">
-              ¿Necesitas ayuda?{' '}
-              <a href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`} className="link text-weak">
-                {ui.supportEmail || 'soporte@lobra.net'}
-              </a>
-            </p>
-          </div>
-        </aside>
+          </aside>
 
         {/* Stripe */}
         <div className="section--surface">
@@ -312,4 +348,55 @@ function makeIdempotencyKey(): string {
           .join('')
       : Math.random().toString(16).slice(2);
   return `chk-${Date.now()}-${rnd}`;
+}
+
+/**
+ * Formatea la línea "En tu hora local: ..." usando la zona del dispositivo.
+ * Usa los ISO UTC provistos por buildCheckoutUI.
+ */
+function formatLocalSchedule(startISO: string, endISO?: string): string {
+  const locale = undefined; // usa preferencia del navegador
+  const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const start = new Date(startISO);
+  if (isNaN(start.getTime())) return '';
+
+  const datePart = new Intl.DateTimeFormat('es-MX', {
+    timeZone: localTZ,
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(start);
+
+  const timeFmt = new Intl.DateTimeFormat(locale, {
+    timeZone: localTZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const startTime = timeFmt.format(start);
+  const endTime =
+    endISO && !isNaN(new Date(endISO).getTime())
+      ? timeFmt.format(new Date(endISO))
+      : undefined;
+
+  const tzName = new Intl.DateTimeFormat(locale, {
+    timeZone: localTZ,
+    timeZoneName: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .formatToParts(start)
+    .find((p) => p.type === 'timeZoneName')?.value;
+
+  const range = endTime ? `${startTime}–${endTime}` : startTime;
+  const tzSuffix = tzName ? ` ${tzName}` : '';
+  return `${capitalize(datePart)}, ${range}${tzSuffix}`;
+}
+
+function capitalize(s: string): string {
+  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
 }

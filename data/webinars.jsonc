@@ -34,7 +34,7 @@
       "hero": {
         "eyebrow": "Taller de Tranquilidad Financiera",
         "title": "Claridad de tus [[ingresos]], [[tranquilidad]] y [[confianza]].",
-        "subtitle": "Clase práctica para registrar tus [[ingresos]] con una herramienta personalizada que usarás desde el [[día 1]].",
+        "subtitle": "Clase práctica en vivo para ordenar tus [[ingresos]] y vender con claridad desde el [[día 1]].",
         "note": "Empieza hoy con claridad y paz.",
         "ctaText": "Reservar mi lugar en la clase",
         "heroImageSrc": "/images/webinars/2025-10-14-2030/hero.jpg",
@@ -56,7 +56,7 @@
         "deliverableBullets": [
           "Tu registro [[listo]] para usar desde mañana.",
           "[[Método simple]] que te toma máximo 5 minutos al día.",
-          "Duración: 90 minutos.",
+          "Duración total: 90 min.",
           "Modalidad: En vivo por Zoom (sin Excel/Sheets también aplicas los conceptos)."
         ],
         "priceLine": "Hoy $690 MXN · Cupo limitado",
@@ -72,6 +72,17 @@
         "live": "El webinar está en vivo.",
         "ended": "Este webinar ha finalizado."
       }
+    },
+    "checkout": {
+      "bullets": [
+        "Acceso al evento en vivo",
+        "Plantilla práctica de apoyo",
+        // Activa si más adelante ofreces replay. Por ahora puedes omitirla si no aplica.
+        // "Acceso a la grabación durante 7 días",
+        "Soporte por email"
+      ],
+      "refundLine": "Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.",
+      "legalLinks": { "privacySlug": "privacidad", "refundSlug": "reembolsos" }
     }
   },
 

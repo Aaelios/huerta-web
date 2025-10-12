@@ -10,6 +10,7 @@
  * - Precio mostrado: shared.pricing.amountCents + currency (puede sobreescribirse con priceCentsFromStripe para evitar discrepancias visuales)
  * - Bullets / refundLine / legalLinks: de webinar.checkout si existe; si no, de defaults
  * - supportEmail: shared.supportEmail
+ * - schedule: derivado de shared.startAt y shared.durationMin. Se muestra en SITE_TZ.
  */
 
 export type CheckoutDefaults = {
@@ -26,6 +27,8 @@ export type CheckoutUI = {
   refundLine?: string;
   supportEmail?: string;
   legalLinks?: { privacySlug?: string; refundSlug?: string };
+  /** Información de horario del evento. Presente solo si startAt es válido. */
+  schedule?: { tzDisplay: string; startISO: string; endISO?: string };
 };
 
 type Pricing = {
@@ -42,6 +45,10 @@ type WebinarNode = {
     title: string;
     supportEmail?: string;
     pricing: Pricing;
+    /** ISO con offset local de CDMX, p. ej. "2025-10-14T20:30:00-06:00" */
+    startAt?: string;
+    /** Duración en minutos. Opcional. */
+    durationMin?: number;
   };
   sales?: {
     hero?: {
@@ -114,6 +121,24 @@ export function buildCheckoutUI(
 
   const supportEmail = webinar.shared.supportEmail ?? undefined;
 
+  // ---- Horario (opcional) ----
+  const startAtISO = typeof webinar.shared.startAt === 'string' ? webinar.shared.startAt : undefined;
+  const durationMin =
+    typeof webinar.shared.durationMin === 'number' && Number.isFinite(webinar.shared.durationMin)
+      ? Math.max(0, Math.trunc(webinar.shared.durationMin))
+      : undefined;
+
+  let schedule: CheckoutUI['schedule'] | undefined;
+  const startDate = safeDate(startAtISO);
+  if (startDate) {
+    const endDate = typeof durationMin === 'number' ? new Date(startDate.getTime() + durationMin * 60_000) : undefined;
+    schedule = {
+      tzDisplay: formatScheduleInSiteTZ(startDate, endDate),
+      startISO: toISO(startDate),
+      endISO: endDate ? toISO(endDate) : undefined,
+    };
+  }
+
   return {
     title,
     desc,
@@ -122,6 +147,7 @@ export function buildCheckoutUI(
     refundLine,
     supportEmail,
     legalLinks,
+    schedule,
   };
 }
 
@@ -176,4 +202,63 @@ function assertWebinar(w: WebinarNode): void {
   ) {
     throw new Error('buildCheckoutUI: pricing.amountCents y currency requeridos');
   }
+}
+
+/**
+ * Devuelve un Date válido si el ISO es parseable. Si no, null.
+ */
+function safeDate(iso?: string): Date | null {
+  if (!iso || typeof iso !== 'string') return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Formatea start/end en la zona del sitio (SITE_TZ) con texto compacto en español.
+ * Ejemplo: "Mar 14 oct 2025, 20:30–22:00 GMT-6 (Ciudad de México)"
+ */
+function formatScheduleInSiteTZ(start: Date, end?: Date): string {
+  const tz = process.env.SITE_TZ || 'America/Mexico_City';
+
+  const locale = 'es-MX';
+  const dayPart = new Intl.DateTimeFormat(locale, {
+    timeZone: tz,
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(start);
+
+  const timeFmt = new Intl.DateTimeFormat(locale, {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const startTime = timeFmt.format(start);
+  const endTime = end ? timeFmt.format(end) : undefined;
+
+  // Nombre corto de zona (puede ser "GMT-6" o "CST" según plataforma)
+  const tzName = new Intl.DateTimeFormat(locale, {
+    timeZone: tz,
+    timeZoneName: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .formatToParts(start)
+    .find((p) => p.type === 'timeZoneName')?.value;
+
+  const range = endTime ? `${startTime}–${endTime}` : `${startTime}`;
+  const tzSuffix = tzName ? ` ${tzName}` : '';
+  return `${capitalize(dayPart)}, ${range}${tzSuffix} (Ciudad de México)`;
+}
+
+function toISO(d: Date): string {
+  return new Date(d.getTime()).toISOString();
+}
+
+function capitalize(s: string): string {
+  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
 }

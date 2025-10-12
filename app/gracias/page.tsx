@@ -20,7 +20,7 @@ type NextStep = {
 };
 
 type WebinarThankyou = { title?: string; body_md?: string };
-type WebinarShared = { supportEmail?: string };
+type WebinarShared = { supportEmail?: string; startAt?: string; durationMin?: number };
 type WebinarExtra = Partial<{ thankyou: WebinarThankyou; shared: WebinarShared }>;
 
 const COPY_BY_VARIANT: Record<Variant, { title: string; lead: string; ctaLabel: string }> = {
@@ -67,7 +67,6 @@ async function fetchSession(sessionId: string) {
   if (!key) throw new Error("STRIPE_SECRET_KEY missing");
   const stripe = new Stripe(key);
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
-    // No expandimos *.metadata; solo line_items y product
     expand: ["line_items", "line_items.data.price.product"],
   });
   return session;
@@ -78,12 +77,8 @@ function extractSkuFulfillmentSuccess(session: Stripe.Checkout.Session) {
   const priceMeta = (first?.price?.metadata ?? {}) as Record<string, string | undefined>;
 
   const sku = (session.metadata?.sku ?? priceMeta.sku) as string | undefined;
-  const fulfillment_type = (session.metadata?.fulfillment_type ?? priceMeta.fulfillment_type) as
-    | string
-    | undefined;
-  const success_slug = (session.metadata?.success_slug ?? priceMeta.success_slug) as
-    | string
-    | undefined;
+  const fulfillment_type = (session.metadata?.fulfillment_type ?? priceMeta.fulfillment_type) as string | undefined;
+  const success_slug = (session.metadata?.success_slug ?? priceMeta.success_slug) as string | undefined;
 
   return { sku, fulfillment_type, success_slug };
 }
@@ -108,6 +103,45 @@ function applyThankyouOverrides(
   };
 }
 
+// ==== Helpers de horario (server) ====
+function safeDate(iso?: string): Date | null {
+  if (!iso || typeof iso !== "string") return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+function toISO(d: Date | null | undefined): string | undefined {
+  if (!d) return undefined;
+  return new Date(d.getTime()).toISOString();
+}
+function formatScheduleInSiteTZ(start: Date, end?: Date): string {
+  const tz = process.env.SITE_TZ || "America/Mexico_City";
+  const locale = "es-MX";
+
+  const dayPart = new Intl.DateTimeFormat(locale, {
+    timeZone: tz,
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(start);
+
+  const timeFmt = new Intl.DateTimeFormat(locale, {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const startTime = timeFmt.format(start);
+  const endTime = end ? timeFmt.format(end) : undefined;
+
+  const range = endTime ? `${startTime}–${endTime}` : startTime;
+  return `${capitalize(dayPart)}, ${range} (Ciudad de México)`;
+}
+function capitalize(s: string): string {
+  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
 // ==== Página ====
 export default async function GraciasPage({
   searchParams,
@@ -130,7 +164,6 @@ export default async function GraciasPage({
     success_slug: success_slug || undefined,
   });
 
-  // Normalizamos a NextStep sin usar any
   const next: NextStep = {
     variant: (nextRaw as NextStep).variant || "generic",
     href: (nextRaw as NextStep).href,
@@ -145,14 +178,29 @@ export default async function GraciasPage({
   let lead = copy.lead;
   const ctaLabel = copy.ctaLabel;
 
-  // Overrides desde JSONC solo para live_class
+  // Datos extra para live_class
   let supportEmail = "soporte@lobra.net";
+  let tzDisplay: string | undefined;
+  let startISO: string | undefined;
+  let endISO: string | undefined;
+
   if (fulfillment_type === "live_class") {
     const webinar = (await getWebinarBySku(sku)) || null;
+
     supportEmail = getSupportEmail(webinar);
     const over = applyThankyouOverrides({ title, lead }, webinar);
     title = over.title;
     lead = over.lead;
+
+    const start = safeDate((webinar as WebinarExtra)?.shared?.startAt);
+    const dur = (webinar as WebinarExtra)?.shared?.durationMin;
+    const end = start && typeof dur === "number" ? new Date(start.getTime() + Math.max(0, Math.trunc(dur)) * 60_000) : null;
+
+    if (start) {
+      tzDisplay = formatScheduleInSiteTZ(start, end ?? undefined);
+      startISO = toISO(start);
+      endISO = toISO(end ?? undefined);
+    }
   }
 
   if (process.env.NEXT_PUBLIC_DEBUG === "1") {
@@ -192,6 +240,62 @@ export default async function GraciasPage({
         <h1 className="h2">{title}</h1>
         <p className="u-lead">{lead}</p>
 
+        {/* Bloque de fecha y horario */}
+        {tzDisplay && (
+          <div className="l-stack-2 u-center u-mt-2">
+            <p className="u-small text-strong">Fecha y horario</p>
+            <p className="u-small">{tzDisplay}</p>
+            <p className="u-small text-weak">
+              En tu hora local: <span id="local-schedule">{/* filled by script */}</span>
+            </p>
+
+            {/* Script cliente para hora local */}
+            <Script id="local-schedule-fill" strategy="afterInteractive">
+              {`
+                (function() {
+                  try {
+                    var startISO='${startISO ?? ""}';
+                    var endISO='${endISO ?? ""}';
+                    if(!startISO) return;
+                    var localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    var start = new Date(startISO);
+                    var end = endISO ? new Date(endISO) : null;
+
+                    var datePart = new Intl.DateTimeFormat('es-MX', {
+                      timeZone: localTZ,
+                      weekday: 'short',
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    }).format(start);
+
+                    var timeFmt = new Intl.DateTimeFormat(undefined, {
+                      timeZone: localTZ,
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    });
+
+                    var startTime = timeFmt.format(start);
+                    var endTime = end ? timeFmt.format(end) : '';
+                    var tzName = new Intl.DateTimeFormat(undefined, {
+                      timeZone: localTZ,
+                      timeZoneName: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }).formatToParts(start).find(function(p){return p.type==='timeZoneName'})?.value || '';
+
+                    var txt = datePart + ', ' + startTime + (endTime ? '–' + endTime : '') + (tzName ? ' ' + tzName : '');
+                    var node = document.getElementById('local-schedule');
+                    if (node) node.textContent = txt;
+                  } catch(e) {}
+                })();
+              `}
+            </Script>
+          </div>
+        )}
+
         {/* CTA dinámico */}
         {next.variant === "bundle" && next.items && next.items.length > 0 ? (
           <div className="l-stack-4 u-center">
@@ -214,7 +318,7 @@ export default async function GraciasPage({
             <li>Revisa spam o promociones.</li>
             <li>Busca el remitente “LOBRÁ &lt;no-reply@mail.lobra.net&gt;”.</li>
             <li>
-              Si no lo encuentras, escribe a <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+              Si no lo encuentras, escribe a <a href={`mailto:${getSupportEmail(null)}`}>{getSupportEmail(null)}</a>.
             </li>
           </ul>
         </div>
