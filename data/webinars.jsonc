@@ -1,9 +1,9 @@
 {
-  "2025-10-14-2030": {
+  "2025-11-18-2030": {
     "shared": {
-      "slug": "2025-10-14-2030",
+      "slug": "2025-11-18-2030",
       "title": "Taller de Tranquilidad Financiera",
-      "startAt": "2025-10-14T20:30:00-06:00",
+      "startAt": "2025-11-18T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -14,7 +14,7 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": true // NUEVO: si es true y startAt > ahora, usar este en Home
+        "featuredHome": false // NUEVO: si es true y startAt > ahora, usar este en Home
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
@@ -101,7 +101,7 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": false
+        "featuredHome": true
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
@@ -120,7 +120,7 @@
       },
       "hero": {
         "eyebrow": "Taller práctico en vivo",
-        "title": "Saber cuánto [[ganas]] te da confianza (de verdad)",
+        "title": "Saber cuánto [[ganas]] te da [[confianza]] (de verdad)",
         "subtitle": "No más suposiciones. Ordena tus ventas con claridad y recupera tu paz financiera.",
         "note": "No es un archivo. Es el inicio de tu tranquilidad.",
         "ctaText": "Quiero claridad financiera",
@@ -129,11 +129,11 @@
       },
       "clasePractica": {
         "eyebrow": "Workshop aplicado a tu negocio",
-        "title": "Tus [[ingresos]] claros al terminar la sesión",
+        "title": "Tus [[ingresos claros]] al terminar la sesión",
         "intro": "Sales del taller con tu sistema funcionando. Sin complicarte. Sin depender de nadie.",
         "leftTitle": "¿Te suena familiar?",
         "bullets": [
-          "No tienes ni idea cuánto [[ganaste]] esta semana.",
+          "No tienes ni idea cuánto ganaste esta semana.",
           "Cobras por todos lados y luego no sabes quién sí te pagó.",
           "Tienes que buscar en chats para ver si ya depositaron.",
           "Dices ‘me fue bien’, pero si te preguntan cuánto… no sabes.",
@@ -142,11 +142,11 @@
         "deliverableTitle": "Te llevas",
         "deliverableBullets": [
           "Tu registro de [[ingresos]] listo y funcionando desde el taller.",
-          "Plantilla adaptable a lo que tú vendes — sin fórmulas raras.",
-          "Toma menos tiempo que contestar un mensaje.",
-          "No necesitas saber Excel — lo haces conmigo, paso a paso."
+          "Plantilla adaptable a lo que tú vendes — [[sin fórmulas]] raras.",
+          "Toma menos [[tiempo]] que contestar un mensaje.",
+          "No necesitas saber Excel — lo haces conmigo, [[paso a paso]]."
         ],
-        "priceLine": "Vale mucho más, pero esta edición es solo $690 MXN",
+        "priceLine": "Por introdución: solo $690 MXN",
         "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
         "ctaText": "Apartar mi lugar ahora"
       }
