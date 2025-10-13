@@ -13,10 +13,10 @@ export default function WebinarsPage() {
       </p>
       <div className="cluster-3">
         <Link
-          href="/webinars/2025-10-14-2030"
+          href="/webinars/2025-10-21-2030"
           className="c-btn c-btn--solid c-btn--pill c-btn--lg"
         >
-          Ir al Webinar de Octubre 2025
+          Ver siguiente Webinar
         </Link>
       </div>
     </div>
