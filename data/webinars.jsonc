@@ -1,96 +1,9 @@
 {
-  "2025-11-18-2030": {
+  "2025-10-28-2030": {
     "shared": {
-      "slug": "2025-11-18-2030",
-      "title": "Taller de Tranquilidad Financiera",
-      "startAt": "2025-11-18T20:30:00-06:00",
-      "durationMin": 90,
-      "zoomJoinUrl": null,
-      "supportEmail": "soporte@lobra.net",
-      "template": { "mode": "email" },
-      "whatsAppSupport": { "enabled": false },
-      "calendar": { "mode": "generated" },
-      "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
-      "flags": {
-        "showReplay": false,
-        "replayUrl": null,
-        "featuredHome": false // NUEVO: si es true y startAt > ahora, usar este en Home
-      },
-      "pricing": {
-        "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
-        "amountCents": 69000,
-        "currency": "MXN",
-        "interval": "one_time"
-        //"stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
-        //"stripeProductId": "prod_TCoI05wHivveWv"
-      }
-    },
-    "sales": {
-      "seo": {
-        "title": "Taller de Tranquilidad Financiera · Webinar 14 oct 2025 (CDMX)",
-        "description": "En 90 minutos sabrás cuánto realmente ganas y qué funciona en tu negocio. Claridad y confianza para decidir.",
-        "canonical": "https://lobra.net/webinars/2025-10-14-2030"
-      },
-      "hero": {
-        "eyebrow": "Taller de Tranquilidad Financiera",
-        "title": "Claridad de tus [[ingresos]], [[tranquilidad]] y [[confianza]].",
-        "subtitle": "Clase práctica en vivo para ordenar tus [[ingresos]] y vender con claridad desde el [[día 1]].",
-        "note": "Empieza hoy con claridad y paz.",
-        "ctaText": "Reservar mi lugar en la clase",
-        "heroImageSrc": "/images/webinars/2025-10-14-2030/hero.jpg",
-        "heroImageAlt": "Roberto Huerta, Webinar Finanzas LOBRÁ Octubre 2025"
-      },
-      "clasePractica": {
-        "eyebrow": "Taller interactivo",
-        "title": "Aprende a poner en orden tus [[ingresos]] en una sola sesión",
-        "intro": "En vivo, [[práctico]] y aplicado a tu negocio. [[No teoría]], resultados.",
-        "leftTitle": "¿Te suena [[familiar]]?",
-        "bullets": [
-          "No sabes cuál es tu [[venta promedio]].",
-          "No tienes claro cuánto ganaste el [[mes pasado]].",
-          "No ves si tus ingresos van [[subiendo]] o bajando.",
-          "No puedes decir quién es tu [[mejor cliente]].",
-          "Todo esto se resuelve con [[5 min al día]]."
-        ],
-        "deliverableTitle": "Lo que te [[llevas]]",
-        "deliverableBullets": [
-          "Tu registro [[listo]] para usar desde mañana.",
-          "[[Método simple]] que te toma máximo 5 minutos al día.",
-          "Duración total: 90 min.",
-          "Modalidad: En vivo por Zoom (sin Excel/Sheets también aplicas los conceptos)."
-        ],
-        "priceLine": "Hoy $690 MXN · Cupo limitado",
-        "guarantee": "si no quedas conforme, reembolso.",
-        "ctaText": "Reservar mi lugar ahora"
-      }
-    },
-    "prelobby": {
-      "labels": {
-        "tooEarly": "Aún no abrimos la sala, vuelve más tarde.",
-        "early": "Faltan pocos minutos, prepara tu conexión.",
-        "open": "Ya puedes entrar al prelobby.",
-        "live": "El webinar está en vivo.",
-        "ended": "Este webinar ha finalizado."
-      }
-    },
-    "checkout": {
-      "bullets": [
-        "Acceso al evento en vivo",
-        "Plantilla práctica de apoyo",
-        // Activa si más adelante ofreces replay. Por ahora puedes omitirla si no aplica.
-        // "Acceso a la grabación durante 7 días",
-        "Soporte por email"
-      ],
-      "refundLine": "Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.",
-      "legalLinks": { "privacySlug": "privacidad", "refundSlug": "reembolsos" }
-    }
-  },
-
-  "2025-10-21-2030": {
-    "shared": {
-      "slug": "2025-10-21-2030",
+      "slug": "2025-10-28-2030",
       "title": "Confianza para saber cuánto ganas (de verdad)",
-      "startAt": "2025-10-21T20:30:00-06:00",
+      "startAt": "2025-10-28T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -101,30 +14,28 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": true
+        "featuredHome": false
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
         "amountCents": 69000,
         "currency": "MXN",
         "interval": "one_time"
-        //"stripePriceId": "price_1SGOfTQ8dpmAG0o2DWCS0Wdk",
-        //"stripeProductId": "prod_TCoI05wHivveWv"
       }
     },
     "sales": {
       "seo": {
-        "title": "Taller en vivo: Confianza para saber cuánto ganas · 21 oct 2025",
-        "description": "Aprende a ordenar tus ingresos en solo 90 minutos. Workshop práctico, sin complicaciones ni tecnicismos. Empieza con claridad y toma control real de tu dinero.",
-        "canonical": "https://lobra.net/webinars/2025-10-21-2030"
+        "title": "Workshop “Domina tus Ingresos” · 28 oct 2025, 8:30 p. m. CDMX",
+        "description": "Ordena tus ventas en 90 minutos y recupera tu paz financiera.",
+        "canonical": "https://lobra.net/webinars/2025-10-28-2030"
       },
       "hero": {
-        "eyebrow": "Taller práctico en vivo",
-        "title": "Saber cuánto [[ganas]] te da [[confianza]] (de verdad)",
-        "subtitle": "No más suposiciones. Ordena tus ventas con claridad y recupera tu paz financiera.",
+        "eyebrow": "Workshop “Domina tus Ingresos”",
+        "title": "Estrategias para cobrar mejor y vender con claridad",
+        "subtitle": "No más suposiciones. Entiende tus ingresos y decide con confianza.",
         "note": "No es un archivo. Es el inicio de tu tranquilidad.",
         "ctaText": "Quiero claridad financiera",
-        "heroImageSrc": "/images/webinars/2025-10-21-2030/hero.jpg",
+        "heroImageSrc": "/images/webinars/fin/ingresos-v001/hero.jpg",
         "heroImageAlt": "Taller LOBRÁ - Ingresos claros"
       },
       "clasePractica": {
@@ -146,7 +57,7 @@
           "Toma menos [[tiempo]] que contestar un mensaje.",
           "No necesitas saber Excel — lo haces conmigo, [[paso a paso]]."
         ],
-        "priceLine": "Por introdución: solo $690 MXN",
+        "priceLine": "$690 MXN",
         "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
         "ctaText": "Apartar mi lugar ahora"
       }
@@ -159,14 +70,22 @@
         "live": "Clase en vivo.",
         "ended": "Sesión finalizada."
       }
+    },
+    "checkout": {
+      "bullets": [
+        "Deja de adivinar cuánto ganas.",
+        "Registra y entiende tus ventas con claridad.",
+        "Descubre qué te da más resultados.",
+        "Sal con la tranquilidad de saber de dónde viene tu dinero."
+      ]
     }
   },
 
-  "2025-10-28-2030": {
+  "2025-11-04-2030": {
     "shared": {
-      "slug": "2025-10-28-2030",
+      "slug": "2025-11-04-2030",
       "title": "Tranquilidad para saber a dónde se va tu dinero",
-      "startAt": "2025-10-28T20:30:00-06:00",
+      "startAt": "2025-11-04T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -184,23 +103,21 @@
         "amountCents": 69000,
         "currency": "MXN",
         "interval": "one_time"
-        //"stripePriceId": "price_1SGOsrQ8dpmAG0o2YrvR2LV3",
-        //"stripeProductId": "prod_TCoVKJyjCmGw1C"
       }
     },
     "sales": {
       "seo": {
-        "title": "Taller en vivo: Controla tus gastos y recupera el control · 28 oct 2025",
-        "description": "Aprende a organizar tus egresos en solo 90 minutos. Workshop práctico, sin tecnicismos. Ideal para dueños de negocio que quieren dejar de adivinar a dónde se va su dinero.",
-        "canonical": "https://lobra.net/webinars/2025-10-28-2030"
+        "title": "Workshop “Controla tus Egresos” · 4 nov 2025, 8:30 p. m. CDMX",
+        "description": "Aprende a organizar tus egresos en 90 minutos y gasta con intención, sin culpa ni enredos.",
+        "canonical": "https://lobra.net/webinars/2025-11-04-2030"
       },
       "hero": {
-        "eyebrow": "Taller práctico en vivo",
-        "title": "Controlar tus [[gastos]] te da tranquilidad (de verdad)",
-        "subtitle": "Gasta con intención, sin culpa y sin enredos. Aprende a ver a dónde se va tu dinero y cómo recuperar el control.",
+        "eyebrow": "Workshop “Controla tus Egresos”",
+        "title": "Aprende a reducir fugas sin vivir limitado",
+        "subtitle": "Gasta con intención y recupera el control de tu dinero.",
         "note": "No es un Excel. Es respirar sin miedo a los números.",
         "ctaText": "Quiero controlar mis gastos",
-        "heroImageSrc": "/images/webinars/2025-10-28-2030/hero.jpg",
+        "heroImageSrc": "/images/webinars/fin/egresos-v001/hero.jpg",
         "heroImageAlt": "Taller LOBRÁ - Egresos claros"
       },
       "clasePractica": {
@@ -222,7 +139,7 @@
           "Alertas simples para que no pierdas el control sin darte cuenta.",
           "Checklist que te ayuda a mantener el orden sin complicarte."
         ],
-        "priceLine": "Vale mucho más, pero esta edición es solo $690 MXN",
+        "priceLine": "$690 MXN",
         "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
         "ctaText": "Apartar mi lugar ahora"
       }
@@ -235,14 +152,22 @@
         "live": "Clase en vivo.",
         "ended": "Sesión finalizada."
       }
+    },
+    "checkout": {
+      "bullets": [
+        "Recupera el control sin vivir limitado.",
+        "Gasta con intención y prioriza lo que sí importa.",
+        "Identifica fugas de gasto sin culpa ni frustración.",
+        "Termina con una sensación real de orden y equilibrio."
+      ]
     }
   },
 
-  "2025-11-04-2030": {
+  "2025-11-11-2030": {
     "shared": {
-      "slug": "2025-11-04-2030",
+      "slug": "2025-11-11-2030",
       "title": "Claridad para entender tus números (de verdad)",
-      "startAt": "2025-11-04T20:30:00-06:00",
+      "startAt": "2025-11-11T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -253,30 +178,28 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": true
+        "featuredHome": false
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-reportes-v001",
         "amountCents": 79000,
         "currency": "MXN",
         "interval": "one_time"
-        //"stripePriceId": "price_1SGOvtQ8dpmAG0o2mzvcK5WM",
-        //"stripeProductId": "prod_TCoZfevgJpTIoh"
       }
     },
     "sales": {
       "seo": {
-        "title": "Taller en vivo: Claridad para entender tus números · 04 nov 2025",
-        "description": "Convierte tus ingresos y egresos en reportes claros, KPIs útiles y un dashboard simple para tomar decisiones con confianza.",
-        "canonical": "https://lobra.net/webinars/2025-11-04-2030"
+        "title": "Workshop “Entiende tus Números” · 11 nov 2025, 8:30 p. m. CDMX",
+        "description": "Convierte tus ingresos y egresos en reportes claros, KPIs útiles y un dashboard simple para decidir con confianza.",
+        "canonical": "https://lobra.net/webinars/2025-11-11-2030"
       },
       "hero": {
-        "eyebrow": "Taller práctico en vivo",
-        "title": "Ver tu negocio con [[claridad]] cambia todo",
-        "subtitle": "Transforma tus ingresos y egresos en datos simples para tomar decisiones con confianza.",
-        "note": "No necesitas saber Excel ni contabilidad. Solo tus números, bien organizados.",
+        "eyebrow": "Workshop “Entiende tus Números”",
+        "title": "Crea tu tablero de rentabilidad en tiempo real",
+        "subtitle": "Transforma tus datos en decisiones con confianza.",
+        "note": "No necesitas saber Excel ni contabilidad.",
         "ctaText": "Quiero entender mis números",
-        "heroImageSrc": "/images/webinars/2025-11-04-2030/hero.jpg",
+        "heroImageSrc": "/images/webinars/fin/reportes-v001/hero.jpg",
         "heroImageAlt": "Taller LOBRÁ - Reportes claros"
       },
       "clasePractica": {
@@ -298,7 +221,7 @@
           "Formato fácil de actualizar (sin fórmulas raras ni macros).",
           "Plantilla reutilizable para cada mes de tu negocio."
         ],
-        "priceLine": "Vale mucho más, pero esta edición es solo $790 MXN",
+        "priceLine": "$790 MXN",
         "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
         "ctaText": "Apartar mi lugar ahora"
       }
@@ -311,14 +234,22 @@
         "live": "Clase en vivo.",
         "ended": "Sesión finalizada."
       }
+    },
+    "checkout": {
+      "bullets": [
+        "Pierde el miedo a tus números.",
+        "Aprende a leer qué funciona y qué no.",
+        "Construye una visión clara de tu rentabilidad.",
+        "Siéntete orgulloso de entender tus finanzas."
+      ]
     }
   },
 
-  "2025-11-11-2030": {
+  "2025-11-18-2030": {
     "shared": {
-      "slug": "2025-11-11-2030",
+      "slug": "2025-11-18-2030",
       "title": "Convierte tus números en decisiones inteligentes",
-      "startAt": "2025-11-11T20:30:00-06:00",
+      "startAt": "2025-11-18T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -329,36 +260,34 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": false
+        "featuredHome": true
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-planeacion-v001",
         "amountCents": 99000,
         "currency": "MXN",
         "interval": "one_time"
-        //"stripePriceId": "price_1SGOzfQ8dpmAG0o2Y0r2jdBw",
-        //"stripeProductId": "prod_TCocVuS7NjkQ6p"
       }
     },
     "sales": {
       "seo": {
-        "title": "Taller en vivo: Convierte tus números en decisiones inteligentes · 11 nov 2025",
-        "description": "Aprende a usar tus datos financieros para decidir con claridad: invertir, ajustar y planear el siguiente paso sin miedo ni confusión.",
-        "canonical": "https://lobra.net/webinars/2025-11-11-2030"
+        "title": "Workshop “Planea tu 2026” · 18 nov 2025, 8:30 p. m. CDMX",
+        "description": "Usa tus datos para decidir con claridad: invertir, ajustar y planear el siguiente paso sin miedo ni confusión.",
+        "canonical": "https://lobra.net/webinars/2025-11-18-2030"
       },
       "hero": {
-        "eyebrow": "Taller práctico en vivo",
-        "title": "Convierte tu [[claridad financiera]] en resultados reales",
-        "subtitle": "Usa tus números para decidir con [[confianza]]: cuándo invertir, cuánto ajustar y cómo proyectar tu negocio sin improvisar — y hacerlo [[sin miedo]] a equivocarte.",
+        "eyebrow": "Workshop “Planea tu 2026”",
+        "title": "Convierte tus finanzas en decisiones claras",
+        "subtitle": "Decide con confianza: cuándo invertir, cuánto ajustar y cómo proyectar tu negocio.",
         "note": "No más corazonadas. Planea con calma y con datos que te respalden.",
         "ctaText": "Quiero planear con inteligencia",
-        "heroImageSrc": "/images/webinars/2025-11-11-2030/hero.jpg",
+        "heroImageSrc": "/images/webinars/fin/planeacion-v001/hero.jpg",
         "heroImageAlt": "Taller LOBRÁ - Estrategia y planeación financiera"
       },
       "clasePractica": {
         "eyebrow": "Workshop aplicado a tu negocio",
         "title": "Tu [[plan financiero]] listo para guiar tus decisiones",
-        "intro": "Aprende a decidir sin miedo qué mantener, qué recortar y dónde invertir. Convierte tus reportes en una guía clara para el siguiente paso de tu negocio.",
+        "intro": "Convierte tus reportes en una guía clara para el siguiente paso de tu negocio.",
         "leftTitle": "¿Te suena familiar?",
         "bullets": [
           "Ya sabes tus números… pero no sabes qué hacer con ellos.",
@@ -370,11 +299,11 @@
         "deliverableTitle": "Te llevas",
         "deliverableBullets": [
           "Método para convertir tus reportes en un plan financiero real.",
-          "Herramienta para proyectar escenarios (optimista, base y conservador).",
-          "Plantilla editable para decidir cuánto invertir o ahorrar sin miedo.",
-          "Ruta práctica para tomar decisiones financieras alineadas con lo que realmente quieres."
+          "Herramienta para proyectar escenarios simples.",
+          "Plantilla editable para decidir cuánto invertir o ahorrar.",
+          "Ruta práctica para tomar decisiones alineadas con lo que realmente quieres."
         ],
-        "priceLine": "Vale mucho más, pero esta edición es solo $990 MXN",
+        "priceLine": "$990 MXN",
         "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
         "ctaText": "Quiero cerrar mi sistema financiero"
       }
@@ -387,6 +316,14 @@
         "live": "Clase en vivo.",
         "ended": "Sesión finalizada."
       }
+    },
+    "checkout": {
+      "bullets": [
+        "Deja de reaccionar mes a mes.",
+        "Planea 2026 con objetivos claros y realistas.",
+        "Convierte metas en números que te respalden, no que te presionen.",
+        "Sal con dirección, control y tranquilidad para el año que viene."
+      ]
     }
   }
 }

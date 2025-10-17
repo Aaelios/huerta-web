@@ -318,7 +318,7 @@ export default async function GraciasPage({
             <li>Revisa spam o promociones.</li>
             <li>Busca el remitente “LOBRÁ &lt;no-reply@mail.lobra.net&gt;”.</li>
             <li>
-              Si no lo encuentras, escribe a <a href={`mailto:${getSupportEmail(null)}`}>{getSupportEmail(null)}</a>.
+              Si no lo encuentras, escribe a <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
             </li>
           </ul>
         </div>

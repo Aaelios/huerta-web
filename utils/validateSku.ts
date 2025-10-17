@@ -1,3 +1,4 @@
+//utils/validateSku.ts
 /**
  * Validador de SKUs conforme al estándar definido en ops/semana0/sku_standard.md
  *

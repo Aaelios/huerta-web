@@ -1,111 +1,196 @@
-// Huerta Consulting — Dev Test Endpoint — 2025-10-06
 // app/dev/test-webinars/route.ts
 
-import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import { resolveNextStep } from '@/lib/postpurchase/resolveNextStep';
-
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 /**
- * GET /dev/test-webinars?sku=...&fulfillment_type=...&success_slug=...&send=0|1&email=...
- *
- * Propósito:
- * - Probar resolveNextStep() sin afectar DB ni webhooks.
- * - (Opcional) Enviar un correo de prueba con el HTML inline actual. No escribe en DB.
- *
- * Seguridad:
- * - Bloqueado en producción salvo override explícito via ALLOW_DEV_TESTS=1.
- *
- * Reglas:
- * - Construye href absoluto con APP_URL.
- * - Si send=1 y SEND_RECEIPTS==='1' y hay email, envía correo de prueba.
+ * Dev tests handler for Webinars Hub modules.
+ * Guarded by ALLOW_DEV_TESTS=1 and FEATURE_WEBINARS_HUB=true.
+ * Next.js 15.5 App Router, ESM, strict TS, ESLint-safe.
  */
 
-function isProd() {
-  // VERCEL_ENV: 'production' | 'preview' | 'development' (cuando existe)
-  const env = process.env.VERCEL_ENV || process.env.NODE_ENV || '';
-  return env === 'production';
+import { NextResponse, type NextRequest } from 'next/server';
+
+// Módulos server-side
+import {
+  f_normalizaFiltrosWebinars,
+  f_construyeOrdenListado,
+  type WebinarsSort,
+  type WebinarsLevel,
+} from '@/src/server/modules/webinars/m_filtros';
+import {
+  f_instanciaProximaPorSku,
+  type SupabaseRpcClient,
+} from '@/src/server/modules/webinars/m_instancias';
+import {
+  f_precioVigentePorSku,
+  type SupabaseClient as PriceClient,
+} from '@/src/server/modules/webinars/m_precios';
+import {
+  f_catalogoListaWebinars,
+  type CatalogoQuery,
+} from '@/src/server/modules/webinars/m_catalogo';
+
+/* =========================
+ * Guards
+ * ========================= */
+
+function isDevEnabled(): boolean {
+  const allow = process.env.ALLOW_DEV_TESTS === '1';
+  const flag = process.env.FEATURE_WEBINARS_HUB === 'TRUE' || process.env.FEATURE_WEBINARS_HUB === 'true' || process.env.FEATURE_WEBINARS_HUB === '1';
+  const notProd = process.env.VERCEL_ENV !== 'production';
+  return allow && flag && notProd;
 }
 
-function absUrl(relOrAbs: string): string {
-  const base = (process.env.APP_URL || '').replace(/\/+$/, '');
-  if (!base) throw new Error('APP_URL not set');
-  if (/^https?:\/\//i.test(relOrAbs)) return relOrAbs;
-  return `${base}${relOrAbs.startsWith('/') ? '' : '/'}${relOrAbs}`;
-}
+/* =========================
+ * Supabase client loader (best-effort)
+ * No asumimos nombres exactos. Intentamos dos ubicaciones comunes.
+ * ========================= */
 
-export async function GET(req: Request) {
+async function getSupabaseServiceClient(): Promise<(PriceClient & SupabaseRpcClient) | null> {
+  // Candidate 1: /lib/supabase/m_getSupabaseService
   try {
-    // Seguridad: bloquear en prod salvo override
-    if (isProd() && process.env.ALLOW_DEV_TESTS !== '1') {
-      return NextResponse.json({ ok: false, error: 'forbidden_in_production' }, { status: 403 });
-    }
+    const modA: unknown = await import('@/lib/supabase/m_getSupabaseService');
+    // Common shapes: default export function or named factory
+    const candidateA: any =
+      (modA as any)?.default ??
+      (modA as any)?.m_getSupabaseService ??
+      (modA as any)?.getSupabaseService ??
+      null;
 
-    const url = new URL(req.url);
-    const sku = url.searchParams.get('sku') || undefined;
-    const fulfillment_type = url.searchParams.get('fulfillment_type') || undefined;
-    const success_slug = url.searchParams.get('success_slug') || undefined;
-    const send = url.searchParams.get('send') === '1';
-    const email = url.searchParams.get('email') || '';
-
-    // Resolver siguiente paso
-    const next = await resolveNextStep({ fulfillment_type, sku, success_slug });
-
-    // Normalización de label y href relativo
-    const label = 'label' in next && next.label ? next.label : 'Continuar';
-    const rel = 'href' in next && next.href ? next.href : `/${(success_slug || 'mi-cuenta').replace(/^\/+/, '')}`;
-    const href = absUrl(rel);
-
-    const payload = {
-      ok: true,
-      input: { sku, fulfillment_type, success_slug, send, email },
-      next: { ...next, label, href },
-      env: {
-        vercel_env: process.env.VERCEL_ENV || null,
-        send_receipts: process.env.SEND_RECEIPTS || null,
-        app_url: process.env.APP_URL || null,
-      },
-    };
-
-    // Envío opcional de correo de prueba, sin tocar DB
-    if (send) {
-      if (!email) {
-        return NextResponse.json({ ...payload, ok: false, error: 'missing_email_for_send' }, { status: 400 });
+    if (typeof candidateA === 'function') {
+      const client = await candidateA();
+      if (client && typeof client === 'object' && 'from' in client && 'rpc' in client) {
+        return client as PriceClient & SupabaseRpcClient;
       }
-      if (process.env.SEND_RECEIPTS !== '1') {
-        return NextResponse.json({ ...payload, ok: false, error: 'SEND_RECEIPTS_not_enabled' }, { status: 400 });
+    }
+  } catch {
+    // ignore
+  }
+
+  // Candidate 2: /lib/supabase/server
+  try {
+    const modB: any = await import('@/lib/supabase/server');
+    const clientB: any =
+      modB?.default ??
+      modB?.supabase ??
+      modB?.client ??
+      null;
+
+    if (clientB && typeof clientB === 'object' && 'from' in clientB && 'rpc' in clientB) {
+      return clientB as PriceClient & SupabaseRpcClient;
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+/* =========================
+ * Helpers
+ * ========================= */
+
+function qpArray(sp: URLSearchParams, key: string): string[] {
+  const vals = sp.getAll(key);
+  return vals.map((v) => v.trim()).filter((v) => v.length > 0);
+}
+
+function qpEnum<T extends string>(sp: URLSearchParams, key: string, allowed: readonly T[]): T | undefined {
+  const v = sp.get(key);
+  if (!v) return undefined;
+  return (allowed as readonly string[]).includes(v) ? (v as T) : undefined;
+}
+
+function qpInt(sp: URLSearchParams, key: string): number | undefined {
+  const v = sp.get(key);
+  if (!v) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/* =========================
+ * GET handler
+ * ========================= */
+
+export async function GET(req: NextRequest) {
+  if (!isDevEnabled()) {
+    return NextResponse.json({ error: 'forbidden', detail: 'Dev tests disabled' }, { status: 403 });
+  }
+
+  const sp = req.nextUrl.searchParams;
+  const mod = sp.get('module');
+
+  try {
+    switch (mod) {
+      case 'filtros': {
+        // Build params using raw query values
+        const params = {
+          page: qpInt(sp, 'page'),
+          page_size: qpInt(sp, 'page_size'),
+          topic: qpArray(sp, 'topic'),
+          level: qpEnum<WebinarsLevel>(sp, 'level', ['basico', 'intermedio', 'avanzado'] as const),
+          sort: qpEnum<WebinarsSort>(sp, 'sort', ['recent', 'price_asc', 'price_desc', 'featured'] as const),
+        };
+        const normalized = f_normalizaFiltrosWebinars(params);
+        const order = f_construyeOrdenListado(normalized.sort);
+        return NextResponse.json({ ok: true, normalized, order });
       }
 
-      const resend = new Resend(process.env.RESEND_API_KEY || '');
-      const from = process.env.RESEND_FROM || 'LOBRÁ <no-reply@mail.lobra.net>';
+      case 'instancias': {
+        const sku = sp.get('sku') ?? '';
+        const max = qpInt(sp, 'max') ?? 5;
 
-      const html = `
-        <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
-          <h1>Prueba de acceso</h1>
-          <p>Este es un correo de prueba usando <code>resolveNextStep</code>.</p>
-          <p><strong>SKU:</strong> ${sku || '(sin sku)'} · <strong>Tipo:</strong> ${fulfillment_type || '(n/a)'}</p>
-          <p><a href="${href}" style="display:inline-block;padding:12px 16px;background:#000;color:#fff;text-decoration:none;border-radius:8px">${label}</a></p>
-          <p style="color:#666;font-size:12px;margin-top:24px">Si el botón no funciona, copia y pega: ${href}</p>
-        </div>
-      `;
+        const supabase = await getSupabaseServiceClient();
+        if (!supabase) {
+          return NextResponse.json({ error: 'internal_error', detail: 'Supabase client not available' }, { status: 500 });
+        }
 
-      const subject = 'Prueba: CTA dinámico de acceso';
-      const sendRes = await resend.emails.send({ from, to: email, subject, html });
+        const resumen = await f_instanciaProximaPorSku(supabase, sku, max);
+        return NextResponse.json({ ok: true, sku, resumen });
+      }
 
-      return NextResponse.json({
-        ...payload,
-        send_result: sendRes,
-      });
+      case 'precio': {
+        const sku = sp.get('sku') ?? '';
+        const currency = (sp.get('currency') ?? 'MXN') as 'MXN' | 'USD';
+
+        const supabase = await getSupabaseServiceClient();
+        if (!supabase) {
+          return NextResponse.json({ error: 'internal_error', detail: 'Supabase client not available' }, { status: 500 });
+        }
+
+        const precio = await f_precioVigentePorSku(supabase, sku, currency);
+        return NextResponse.json({ ok: true, sku, precio });
+      }
+
+      case 'catalogo': {
+        const topics = qpArray(sp, 'topic');
+        const query: CatalogoQuery = {
+          topic: topics.length ? topics : undefined,
+          level: qpEnum<WebinarsLevel>(sp, 'level', ['basico', 'intermedio', 'avanzado'] as const),
+          sort: qpEnum<WebinarsSort>(sp, 'sort', ['recent', 'price_asc', 'price_desc', 'featured'] as const),
+          page: qpInt(sp, 'page'),
+          page_size: qpInt(sp, 'page_size'),
+        };
+
+        const supabase = await getSupabaseServiceClient();
+        if (!supabase) {
+          return NextResponse.json({ error: 'internal_error', detail: 'Supabase client not available' }, { status: 500 });
+        }
+
+        const data = await f_catalogoListaWebinars(supabase, query);
+        return NextResponse.json({ ok: true, query, data });
+      }
+
+      default:
+        return NextResponse.json(
+          {
+            error: 'bad_request',
+            detail:
+              'Use ?module=filtros|instancias|precio|catalogo',
+          },
+          { status: 400 }
+        );
     }
-
-    // Solo respuesta JSON sin envío
-    return NextResponse.json(payload);
-  } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: e?.message || 'unexpected_error' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : 'unknown_error';
+    return NextResponse.json({ error: 'internal_error', detail }, { status: 500 });
   }
 }

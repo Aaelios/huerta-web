@@ -24,11 +24,11 @@ export default function Hero() {
             </h1>
 
             <p className="u-lead u-maxw-prose">
-              LOBRÁ es un <span className="accent">sistema educativo</span> con webinars y cursos que generan avances rápidos, con <span className="accent">herramientas</span> listas para usar.
+              LOBRÁ es un Método de aprendizaje <span className="accent">inovador</span> con webinars y cursos que generan avances rápidos, <span className="accent">concretos</span> y con <span className="accent">herramientas</span> listas para usar.
             </p>
 
             <p className="small u-maxw-prose">
-              Si tus ingresos son inestables, cada hora de aprendizaje se convierte en <span className="accent">progreso visible</span> y medible.
+              No es un curso teórico, cada hora de aprendizaje la conviertes en <span className="accent">progreso visible</span>, aplicable de inmediato y con resultados tangibles.
             </p>
 
             {/* Cluster de CTAs + nota de confianza */}

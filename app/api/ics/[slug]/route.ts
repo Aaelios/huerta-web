@@ -7,7 +7,7 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ slug: string }> }
 ) {
-  const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+  //const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000";
   const CANON = process.env.CANONICAL_BASE_URL ?? "https://lobra.net";
   const HOST = new URL(CANON).host;
   const TZ = process.env.SITE_TZ ?? "America/Mexico_City";

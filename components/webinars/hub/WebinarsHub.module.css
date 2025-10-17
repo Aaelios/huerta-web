@@ -1,0 +1,199 @@
+/* WebinarsHub.module.css — v2.5.2 (fix: selectors puros con :global) */
+
+/* ====== HERO (título/subtítulo) ======================================= */
+/* Header compacto para /webinars */
+.page header.section{
+  padding-block: 32px 24px;   /* antes 64px 0 en otras páginas */
+  margin-block-end: 24px;     /* separa del primer H2 */
+}
+.page header.section h1{
+  font-size: clamp(2rem, 1.6rem + 1vw, 2.75rem); /* ~32–44 */
+  line-height: 1.15;
+  margin: 0 0 8px 0;
+}
+.page header.section p{
+  margin: 0;
+  max-width: 60ch;
+}
+.page header.section .accent{ color: var(--accent); font-weight: 700; }
+
+.page header[role="banner"] { margin-block-end: var(--space-6, 32px); }
+.heroTitle { font-weight: 700; letter-spacing: -0.015em; max-width: 18ch; }
+.heroKicker { max-width: 68ch; color: var(--fg-80); }
+
+/* ====== BADGES / META ================================================== */
+.metaRow { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-bottom: 10px; }
+.badge { padding: 6px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+.badge--level { background: var(--accent, #50C878); color:#04210f; }
+.badge--state { background: rgba(255,255,255,.10); color: var(--fg); border:1px solid var(--border-dark-1); }
+.badge--topic { background: rgba(255,255,255,.06); color: var(--fg-80); }
+
+/* ====== PRECIO / CTA base ============================================= */
+.price, .featuredPrice { font-size: 18px; font-weight: 700; color: var(--fg); }
+.btnPrimary{
+  display:inline-flex; align-items:center; gap:10px;
+  padding: 9px 14px; border-radius: 12px;
+  background: var(--accent,#50C878); color:#0A0A0A;
+  font-weight:600;
+  font-family: inherit; /* asegura tipografía Satoshi heredada */
+  transition: transform 150ms cubic-bezier(.2,.8,.2,1), box-shadow 150ms cubic-bezier(.2,.8,.2,1);
+}
+.btnPrimary:hover{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+.btnPrimary:active{ transform: translateY(0); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.btnPrimary:focus-visible{ outline:2px solid var(--accent,#50C878); outline-offset:2px; }
+
+/* ====== FILTROS compactos ============================================ */
+.filtersBar{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding-block:12px; }
+.filtersBar :global(.c-form-control){ max-width:320px; }
+.filtersBar :global(select), .filtersBar :global(button){ height:40px; }
+.chip{ border-radius:12px; padding:6px 10px; }
+.select{ min-height:36px; }
+
+/* ====== SUPERFICIE de cards =========================================== */
+.hub :global(.c-card), .card, .featuredCard{
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border-dark-1, rgba(255,255,255,.10));
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.hub :global(.c-card:hover), .card:hover, .featuredCard:hover{
+  background: rgba(255,255,255,.08);
+  border-color: var(--border-dark-2, rgba(255,255,255,.14));
+}
+
+/* ====== CARD layout y densidad ======================================== */
+.hub :global(.c-card), .card, .featuredCard { padding: 16px 16px 18px; border-radius: 14px; }
+.cardMedia{ position:relative; aspect-ratio:16/9; overflow:hidden; border-radius:12px; background: rgba(255,255,255,.04); margin: 0 0 12px 0; }
+.cardMedia img{ width:100%; height:100%; object-fit:cover; display:block; }
+.cardBody{ padding: 0; }
+.cardTitle{
+  font-size: clamp(1rem, .9rem + .4vw, 1.25rem);
+  font-weight:500; line-height:1.25; margin-block:6px 8px;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+  line-clamp: 3;
+}
+.titleBundle{ font-size: clamp(1.125rem, 1rem + .6vw, 1.5rem); font-weight:600; line-height:1.25; }
+.titleClass{
+  font-size: clamp(1rem, .85rem + .35vw, 1.125rem);
+  font-weight:500; line-height:1.25;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+  line-clamp: 3;
+}
+.cardFooter{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top: 10px; }
+
+/* ====== CTA jerárquico por tipo ======================================= */
+.btnPrimary { font-size: 14px; }                                   /* Clases */
+.bundlesGrid .btnPrimary { font-size: 15px; padding: 10px 16px; }  /* Módulos */
+.hub :global(.featured-grid) .btnPrimary,
+.featuredCard .btnPrimary { font-size:16px; padding:12px 18px; }   /* Featured */
+
+/* ====== GRIDS ========================================================== */
+.bundlesGrid{ display:grid; gap: 24px; grid-template-columns:1fr; }
+@media (min-width:1024px){ .bundlesGrid{ grid-template-columns:1fr 1fr; } }
+
+.classGrid{ display:grid; gap: 24px; grid-template-columns:1fr; }
+@media (min-width:481px) and (max-width:1279px){ .classGrid{ grid-template-columns:1fr 1fr; } }
+@media (min-width:1280px){ .classGrid{ grid-template-columns:1fr 1fr 1fr; } }
+
+/* ====== FEATURED centrado ============================================= */
+/* Override global featured-grid (globals.css) que forzaba 2/3 columnas */
+.hub :global(.featured-grid){
+  grid-template-columns: 1fr !important;
+  max-width: 920px;
+  margin-inline: auto;
+  align-items: start;
+}
+.featuredCard{ width: 100%; max-width: 920px; margin-inline: auto; padding: 20px; }
+.featuredTitle{ font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem); font-weight: 700; line-height:1.2; margin-block:10px 8px; max-width: 32ch; }
+.featuredSummary{ max-width: 60ch; color: var(--fg-80); }
+.featuredFooter{ display:grid; grid-template-columns:auto 1fr; align-items:center; gap:12px; }
+.featuredMedia{ aspect-ratio:16/9; overflow:hidden; border-radius: 12px; background: rgba(255,255,255,.04); }
+.featuredMedia img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* ====== UTILIDADES internas del hub =================================== */
+.cardMeta{ display:flex; flex-wrap:wrap; gap:8px 10px; margin-bottom: 8px; }
+.badgeSoon{ background: rgba(255,255,255,.10); color: var(--accent,#5cf28e); border:1px solid rgba(255,255,255,.20); font-weight:600; }
+.tags{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px; padding:0; list-style:none; font-size:13px; color:rgba(255,255,255,.85); opacity:.9; }
+.tags li{ background: rgba(255,255,255,.06); padding:4px 8px; border-radius:6px; }
+
+/* ====== RESPONSIVE refinements ======================================== */
+@media (min-width:1024px){ .featuredCard{ padding: 24px; } }
+
+/* ====== STATES ========================================================= */
+.emptyState{ text-align:center; padding: 28px; border:1px solid var(--border-dark-1); border-radius: 14px; background: rgba(255,255,255,.04); }
+
+/* ====== AJUSTES FINOS ================================================== */
+/* 1) Featured centrado 1-col (override global con .hub). */
+/* 2) Tipografía Satoshi en CTA asegurada con font-family: inherit. */
+/* 3) Sin cambios funcionales ni en lógica de props. */
+
+/* PATCH v2.5.3 — Featured más jerárquico + chips coherentes en individuales */
+
+/* 1) Destacado: título, precio y CTA ligeramente mayores */
+.featuredCard .cardTitle{
+  font-size: clamp(1.25rem, 1.05rem + 1.2vw, 2.25rem);
+  font-weight: 700;
+}
+.featuredCard .price{ font-size: 20px; }
+.hub :global(.featured-grid) .btnPrimary,
+.featuredCard .btnPrimary{ font-size: 17px; padding: 12px 20px; }
+
+/* 2) Individuales: meta siempre en 2 filas
+   Fila 1: Nivel + Fecha.  Fila 2: Tema (y cualquier extra). */
+.cardMeta, .metaRow{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  row-gap: 8px;
+}
+.cardMeta > *:nth-child(1),
+.cardMeta > *:nth-child(2),
+.metaRow > *:nth-child(1),
+.metaRow > *:nth-child(2){
+  grid-row: 1;
+}
+.cardMeta > *:nth-child(n+3),
+.metaRow > *:nth-child(n+3){
+  grid-column: 1 / -1;
+  grid-row: auto; /* fuerza la segunda fila */
+}
+
+/* PATCH v2.5.4 — Corrección visual meta Featured e Individuales */
+
+/* Featured: meta en una sola línea, fluido */
+.featuredCard .metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Individuales: coherencia y wrap natural sin forzar grid */
+.cardMeta, .metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+/* Asegura tipografía y tamaño uniforme de badges */
+.badge, .badge--level, .badge--state, .badge--topic {
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* PATCH v2.5.5 — Título de destacado más grande, sin depender del wrapper */
+.hub :global(.featured-grid) .cardTitle,
+.featuredCard .cardTitle {
+  font-size: clamp(1.375rem, 1.05rem + 1.6vw, 2.25rem); /* ~22–36px */
+  line-height: 1.25;
+  font-weight: 700;
+  margin-block: 8px 10px;
+}
+
+/* Mantén coherencia de jerarquía en precio y CTA dentro de destacado */
+.hub :global(.featured-grid) .price,
+.featuredCard .price { font-size: 20px; }
+
+.hub :global(.featured-grid) .btnPrimary,
+.featuredCard .btnPrimary { font-size: 17px; padding: 12px 20px; }

@@ -178,6 +178,14 @@ a:hover {
   outline-offset: 2px;
 }
 
+/* [OVERRIDE] Tipografía de controles
+   Razón: los botones y selects no heredan font-family del body en todos los navegadores.
+   Forzamos var(--font-sans) (Satoshi) para mantener consistencia global. */
+:where(button, .c-btn, [type="button"], [type="submit"], select) {
+  font-family: var(--font-sans);
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: .001ms !important;
@@ -692,6 +700,22 @@ hr {
   }
   .l-hero-imgCol {
     justify-self: end;
+  }
+}
+
+/* Variante compacta del hero para páginas de listados (ej. /webinars) */
+.l-hero--compact {
+  padding-block: 40px 0;
+}
+@media (max-width: 767px) {
+  .l-hero--compact {
+    padding-block: 32px 0;
+  }
+}
+@media (min-width: 1200px) {
+  .l-hero--compact .l-heroGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
   }
 }
 
