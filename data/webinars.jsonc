@@ -1,4 +1,85 @@
 {
+  "2025-10-23-2030": {
+  "shared": {
+    "slug": "2025-10-23-2030",
+    "title": "Coaching de carrera: convierte tu perfil en entrevistas reales",
+    "startAt": "2025-10-23T20:30:00-06:00",
+    "durationMin": 60,
+    "zoomJoinUrl": null,
+    "supportEmail": "soporte@lobra.net",
+    "template": { "mode": "email" },
+    "whatsAppSupport": { "enabled": false },
+    "calendar": { "mode": "generated" },
+    "sku": "liveclass-lobra-rh-career-v001",
+    "flags": {
+      "showReplay": false,
+      "replayUrl": null,
+      "featuredHome": false
+    },
+    "pricing": {
+      "sku": "liveclass-lobra-rh-career-v001",
+      "amountCents": 249000,
+      "currency": "MXN",
+      "interval": "one_time"
+    }
+  },
+  "sales": {
+    "seo": {
+      "title": "Workshop Coaching de Carrera con Lorenzo Flores · 23 oct 2025, 8:30 p. m. CDMX",
+      "description": "Lorenzo Flores comparte su método probado para posicionar perfiles profesionales y convertir oportunidades en entrevistas reales.",
+      "canonical": "https://lobra.net/webinars/2025-10-23-2030"
+    },
+    "hero": {
+      "eyebrow": "Workshop en vivo con [[Lorenzo Flores]]",
+      "title": "Conecta tu historia con las [[oportunidades]] que mereces",
+      "subtitle": "Una sesión donde [[Lorenzo]] te enseña a mostrar lo que [[vales]], sin adornos ni frases vacías. Su enfoque ha ayudado a decenas de profesionales a destacar donde importa: [[frente al reclutador]].",
+      "note": "Sesión en vivo · 60 minutos de estrategia y acción",
+      "ctaText": "Apartar mi lugar con Lorenzo",
+      "heroImageSrc": "/images/webinars/rh/career-v001/hero.jpg",
+      "heroImageAlt": "Lorenzo Flores impartiendo workshop de coaching de carrera"
+    },
+    "clasePractica": {
+      "eyebrow": "Un método diseñado por quien ha estado del otro lado",
+      "title": "Lorenzo te guía a construir una versión [[profesional]] irresistible",
+      "intro": "Su experiencia en reclutamiento y liderazgo le permite ver lo que otros no: cómo pensar como quien contrata, no como quien busca empleo.",
+      "leftTitle": "¿Por qué su método funciona?",
+      "bullets": [
+        "Transforma logros dispersos en una historia coherente.",
+        "Convierte tu CV en un argumento claro, no una lista de tareas.",
+        "Optimiza tu LinkedIn para atraer las oportunidades correctas.",
+        "Crea un pitch personal que genera recordación inmediata."
+      ],
+      "deliverableTitle": "Sales con resultados concretos",
+      "deliverableBullets": [
+        "CV con narrativa profesional [[convincente]].",
+        "Perfil de LinkedIn ajustado para búsquedas y [[visibilidad]].",
+        "Pitch de presentación de 60 segundos probado por Lorenzo.",
+        "Plan personal de 30 días para mantener el [[impulso]]."
+      ],
+      "priceLine": "$2,490 MXN",
+      "guarantee": "Garantía total: si no sientes que tu perfil mejora, te devolvemos tu dinero.",
+      "ctaText": "Reservar mi lugar ahora"
+    }
+  },
+  "prelobby": {
+    "labels": {
+      "tooEarly": "Aún no abrimos la sala.",
+      "early": "Faltan pocos minutos.",
+      "open": "Prelobby disponible.",
+      "live": "Clase en vivo.",
+      "ended": "Sesión finalizada."
+    }
+  },
+  "checkout": {
+    "bullets": [
+      "Actualiza tu CV con estrategia y claridad.",
+      "Optimiza tu LinkedIn para destacar en búsquedas.",
+      "Aprende a comunicar tu valor profesional con confianza.",
+      "Sal con herramientas reales para conseguir entrevistas."
+    ]
+  }
+},
+
   "2025-10-28-2030": {
     "shared": {
       "slug": "2025-10-28-2030",
