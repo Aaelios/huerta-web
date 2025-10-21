@@ -10,14 +10,14 @@
     "template": { "mode": "email" },
     "whatsAppSupport": { "enabled": false },
     "calendar": { "mode": "generated" },
-    "sku": "liveclass-lobra-rh-career-v001",
+    "sku": "liveclass-lobra-lf-rh-career-v001",
     "flags": {
       "showReplay": false,
       "replayUrl": null,
       "featuredHome": false
     },
     "pricing": {
-      "sku": "liveclass-lobra-rh-career-v001",
+      "sku": "liveclass-lobra-lf-rh-career-v001",
       "amountCents": 249000,
       "currency": "MXN",
       "interval": "one_time"
