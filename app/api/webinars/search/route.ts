@@ -128,9 +128,9 @@ export async function GET(req: NextRequest) {
   const query: CatalogoQuery = {
     topic: topics.length ? topics : undefined,
     level: qpEnum<WebinarsLevel>(sp, 'level', [
-      'basico',
-      'intermedio',
-      'avanzado',
+      'Fundamentos',
+      'Profundización',
+      'Impacto',
     ] as const),
     sort: qpEnum<WebinarsSort>(sp, 'sort', [
       'recent',
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest) {
     // 5) Query
     const data: HubSearchDTO = await f_catalogoListaWebinars(supabase, {
       topic: normalized.topic && normalized.topic.length ? normalized.topic : undefined,
-      level: (normalized.level ?? undefined) as 'basico' | 'intermedio' | 'avanzado' | undefined,
+      level: (normalized.level ?? undefined) as 'Fundamentos' | 'Profundización' | 'Impacto' | undefined,
       sort: (normalized.sort ?? 'recent') as 'recent' | 'price_asc' | 'price_desc' | 'featured',
       page,
       page_size,

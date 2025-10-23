@@ -10,7 +10,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import * as analytics from '@/components/webinars/hub/analytics';
 
-type Level = 'basico' | 'intermedio' | 'avanzado';
+type Level = 'Fundamentos' | 'Profundización' | 'Impacto';
 
 type Props = {
   topics: string[];

@@ -20,7 +20,7 @@ import {
 
 export interface CatalogoQuery {
   topic?: string | string[];
-  level?: 'basico' | 'intermedio' | 'avanzado';
+  level?: 'Fundamentos' | 'Profundización' | 'Impacto';
   sort?: 'recent' | 'price_asc' | 'price_desc' | 'featured';
   page?: number;
   page_size?: number;
@@ -39,7 +39,7 @@ interface ProductRow {
   created_at?: string | null; // ISO para orden secundario local
 }
 
-type Level = 'basico' | 'intermedio' | 'avanzado';
+type Level = 'Fundamentos' | 'Profundización' | 'Impacto';
 
 interface ProductMeta {
   topics?: unknown;
@@ -552,7 +552,7 @@ function toBoolean(val: unknown): boolean {
 }
 
 function toLevel(val: unknown): Level | null {
-  if (val === 'basico' || val === 'intermedio' || val === 'avanzado') return val;
+  if (val === 'Fundamentos' || val === 'Profundización' || val === 'Impacto') return val;
   return null;
 }
 

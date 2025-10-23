@@ -10,7 +10,7 @@ export interface HubItemDTO {
   sku: string;
   title: string;
   cover: string | null;
-  level: 'basico' | 'intermedio' | 'avanzado' | null;
+  level: 'Fundamentos' | 'Profundización' | 'Impacto' | null;
   topics: string[];
   price_cents: number | null;
   currency: string | null;

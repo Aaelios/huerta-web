@@ -24,7 +24,7 @@ type HubSearchResponse = HubApiResponse & {
   featured_items: HubItemDTO[];
   facets: {
     topics: string[];
-    levels: Array<'basico' | 'intermedio' | 'avanzado'>;
+    levels: Array<'Fundamentos' | 'Profundización' | 'Impacto'>;
   };
 };
 type ApiMaybeWrapped = HubSearchResponse | { data: HubSearchResponse };

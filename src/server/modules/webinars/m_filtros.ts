@@ -7,7 +7,7 @@
  */
 
 export type WebinarsSort = 'recent' | 'price_asc' | 'price_desc' | 'featured';
-export type WebinarsLevel = 'basico' | 'intermedio' | 'avanzado';
+export type WebinarsLevel = 'Fundamentos' | 'Profundización' | 'Impacto';
 
 export interface HubSearchParams {
   page?: number;
@@ -140,7 +140,7 @@ function sanitizeTag(s: string): string {
 }
 
 function isLevel(v: unknown): v is WebinarsLevel {
-  return v === 'basico' || v === 'intermedio' || v === 'avanzado';
+  return v === 'Fundamentos' || v === 'Profundización' || v === 'Impacto';
 }
 
 function isSort(v: unknown): v is WebinarsSort {
