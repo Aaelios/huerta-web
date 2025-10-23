@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
           page: qpInt(sp, 'page'),
           page_size: qpInt(sp, 'page_size'),
           topic: qpArray(sp, 'topic'),
-          level: qpEnum<WebinarsLevel>(sp, 'level', ['basico', 'intermedio', 'avanzado'] as const),
+          level: qpEnum<WebinarsLevel>(sp, 'level', ['Fundamentos', 'Profundización', 'Impacto'] as const),
           sort: qpEnum<WebinarsSort>(sp, 'sort', ['recent', 'price_asc', 'price_desc', 'featured'] as const),
         };
         const normalized = f_normalizaFiltrosWebinars(params);
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
         const topics = qpArray(sp, 'topic');
         const query: CatalogoQuery = {
           topic: topics.length ? topics : undefined,
-          level: qpEnum<WebinarsLevel>(sp, 'level', ['basico', 'intermedio', 'avanzado'] as const),
+          level: qpEnum<WebinarsLevel>(sp, 'level', ['Fundamentos', 'Profundización', 'Impacto'] as const),
           sort: qpEnum<WebinarsSort>(sp, 'sort', ['recent', 'price_asc', 'price_desc', 'featured'] as const),
           page: qpInt(sp, 'page'),
           page_size: qpInt(sp, 'page_size'),

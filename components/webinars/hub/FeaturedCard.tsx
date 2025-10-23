@@ -51,9 +51,9 @@ function fmtDateISO(iso: string | null) {
 
 function mapLevel(lv: Props['level']) {
   switch (lv) {
-    case 'basico': return 'Básico';
-    case 'intermedio': return 'Intermedio';
-    case 'avanzado': return 'Avanzado';
+    case 'Fundamentos': return 'Fundamentos';
+    case 'Profundización': return 'Profundización';
+    case 'Impacto': return 'Impacto';
     default: return null;
   }
 }
