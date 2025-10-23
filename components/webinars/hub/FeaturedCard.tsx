@@ -1,4 +1,9 @@
 // components/webinars/hub/FeaturedCard.tsx
+// SOLUCIÓN TEMPORAL:
+// Forzar navegación al landing fijo para live_class, bundles y courses.
+// Si existe instance_slug, se pasa como query (?i=) para preselección en el landing.
+// Mantener hasta que el orquestador de rutas maneje instancias múltiples de forma nativa.
+
 'use client';
 
 import Link from 'next/link';
@@ -19,6 +24,7 @@ type Base = Pick<
   | 'next_start_at'
   | 'instance_slug'
   | 'fulfillment_type'
+  | 'landing_slug' // habilita CTA para módulos/cursos y landing de live_class
 >;
 
 // Si existe, llega como string. No forma parte garantizada de HubItemDTO.
@@ -52,12 +58,18 @@ function mapLevel(lv: Props['level']) {
   }
 }
 
+// Normaliza slugs que llegan sin "/"
+function normHref(v?: string | null) {
+  if (!v) return undefined;
+  return v.startsWith('/') ? v : `/${v}`;
+}
+
 export function FeaturedCard(props: Props) {
   const price = fmtPrice(props.price_cents, props.currency);
   const formattedDate = fmtDateISO(props.next_start_at);
   const levelLabel = mapLevel(props.level);
 
-  // Normaliza topics a string
+  // topics → primer tema visible
   const topic =
     Array.isArray(props.topics) && props.topics.length > 0
       ? String(props.topics[0])
@@ -65,12 +77,18 @@ export function FeaturedCard(props: Props) {
 
   const isLiveClass = props.fulfillment_type === 'live_class';
   const isPurchasableLive = isLiveClass && props.purchasable === true;
-  const instanceHref = isPurchasableLive && props.instance_slug ? `/webinars/${props.instance_slug}` : undefined;
+
+  // TEMP: siempre mandar al landing fijo. Si hay instance_slug, lo pasamos en query (?i=)
+  const base = normHref(props.landing_slug);
+  const href =
+    base && props.instance_slug
+      ? `${base}?i=${encodeURIComponent(String(props.instance_slug))}`
+      : base;
 
   const ctaLabel = isPurchasableLive ? 'Más detalles' : 'Ver módulo';
 
   const onSelect = () => {
-    if (instanceHref) analytics.select_item(props.sku);
+    if (href) analytics.select_item(props.sku);
   };
 
   return (
@@ -88,8 +106,9 @@ export function FeaturedCard(props: Props) {
         <div className={s.featuredContent}>
           <h3 className={s.featuredTitle}>{props.title}</h3>
 
-          {typeof props.summary === 'string' && props.summary.trim() !== '' ? (
-            <p className={s.featuredSummary}>{props.summary}</p>
+          {typeof (props as { summary?: string | null }).summary === 'string' &&
+          (props as { summary?: string | null }).summary?.trim() !== '' ? (
+            <p className={s.featuredSummary}>{(props as { summary?: string | null }).summary}</p>
           ) : null}
 
           <div className={s.metaRow} aria-label="Metadatos del webinar">
@@ -105,21 +124,19 @@ export function FeaturedCard(props: Props) {
           <div className={s.featuredFooter}>
             {price && <span className={s.featuredPrice}>{price}</span>}
 
-            {instanceHref ? (
-              <Link href={instanceHref} className={s.btnPrimary} aria-label={`${ctaLabel}: ${props.title}`} onClick={onSelect}>
+            {href ? (
+              <Link
+                href={href}
+                className={s.btnPrimary}
+                aria-label={`${ctaLabel}: ${props.title}`}
+                onClick={onSelect}
+              >
                 {ctaLabel}
                 <svg width="16" height="16" aria-hidden="true" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M5 12h14m0 0-6-6m6 6-6 6" />
                 </svg>
               </Link>
-            ) : (
-              <button className={s.btnPrimary} aria-disabled="true" title="Pronto disponible">
-                {ctaLabel}
-                <svg width="16" height="16" aria-hidden="true" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M5 12h14m0 0-6-6m6 6-6 6" />
-                </svg>
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

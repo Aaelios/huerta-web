@@ -1,91 +1,234 @@
 {
-   "ms-tranquilidad-financiera": {
-    "shared": {
-      "slug": "ms-tranquilidad-financiera",
-      "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada",
-      "startAt": "2025-10-28T20:30:00-06:00",
-      "durationMin": 90,
-      "zoomJoinUrl": null,
-      "supportEmail": "soporte@lobra.net",
-      "template": { "mode": "email" },
-      "whatsAppSupport": { "enabled": false },
-      "calendar": { "mode": "generated" },
-      "sku": "course-lobra-rhd-fin-finanzas-v001",
-      "flags": {
-        "showReplay": false,
-        "replayUrl": null,
-        "featuredHome": true
+  "home": {
+    "featured": {
+      "type": "bundle",
+      "sku": "course-lobra-rhd-fin-finanzas-v001"
+    }
+  },
+
+  "sales": {
+    "webinars": {
+      "liveclass-lobra-rhd-fin-ingresos-v001": {
+        "type": "webinar",
+        "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
+        "seo": {
+          "title": "Workshop \"Domina tus Ingresos\" · 28 oct 2025, 8:30 p. m. CDMX",
+          "description": "Ordena tus ventas en 90 minutos y recupera tu paz financiera.",
+          "canonical": "https://lobra.net/webinars/w-domina-ingresos"
+        },
+        "hero": {
+          "eyebrow": "Workshop \"Domina tus Ingresos\"",
+          "title": "Estrategias para cobrar mejor y vender con claridad",
+          "subtitle": "No más suposiciones. Entiende tus ingresos y decide con confianza.",
+          "image": {
+            "src": "/images/webinars/fin/ingresos-v001/hero.jpg",
+            "alt": "Taller LOBRÁ - Ingresos claros"
+          }
+        },
+        "clasepractica": {
+          "deliverableBullets": [
+            "Tu registro de [[ingresos]] listo y funcionando desde el taller.",
+            "Plantilla adaptable a lo que tú vendes — [[sin fórmulas]] raras.",
+            "Toma menos [[tiempo]] que contestar un mensaje.",
+            "No necesitas saber Excel — lo haces conmigo, [[paso a paso]]."
+          ]
+        },
+        "bullets": [
+          "Deja de adivinar cuánto ganas.",
+          "Registra y entiende tus ventas con claridad.",
+          "Descubre qué te da más resultados.",
+          "Sal con la tranquilidad de saber de dónde viene tu dinero."
+        ]
       },
-      "pricing": {
-        "sku": "course-lobra-rhd-fin-finanzas-v001",
-        "amountCents": 299000,
-        "currency": "MXN",
-        "interval": "one_time"
+      "liveclass-lobra-rhd-fin-egresos-v001": {
+        "type": "webinar",
+        "sku": "liveclass-lobra-rhd-fin-egresos-v001",
+        "seo": {
+          "title": "Workshop \"Controla tus Egresos\" · 4 nov 2025, 8:30 p. m. CDMX",
+          "description": "Aprende a organizar tus egresos en 90 minutos y gasta con intención, sin culpa ni enredos.",
+          "canonical": "https://lobra.net/webinars/w-controla-egresos"
+        },
+        "hero": {
+          "eyebrow": "Workshop \"Controla tus Egresos\"",
+          "title": "Aprende a reducir fugas sin vivir limitado",
+          "subtitle": "Gasta con intención y recupera el control de tu dinero.",
+          "image": {
+            "src": "/images/webinars/fin/egresos-v001/hero.jpg",
+            "alt": "Taller LOBRÁ - Egresos claros"
+          }
+        },
+        "clasepractica": {
+          "deliverableBullets": [
+            "Tu sistema de [[egresos]] funcionando al terminar el taller.",
+            "Categorías pensadas para negocios pequeños (no contadores).",
+            "Alertas simples para que no pierdas el control sin darte cuenta.",
+            "Checklist que te ayuda a mantener el orden sin complicarte."
+          ]
+        },
+        "bullets": [
+          "Recupera el control sin vivir limitado.",
+          "Gasta con intención y prioriza lo que sí importa.",
+          "Identifica fugas de gasto sin culpa ni frustración.",
+          "Termina con una sensación real de orden y equilibrio."
+        ]
+      },
+      "liveclass-lobra-rhd-fin-reportes-v001": {
+        "type": "webinar",
+        "sku": "liveclass-lobra-rhd-fin-reportes-v001",
+        "seo": {
+          "title": "Workshop \"Entiende tus Números\" · 11 nov 2025, 8:30 p. m. CDMX",
+          "description": "Convierte tus ingresos y egresos en reportes claros, KPIs útiles y un dashboard simple para decidir con confianza.",
+          "canonical": "https://lobra.net/webinars/w-entiende-numeros"
+        },
+        "hero": {
+          "eyebrow": "Workshop \"Entiende tus Números\"",
+          "title": "Crea tu tablero de rentabilidad en tiempo real",
+          "subtitle": "Transforma tus datos en decisiones con confianza.",
+          "image": {
+            "src": "/images/webinars/fin/reportes-v001/hero.jpg",
+            "alt": "Taller LOBRÁ - Reportes claros"
+          }
+        },
+        "clasepractica": {
+          "deliverableBullets": [
+            "Dashboard simple con tus ingresos, egresos y total disponible.",
+            "Indicadores clave de rentabilidad y salud financiera.",
+            "Formato fácil de actualizar (sin fórmulas raras ni macros).",
+            "Plantilla reutilizable para cada mes de tu negocio."
+          ]
+        },
+        "bullets": [
+          "Pierde el miedo a tus números.",
+          "Aprende a leer qué funciona y qué no.",
+          "Construye una visión clara de tu rentabilidad.",
+          "Siéntete orgulloso de entender tus finanzas."
+        ]
+      },
+      "liveclass-lobra-rhd-fin-planeacion-v001": {
+        "type": "webinar",
+        "sku": "liveclass-lobra-rhd-fin-planeacion-v001",
+        "seo": {
+          "title": "Workshop \"Planea tu 2026\" · 18 nov 2025, 8:30 p. m. CDMX",
+          "description": "Usa tus datos para decidir con claridad: invertir, ajustar y planear el siguiente paso sin miedo ni confusión.",
+          "canonical": "https://lobra.net/webinars/w-planea-2026"
+        },
+        "hero": {
+          "eyebrow": "Workshop \"Planea tu 2026\"",
+          "title": "Convierte tus finanzas en decisiones claras",
+          "subtitle": "Decide con confianza: cuándo invertir, cuánto ajustar y cómo proyectar tu negocio.",
+          "image": {
+            "src": "/images/webinars/fin/planeacion-v001/hero.jpg",
+            "alt": "Taller LOBRÁ - Estrategia y planeación financiera"
+          }
+        },
+        "clasepractica": {
+          "deliverableBullets": [
+            "Método para convertir tus reportes en un plan financiero real.",
+            "Herramienta para proyectar escenarios simples.",
+            "Plantilla editable para decidir cuánto invertir o ahorrar.",
+            "Ruta práctica para tomar decisiones alineadas con lo que realmente quieres."
+          ]
+        },
+        "bullets": [
+          "Deja de reaccionar mes a mes.",
+          "Planea 2026 con objetivos claros y realistas.",
+          "Convierte metas en números que te respalden, no que te presionen.",
+          "Sal con dirección, control y tranquilidad para el año que viene."
+        ]
       }
     },
-    "sales": {
-      "seo": {
-        "title": "Programa \"Tranquilidad Financiera\" · 4 Workshops + 1 sesión personalizada",
-        "description": "Accede al recorrido completo para dominar tus finanzas: Ingresos, Egresos, Reportes, Planeación y una sesión 1:1.",
-        "canonical": "https://lobra.net/webinars/ms-tranquilidad-financiera"
-      },
-      "hero": {
-        "eyebrow": "Programa Completo",
-        "title": "Tranquilidad [[Financiera]] para tu negocio",
-        "subtitle": "Domina ingresos, controla egresos, entiende reportes y planea con confianza + sesión 1:1 personalizada.",
-        "note": "El camino completo a tu tranquilidad.",
-        "ctaText": "Quiero claridad financiera",
-        "heroImageSrc": "/images/webinars/fin/planeacion-v001/hero.jpg",
-        "heroImageAlt": "Programa Tranquilidad Financiera LOBRÁ - Control total de tus finanzas empresariales"
-      },
-      "clasePractica": {
-        "eyebrow": "Programa completo de claridad financiera",
-        "title": "Tus [[finanzas]] bajo control al terminar el programa",
-        "intro": "Terminas el programa con tu sistema funcionando. Sin complicarte. Sin depender de nadie.",
-        "leftTitle": "¿Te suena familiar?",
-        "bullets": [
+    "bundles": {
+      "course-lobra-rhd-fin-finanzas-v001": {
+        "type": "bundle",
+        "sku": "course-lobra-rhd-fin-finanzas-v001",
+        "seo": {
+          "title": "Programa \"Tranquilidad Financiera\" · 4 Workshops + 1 sesión personalizada",
+          "description": "Accede al recorrido completo para dominar tus finanzas: Ingresos, Egresos, Reportes, Planeación y una sesión 1:1.",
+          "canonical": "https://lobra.net/webinars/m-tranquilidad-financiera"
+        },
+        "hero": {
+          "eyebrow": "Programa Completo",
+          "title": "Tranquilidad [[Financiera]] para tu negocio",
+          "subtitle": "Domina ingresos, controla egresos, entiende reportes y planea con confianza + sesión 1:1 personalizada.",
+          "image": {
+            "src": "/images/modulos/finanzas.jpg",
+            "alt": "Programa Tranquilidad Financiera LOBRÁ - Control total de tus finanzas empresariales"
+          }
+        },
+        "clasepractica": {
+          "bullets": [
             "No sabes cuánto ganas ni en qué gastas cada mes.",
             "Tomas decisiones financieras basadas en intuición, no en datos.",
             "Te da miedo abrir tu app de banco por el desorden.",
             "No sabes si podrías invertir, ahorrar o ajustar gastos.",
             "Cada mes es una sorpresa financiera, sin control real."
-        ],
-        "deliverableTitle": "Te llevas",
-        "deliverableBullets": [
+          ],
+          "deliverableBullets": [
             "Sistema completo de [[control financiero]] funcionando desde el primer día.",
             "Dashboard unificado con ingresos, egresos y [[rentabilidad]] en tiempo real.",
             "Plan financiero estratégico para [[2026]] con objetivos claros.",
             "Sesión 1:1 personalizada para aplicar todo a tu [[caso específico]].",
             "Ahorro significativo vs comprar workshops por separado."
-        ],
-        "priceLine": "$2990 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
-        "ctaText": "Apartar mi lugar ahora"
-      }
-    },
-    "prelobby": {
-      "labels": {
-        "tooEarly": "Aún no abrimos la sala.",
-        "early": "Faltan pocos minutos.",
-        "open": "Prelobby disponible.",
-        "live": "Clase en vivo.",
-        "ended": "Sesión finalizada."
-      }
-    },
-    "checkout": {
-      "bullets": [
+          ]
+        },
+        "bullets": [
           "Deja de adivinar y empieza a decidir con datos reales.",
           "Controla cada peso que entra y sale de tu negocio.",
           "Convierte números abrumadores en decisiones claras.",
           "Planea tu 2026 con confianza y dirección estratégica.",
           "Atención personalizada para tu situación específica."
-      ]
+        ]
+      }
+    },
+    "one_to_one": {
+      "one2one-lobra-rhd-030m-v001": {
+        "type": "one_to_one",
+        "sku": "one2one-lobra-rhd-030m-v001",
+        "seo": {
+          "title": "Asesoría 1:1 \"Sesión de Claridad\" · 30 min para resolver tu mayor duda de negocio",
+          "description": "Una sesión individual en la que resolverás tu duda principal y definirás un plan de acción inmediato.",
+          "canonical": "https://lobra.net/asesorias"
+        },
+        "hero": {
+          "eyebrow": "Asesoría 1:1 con [[Roberto Huerta]]",
+          "title": "La [[claridad]] que necesitas para tu siguiente paso",
+          "subtitle": "30 minutos dedicados exclusivamente a despejar tu duda más urgente y convertirla en [[acción concreta]].",
+          "image": {
+            "src": "https://lobra.net/asesorias/default-1a1.jpg",
+            "alt": "Asesoría 1:1 con Roberto Huerta - Sesiones personalizadas de claridad empresarial"
+          }
+        },
+        "clasepractica": {
+          "bullets": [
+            "Sientes que [[avanzas a ciegas]] sin rumbo claro.",
+            "Tienes una duda específica que te quita el [[sueño]] cada noche.",
+            "Analizas tanto las opciones que terminas [[paralizado]].",
+            "Necesitas una voz externa que te ayude a ver lo [[obvio]].",
+            "Quieres evitar cometer errores costosos por falta de [[perspectiva]]."
+          ],
+          "deliverableBullets": [
+            "Respuesta [[clara]] y concreta a tu duda más urgente.",
+            "Plan de [[acción]] inmediato con pasos específicos.",
+            "Perspectiva [[experta]] sobre tu situación actual.",
+            "Cerrazón mental [[resuelta]] en menos de 30 minutos.",
+            "Confianza renovada para tomar la [[decisión]] correcta."
+          ]
+        },
+        "bullets": [
+          "Sal de la parálisis por análisis de una vez por todas.",
+          "Obtén perspectiva fresca sobre tu desafío actual.",
+          "Convierte la confusión en dirección clara y accionable.",
+          "Toma decisiones con confianza y no con miedo.",
+          "Ahorra tiempo y dinero evitando caminos equivocados."
+        ]
+      }
     }
   },
- 
-  "w-ingresos": {
+
+  // ESTRUCTURA LEGACY (MANTENIDA PARA COMPATIBILIDAD)
+  "2025-10-28-2030": {
     "shared": {
-      "slug": "w-ingresos",
+      "slug": "2025-10-28-2030",
       "title": "Confianza para saber cuánto ganas (de verdad)",
       "startAt": "2025-10-28T20:30:00-06:00",
       "durationMin": 90,
@@ -109,12 +252,12 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Domina tus Ingresos” · 28 oct 2025, 8:30 p. m. CDMX",
+        "title": "Workshop \"Domina tus Ingresos\" · 28 oct 2025, 8:30 p. m. CDMX",
         "description": "Ordena tus ventas en 90 minutos y recupera tu paz financiera.",
-        "canonical": "https://lobra.net/webinars/w-ingresos"
+        "canonical": "https://lobra.net/webinars/2025-10-28-2030"
       },
       "hero": {
-        "eyebrow": "Workshop “Domina tus Ingresos”",
+        "eyebrow": "Workshop \"Domina tus Ingresos\"",
         "title": "Estrategias para cobrar mejor y vender con claridad",
         "subtitle": "No más suposiciones. Entiende tus ingresos y decide con confianza.",
         "note": "No es un archivo. Es el inicio de tu tranquilidad.",
@@ -131,7 +274,7 @@
           "No tienes ni idea cuánto ganaste esta semana.",
           "Cobras por todos lados y luego no sabes quién sí te pagó.",
           "Tienes que buscar en chats para ver si ya depositaron.",
-          "Dices ‘me fue bien’, pero si te preguntan cuánto… no sabes.",
+          "Dices 'me fue bien', pero si te preguntan cuánto… no sabes.",
           "Te da miedo abrir tu app de banco porque todo está revuelto."
         ],
         "deliverableTitle": "Te llevas",
@@ -165,9 +308,9 @@
     }
   },
 
-  "w-gastos": {
+  "2025-11-04-2030": {
     "shared": {
-      "slug": "w-gastos",
+      "slug": "2025-11-04-2030",
       "title": "Tranquilidad para saber a dónde se va tu dinero",
       "startAt": "2025-11-04T20:30:00-06:00",
       "durationMin": 90,
@@ -191,12 +334,12 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Controla tus Egresos” · 4 nov 2025, 8:30 p. m. CDMX",
+        "title": "Workshop \"Controla tus Egresos\" · 4 nov 2025, 8:30 p. m. CDMX",
         "description": "Aprende a organizar tus egresos en 90 minutos y gasta con intención, sin culpa ni enredos.",
-        "canonical": "https://lobra.net/webinars/w-gastos"
+        "canonical": "https://lobra.net/webinars/2025-11-04-2030"
       },
       "hero": {
-        "eyebrow": "Workshop “Controla tus Egresos”",
+        "eyebrow": "Workshop \"Controla tus Egresos\"",
         "title": "Aprende a reducir fugas sin vivir limitado",
         "subtitle": "Gasta con intención y recupera el control de tu dinero.",
         "note": "No es un Excel. Es respirar sin miedo a los números.",
@@ -247,9 +390,9 @@
     }
   },
 
-  "w-reportes": {
+  "2025-11-11-2030": {
     "shared": {
-      "slug": "w-reportes",
+      "slug": "2025-11-11-2030",
       "title": "Claridad para entender tus números (de verdad)",
       "startAt": "2025-11-11T20:30:00-06:00",
       "durationMin": 90,
@@ -273,12 +416,12 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Entiende tus Números” · 11 nov 2025, 8:30 p. m. CDMX",
+        "title": "Workshop \"Entiende tus Números\" · 11 nov 2025, 8:30 p. m. CDMX",
         "description": "Convierte tus ingresos y egresos en reportes claros, KPIs útiles y un dashboard simple para decidir con confianza.",
-        "canonical": "https://lobra.net/webinars/w-reportes"
+        "canonical": "https://lobra.net/webinars/2025-11-11-2030"
       },
       "hero": {
-        "eyebrow": "Workshop “Entiende tus Números”",
+        "eyebrow": "Workshop \"Entiende tus Números\"",
         "title": "Crea tu tablero de rentabilidad en tiempo real",
         "subtitle": "Transforma tus datos en decisiones con confianza.",
         "note": "No necesitas saber Excel ni contabilidad.",
@@ -329,9 +472,9 @@
     }
   },
 
-  "w-planeacion": {
+  "2025-11-18-2030": {
     "shared": {
-      "slug": "w-planeacion",
+      "slug": "2025-11-18-2030",
       "title": "Convierte tus números en decisiones inteligentes",
       "startAt": "2025-11-18T20:30:00-06:00",
       "durationMin": 90,
@@ -344,7 +487,7 @@
       "flags": {
         "showReplay": false,
         "replayUrl": null,
-        "featuredHome": false
+        "featuredHome": true
       },
       "pricing": {
         "sku": "liveclass-lobra-rhd-fin-planeacion-v001",
@@ -355,12 +498,12 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Planea tu 2026” · 18 nov 2025, 8:30 p. m. CDMX",
+        "title": "Workshop \"Planea tu 2026\" · 18 nov 2025, 8:30 p. m. CDMX",
         "description": "Usa tus datos para decidir con claridad: invertir, ajustar y planear el siguiente paso sin miedo ni confusión.",
-        "canonical": "https://lobra.net/webinars/w-planeacion"
+        "canonical": "https://lobra.net/webinars/2025-11-18-2030"
       },
       "hero": {
-        "eyebrow": "Workshop “Planea tu 2026”",
+        "eyebrow": "Workshop \"Planea tu 2026\"",
         "title": "Convierte tus finanzas en decisiones claras",
         "subtitle": "Decide con confianza: cuándo invertir, cuánto ajustar y cómo proyectar tu negocio.",
         "note": "No más corazonadas. Planea con calma y con datos que te respalden.",
