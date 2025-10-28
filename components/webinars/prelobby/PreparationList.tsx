@@ -16,8 +16,9 @@ export default function PreparationList() {
     >
       <h2 id="prelobby-prep-title">Prepárate antes del evento</h2>
       <ul className="list-check stack-2">
-        <li>Instala o actualiza Zoom en tu computadora o celular.</li>
-        <li>Haz una prueba rápida de audio y cámara.</li>
+        <li>Entra desde la app de Microsoft Teams o desde tu navegador (Edge, Chrome o Firefox).</li>
+        <li>Si usas navegador, permite acceso a micrófono y cámara cuando lo solicite.</li>
+        <li>Haz una prueba rápida de audio y cámara antes del inicio.</li>
         <li>Abre Excel para seguir el taller.</li>
         <li>Asegúrate de tener buena iluminación frontal.</li>
         <li>Usa una conexión de internet estable, evita descargas.</li>
