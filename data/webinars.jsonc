@@ -89,7 +89,7 @@
       "title": "Confianza para saber cuánto ganas (de verdad)",
       "startAt": "2025-10-28T20:30:00-06:00",
       "durationMin": 90,
-      "zoomJoinUrl": null,
+      "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_OWQxNjQ4M2YtZmJmZi00YzUxLWE4YmItNWM2YjIxODlkZmE0%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
       "supportEmail": "soporte@lobra.net",
       "template": { "mode": "email" },
       "whatsAppSupport": { "enabled": false },

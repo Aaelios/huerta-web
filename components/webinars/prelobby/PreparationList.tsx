@@ -18,7 +18,7 @@ export default function PreparationList() {
       <ul className="list-check stack-2">
         <li>Instala o actualiza Zoom en tu computadora o celular.</li>
         <li>Haz una prueba rápida de audio y cámara.</li>
-        <li>Abre Excel o Google Sheets para seguir el taller.</li>
+        <li>Abre Excel para seguir el taller.</li>
         <li>Asegúrate de tener buena iluminación frontal.</li>
         <li>Usa una conexión de internet estable, evita descargas.</li>
         <li>Busca un espacio sin distracciones durante 90 min.</li>
