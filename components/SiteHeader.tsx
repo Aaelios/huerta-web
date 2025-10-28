@@ -77,7 +77,7 @@ const trackCTA = () => {
           <div className="nav-right">
             <a
               className="c-btn c-btn--icon"
-              href="https://www.instagram.com/rh.university"
+              href="https://www.instagram.com/soylobra"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -87,7 +87,7 @@ const trackCTA = () => {
             </a>
             <a
               className="c-btn c-btn--icon"
-              href="https://www.youtube.com/@RHUniversity"
+              href="https://www.youtube.com/@soylobra"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="YouTube"
