@@ -169,9 +169,9 @@
     "shared": {
       "slug": "w-gastos",
       "title": "Tranquilidad para saber a dónde se va tu dinero",
-      "startAt": "2025-11-04T20:30:00-06:00",
+      "startAt": "2025-11-04T15:40:00-06:00",
       "durationMin": 90,
-      "zoomJoinUrl": null,
+      "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZWE2NGQxMmEtZGQ0OC00NzU2LTg4YTgtMGU2NDY5ODc1OTM5%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
       "supportEmail": "soporte@lobra.net",
       "template": { "mode": "email" },
       "whatsAppSupport": { "enabled": false },
