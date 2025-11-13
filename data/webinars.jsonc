@@ -1,5 +1,5 @@
 {
-   "ms-tranquilidad-financiera": {
+  "ms-tranquilidad-financiera": {
     "shared": {
       "slug": "ms-tranquilidad-financiera",
       "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada",
@@ -25,42 +25,42 @@
     },
     "sales": {
       "seo": {
-        "title": "Programa \"Tranquilidad Financiera\" · 4 Workshops + 1 sesión personalizada",
-        "description": "Accede al recorrido completo para dominar tus finanzas: Ingresos, Egresos, Reportes, Planeación y una sesión 1:1.",
+        "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada",
+        "description": "El recorrido completo para dominar tus finanzas: organiza ingresos, controla egresos, entiende tus números, planea tu futuro y consolida todo con una sesión personalizada.",
         "canonical": "https://lobra.net/webinars/ms-tranquilidad-financiera"
       },
       "hero": {
         "eyebrow": "Programa Completo",
-        "title": "Tranquilidad [[Financiera]] para tu negocio",
-        "subtitle": "Domina ingresos, controla egresos, entiende reportes y planea con confianza + sesión 1:1 personalizada.",
-        "note": "El camino completo a tu tranquilidad.",
-        "ctaText": "Quiero claridad financiera",
-        "heroImageSrc": "/images/webinars/fin/planeacion-v001/hero.jpg",
+        "title": "Tranquilidad [[Financiera real]] para tu negocio",
+        "subtitle": "Domina tus ingresos y controla tus egresos. Entiende tus números y diseña tu [[plan financiero 2026]] con calma y dirección.",
+        "note": "El camino completo hacia la claridad, el control y la tranquilidad financiera.",
+        "ctaText": "Quiero construir mi tranquilidad financiera",
+        "heroImageSrc": "/images/webinars/fin/ingresos-v001/hero.jpg",
         "heroImageAlt": "Programa Tranquilidad Financiera LOBRÁ - Control total de tus finanzas empresariales"
       },
       "clasePractica": {
-        "eyebrow": "Programa completo de claridad financiera",
-        "title": "Tus [[finanzas]] bajo control al terminar el programa",
-        "intro": "Terminas el programa con tu sistema funcionando. Sin complicarte. Sin depender de nadie.",
+        "eyebrow": "Programa integral de claridad y control financiero",
+        "title": "Tu [[sistema financiero completo]] listo para guiar cada decisión",
+        "intro": "En cuatro semanas construyes el sistema que transforma tu relación con el dinero. Sin tecnicismos, con estructura, método y acompañamiento personal.",
         "leftTitle": "¿Te suena familiar?",
         "bullets": [
-            "No sabes cuánto ganas ni en qué gastas cada mes.",
-            "Tomas decisiones financieras basadas en intuición, no en datos.",
-            "Te da miedo abrir tu app de banco por el desorden.",
-            "No sabes si podrías invertir, ahorrar o ajustar gastos.",
-            "Cada mes es una sorpresa financiera, sin control real."
+          "Tienes miedo de ver tus números por el desorden o la confusión.",
+          "No sabes cuánto ganas realmente ni en qué se va tu dinero.",
+          "Tomas decisiones financieras con intuición, no con información.",
+          "Tu negocio crece, pero tus finanzas no lo reflejan.",
+          "Cada mes sientes que trabajas más, pero avanzas menos."
         ],
-        "deliverableTitle": "Te llevas",
+        "deliverableTitle": "Al finalizar el programa, logras:",
         "deliverableBullets": [
-            "Sistema completo de [[control financiero]] funcionando desde el primer día.",
-            "Dashboard unificado con ingresos, egresos y [[rentabilidad]] en tiempo real.",
-            "Plan financiero estratégico para [[2026]] con objetivos claros.",
-            "Sesión 1:1 personalizada para aplicar todo a tu [[caso específico]].",
-            "Ahorro significativo vs comprar workshops por separado."
+          "Sistema completo de [[control financiero]] funcionando desde el primer día — sin complicarte.",
+          "Dashboard unificado con [[ingresos]], [[egresos]] y [[rentabilidad real]].",
+          "Plan financiero [[2026]] con metas claras, realistas y alcanzables.",
+          "Sesión [[1:1 personalizada]] para ajustar tu sistema a tu caso específico.",
+          "Ahorro significativo frente a adquirir cada workshop por separado."
         ],
-        "priceLine": "$2990 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
-        "ctaText": "Apartar mi lugar ahora"
+        "priceLine": "$2,990 MXN",
+        "guarantee": "Garantía total: si no te aporta [[claridad]], [[control]] ni [[tranquilidad]], te regresamos tu dinero. Sin preguntas. Sin estrés.",
+        "ctaText": "Quiero iniciar mi transformación financiera"
       }
     },
     "prelobby": {
@@ -74,14 +74,15 @@
     },
     "checkout": {
       "bullets": [
-          "Deja de adivinar y empieza a decidir con datos reales.",
-          "Controla cada peso que entra y sale de tu negocio.",
-          "Convierte números abrumadores en decisiones claras.",
-          "Planea tu 2026 con confianza y dirección estratégica.",
-          "Atención personalizada para tu situación específica."
+        "Deja atrás el [[estrés financiero]] y toma decisiones con datos reales.",
+        "Controla tus [[ingresos]], [[egresos]] y [[rentabilidad]] desde un solo sistema.",
+        "Construye tu [[plan financiero 2026]] con dirección y confianza.",
+        "Aplica todo a tu negocio con una [[sesión personalizada 1:1]].",
+        "Termina con la [[claridad]], el [[control]] y la [[tranquilidad]] que buscabas."
       ]
     }
-  },
+  }
+,
  
   "w-ingresos": {
     "shared": {
@@ -109,40 +110,40 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Domina tus Ingresos” · 28 oct 2025, 8:30 p. m. CDMX",
-        "description": "Ordena tus ventas en 90 minutos y recupera tu paz financiera.",
+        "title": "Mis ingresos, mi claridad · Taller de control de ingresos para emprendedores",
+        "description": "Aprende a entender y ordenar tus ingresos en 90 minutos. Recupera tu tranquilidad y toma el control de tu dinero.",
         "canonical": "https://lobra.net/webinars/w-ingresos"
       },
       "hero": {
-        "eyebrow": "Workshop “Domina tus Ingresos”",
-        "title": "Estrategias para cobrar mejor y vender con claridad",
-        "subtitle": "No más suposiciones. Entiende tus ingresos y decide con confianza.",
-        "note": "No es un archivo. Es el inicio de tu tranquilidad.",
+        "eyebrow": "Workshop “Mis ingresos, mi claridad”",
+        "title": "De vender sin rumbo a vivir con [[claridad financiera]]",
+        "subtitle": "Aprende a leer tus ingresos, entender de dónde viene tu dinero y tomar decisiones con confianza para vender mejor y dormir tranquilo.",
+        "note": "Tu primer paso hacia la tranquilidad financiera.",
         "ctaText": "Quiero claridad financiera",
         "heroImageSrc": "/images/webinars/fin/ingresos-v001/hero.jpg",
-        "heroImageAlt": "Taller LOBRÁ - Ingresos claros"
+        "heroImageAlt": "Taller LOBRÁ - Mis ingresos, mi claridad"
       },
       "clasePractica": {
         "eyebrow": "Workshop aplicado a tu negocio",
         "title": "Tus [[ingresos claros]] al terminar la sesión",
-        "intro": "Sales del taller con tu sistema funcionando. Sin complicarte. Sin depender de nadie.",
+        "intro": "En 90 minutos ordenas tus ventas, creas tu registro de ingresos y descubres qué te deja más dinero — sin fórmulas ni teoría, listo para usar al salir.",
         "leftTitle": "¿Te suena familiar?",
         "bullets": [
-          "No tienes ni idea cuánto ganaste esta semana.",
-          "Cobras por todos lados y luego no sabes quién sí te pagó.",
-          "Tienes que buscar en chats para ver si ya depositaron.",
-          "Dices ‘me fue bien’, pero si te preguntan cuánto… no sabes.",
-          "Te da miedo abrir tu app de banco porque todo está revuelto."
+          "Cobras por todos lados, pero no sabes quién ya te pagó.",
+          "Sientes que trabajas mucho, pero no sabes si realmente ganas.",
+          "Buscas en chats o cuentas para confirmar depósitos.",
+          "Dices ‘me fue bien’, pero no puedes probarlo con números.",
+          "Cada venta te da alegría, pero también confusión."
         ],
         "deliverableTitle": "Te llevas",
         "deliverableBullets": [
-          "Tu registro de [[ingresos]] listo y funcionando desde el taller.",
-          "Plantilla adaptable a lo que tú vendes — [[sin fórmulas]] raras.",
-          "Toma menos [[tiempo]] que contestar un mensaje.",
-          "No necesitas saber Excel — lo haces conmigo, [[paso a paso]]."
+          "Tu registro de [[ingresos]] listo y funcionando antes de salir del taller.",
+          "Una plantilla que se adapta a lo que tú vendes — [[sin fórmulas ni tecnicismos]].",
+          "Método paso a paso para mantener el [[control en minutos]] al día.",
+          "[[Confianza]] para decidir cuánto cobrar, cuándo invertir y qué te deja más — sin miedo ni estrés."
         ],
         "priceLine": "$690 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
+        "guarantee": "Si no te sirve, te regresamos tu dinero. Sin preguntas, sin estrés.",
         "ctaText": "Apartar mi lugar ahora"
       }
     },
@@ -159,180 +160,181 @@
       "bullets": [
         "Deja de adivinar cuánto ganas.",
         "Registra y entiende tus ventas con claridad.",
-        "Descubre qué te da más resultados.",
-        "Sal con la tranquilidad de saber de dónde viene tu dinero."
-      ]
+        "Descubre qué productos o servicios te dejan más margen.",
+        "Sal con la tranquilidad de saber en qué punto estás y cómo crecer."
+      ],
+      "refundLine": "Garantía LOBRÁ de 7 días: si no te aporta valor, te devolvemos tu dinero. Sin estrés, sin explicaciones."
     }
   },
 
   "w-gastos": {
-    "shared": {
-      "slug": "w-gastos",
-      "title": "Tranquilidad para saber a dónde se va tu dinero",
-      "startAt": "2025-11-04T20:30:00-06:00",
-      "durationMin": 90,
-      "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZWE2NGQxMmEtZGQ0OC00NzU2LTg4YTgtMGU2NDY5ODc1OTM5%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
-      "supportEmail": "soporte@lobra.net",
-      "template": { "mode": "email" },
-      "whatsAppSupport": { "enabled": false },
-      "calendar": { "mode": "generated" },
+  "shared": {
+    "slug": "w-gastos",
+    "title": "Tranquilidad para saber a dónde se va tu dinero",
+    "startAt": "2025-11-04T20:30:00-06:00",
+    "durationMin": 90,
+    "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZWE2NGQxMmEtZGQ0OC00NzU2LTg4YTgtMGU2NDY5ODc1OTM5%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
+    "supportEmail": "soporte@lobra.net",
+    "template": { "mode": "email" },
+    "whatsAppSupport": { "enabled": false },
+    "calendar": { "mode": "generated" },
+    "sku": "liveclass-lobra-rhd-fin-egresos-v001",
+    "flags": {
+      "showReplay": false,
+      "replayUrl": null,
+      "featuredHome": false
+    },
+    "pricing": {
       "sku": "liveclass-lobra-rhd-fin-egresos-v001",
-      "flags": {
-        "showReplay": false,
-        "replayUrl": null,
-        "featuredHome": false
-      },
-      "pricing": {
-        "sku": "liveclass-lobra-rhd-fin-egresos-v001",
-        "amountCents": 69000,
-        "currency": "MXN",
-        "interval": "one_time"
-      }
-    },
-    "sales": {
-      "seo": {
-        "title": "Workshop “Controla tus Egresos” · 4 nov 2025, 8:30 p. m. CDMX",
-        "description": "Aprende a organizar tus egresos en 90 minutos y gasta con intención, sin culpa ni enredos.",
-        "canonical": "https://lobra.net/webinars/w-gastos"
-      },
-      "hero": {
-        "eyebrow": "Workshop “Controla tus Egresos”",
-        "title": "Aprende a reducir fugas sin vivir limitado",
-        "subtitle": "Gasta con intención y recupera el control de tu dinero.",
-        "note": "No es un Excel. Es respirar sin miedo a los números.",
-        "ctaText": "Quiero controlar mis gastos",
-        "heroImageSrc": "/images/webinars/fin/egresos-v001/hero.jpg",
-        "heroImageAlt": "Taller LOBRÁ - Egresos claros"
-      },
-      "clasePractica": {
-        "eyebrow": "Workshop aplicado a tu negocio",
-        "title": "Tus [[egresos]] en orden al terminar la sesión",
-        "intro": "Sales del taller con tu sistema de control funcionando y listo para seguirlo semana a semana.",
-        "leftTitle": "¿Te suena familiar?",
-        "bullets": [
-          "Sientes que el dinero desaparece, pero no sabes en qué.",
-          "Anotas gastos en todos lados (libreta, notas, capturas).",
-          "No separas lo personal de lo del negocio.",
-          "Llega fin de mes y no sabes cuánto gastaste.",
-          "Te incomoda ver cuánto se te va en cosas que ni recuerdas."
-        ],
-        "deliverableTitle": "Te llevas",
-        "deliverableBullets": [
-          "Tu sistema de [[egresos]] funcionando al terminar el taller.",
-          "Categorías pensadas para negocios pequeños (no contadores).",
-          "Alertas simples para que no pierdas el control sin darte cuenta.",
-          "Checklist que te ayuda a mantener el orden sin complicarte."
-        ],
-        "priceLine": "$690 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
-        "ctaText": "Apartar mi lugar ahora"
-      }
-    },
-    "prelobby": {
-      "labels": {
-        "tooEarly": "Aún no abrimos la sala.",
-        "early": "Faltan pocos minutos.",
-        "open": "Prelobby disponible.",
-        "live": "Clase en vivo.",
-        "ended": "Sesión finalizada."
-      }
-    },
-    "checkout": {
-      "bullets": [
-        "Recupera el control sin vivir limitado.",
-        "Gasta con intención y prioriza lo que sí importa.",
-        "Identifica fugas de gasto sin culpa ni frustración.",
-        "Termina con una sensación real de orden y equilibrio."
-      ]
+      "amountCents": 69000,
+      "currency": "MXN",
+      "interval": "one_time"
     }
   },
+  "sales": {
+    "seo": {
+      "title": "Mi dinero, mis reglas · Controla tus gastos y recupera tu tranquilidad",
+      "description": "Aprende a identificar en qué se va tu dinero, separar lo necesario de lo prescindible y tomar decisiones con calma — sin culpa ni estrés.",
+      "canonical": "https://lobra.net/webinars/w-gastos"
+    },
+    "hero": {
+      "eyebrow": "Workshop “Mi dinero, mis reglas”",
+      "title": "Recupera el [[control real]] de tus gastos y vuelve a [[disfrutar tu dinero]].",
+      "subtitle": "Más [[control]], menos culpa. Aprende a gastar con intención, eliminar fugas y decidir con [[claridad]].",
+      "note": "Tu segundo paso hacia la tranquilidad financiera.",
+      "ctaText": "Quiero recuperar el control",
+      "heroImageSrc": "/images/webinars/fin/egresos-v001/hero.jpg",
+      "heroImageAlt": "Taller LOBRÁ - Mi dinero, mis reglas"
+    },
+    "clasePractica": {
+      "eyebrow": "Workshop aplicado a tu negocio",
+      "title": "Tus [[gastos claros]] al terminar la sesión",
+      "intro": "En 90 minutos aprendes a clasificar y registrar tus egresos, detectar fugas y mantener el equilibrio sin fórmulas complicadas.",
+      "leftTitle": "¿Te suena familiar?",
+      "bullets": [
+        "El dinero se va y no sabes en qué.",
+        "Tienes gastos en notas, fotos o libretas y nunca coinciden.",
+        "No separas lo personal de lo del negocio.",
+        "Llega fin de mes y no sabes cuánto gastaste.",
+        "Te cuesta decidir qué sí mantener y qué eliminar sin culpa."
+      ],
+      "deliverableTitle": "Te llevas",
+      "deliverableBullets": [
+        "Tu registro de gastos [[funcionando]] antes de salir del taller.",
+        "Categorías adaptadas a [[negocios reales]], sin tecnicismos.",
+        "Alertas simples para [[evitar fugas]] sin darte cuenta.",
+        "Checklist para mantener el [[orden en minutos]] a la semana."
+      ],
+      "priceLine": "$690 MXN",
+      "guarantee": "si no te sirve, te regresamos tu dinero en los primeros 7 días.",
+      "ctaText": "Apartar mi lugar ahora"
+    }
+  },
+  "prelobby": {
+    "labels": {
+      "tooEarly": "Aún no abrimos la sala.",
+      "early": "Faltan pocos minutos.",
+      "open": "Prelobby disponible.",
+      "live": "Clase en vivo.",
+      "ended": "Sesión finalizada."
+    }
+  },
+  "checkout": {
+    "bullets": [
+      "Deja de sentir que el dinero se va sin avisar.",
+      "Aprende a controlar tus gastos sin vivir limitado.",
+      "Toma decisiones con intención y sin culpa.",
+      "Sal con un sistema claro que te da equilibrio y tranquilidad."
+    ]
+  }
+},
 
-  "w-reportes": {
-    "shared": {
-      "slug": "w-reportes",
-      "title": "Claridad para entender tus números (de verdad)",
-      "startAt": "2025-11-11T20:30:00-06:00",
-      "durationMin": 90,
-      "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MjljOWFkZDYtZDU0ZC00NzFhLWIyMzEtZjg1MzZmY2FkMmRk%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
-      "supportEmail": "soporte@lobra.net",
-      "template": { "mode": "email" },
-      "whatsAppSupport": { "enabled": false },
-      "calendar": { "mode": "generated" },
+"w-reportes": {
+  "shared": {
+    "slug": "w-reportes",
+    "title": "Poder para entender tus números (de verdad)",
+    "startAt": "2025-11-11T20:30:00-06:00",
+    "durationMin": 90,
+    "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MjljOWFkZDYtZDU0ZC00NzFhLWIyMzEtZjg1MzZmY2FkMmRk%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
+    "supportEmail": "soporte@lobra.net",
+    "template": { "mode": "email" },
+    "whatsAppSupport": { "enabled": false },
+    "calendar": { "mode": "generated" },
+    "sku": "liveclass-lobra-rhd-fin-reportes-v001",
+    "flags": {
+      "showReplay": false,
+      "replayUrl": null,
+      "featuredHome": false
+    },
+    "pricing": {
       "sku": "liveclass-lobra-rhd-fin-reportes-v001",
-      "flags": {
-        "showReplay": false,
-        "replayUrl": null,
-        "featuredHome": false
-      },
-      "pricing": {
-        "sku": "liveclass-lobra-rhd-fin-reportes-v001",
-        "amountCents": 79000,
-        "currency": "MXN",
-        "interval": "one_time"
-      }
-    },
-    "sales": {
-      "seo": {
-        "title": "Workshop “Entiende tus Números” · 11 nov 2025, 8:30 p. m. CDMX",
-        "description": "Convierte tus ingresos y egresos en reportes claros, KPIs útiles y un dashboard simple para decidir con confianza.",
-        "canonical": "https://lobra.net/webinars/w-reportes"
-      },
-      "hero": {
-        "eyebrow": "Workshop “Entiende tus Números”",
-        "title": "Crea tu tablero de rentabilidad en tiempo real",
-        "subtitle": "Transforma tus datos en decisiones con confianza.",
-        "note": "No necesitas saber Excel ni contabilidad.",
-        "ctaText": "Quiero entender mis números",
-        "heroImageSrc": "/images/webinars/fin/reportes-v001/hero.jpg",
-        "heroImageAlt": "Taller LOBRÁ - Reportes claros"
-      },
-      "clasePractica": {
-        "eyebrow": "Workshop aplicado a tu negocio",
-        "title": "Tus [[reportes]] claros y listos para usar",
-        "intro": "Aprende a leer tus datos sin enredos. Lo importante, en una sola vista.",
-        "leftTitle": "¿Te suena familiar?",
-        "bullets": [
-          "Tienes datos pero no sabes cómo [[interpretarlos]].",
-          "No sabes si el mes fue bueno o malo… hasta que es tarde.",
-          "Tomas decisiones basadas en intuición, no en evidencia.",
-          "Quisieras saber si podrías pagar más, invertir o recortar.",
-          "Cada vez que abres tu archivo te confundes más."
-        ],
-        "deliverableTitle": "Te llevas",
-        "deliverableBullets": [
-          "Dashboard simple con tus ingresos, egresos y total disponible.",
-          "Indicadores clave de rentabilidad y salud financiera.",
-          "Formato fácil de actualizar (sin fórmulas raras ni macros).",
-          "Plantilla reutilizable para cada mes de tu negocio."
-        ],
-        "priceLine": "$790 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
-        "ctaText": "Apartar mi lugar ahora"
-      }
-    },
-    "prelobby": {
-      "labels": {
-        "tooEarly": "Aún no abrimos la sala.",
-        "early": "Faltan pocos minutos.",
-        "open": "Prelobby disponible.",
-        "live": "Clase en vivo.",
-        "ended": "Sesión finalizada."
-      }
-    },
-    "checkout": {
-      "bullets": [
-        "Pierde el miedo a tus números.",
-        "Aprende a leer qué funciona y qué no.",
-        "Construye una visión clara de tu rentabilidad.",
-        "Siéntete orgulloso de entender tus finanzas."
-      ]
+      "amountCents": 79000,
+      "currency": "MXN",
+      "interval": "one_time"
     }
   },
+  "sales": {
+    "seo": {
+      "title": "Mis números, mi poder · Convierte tus datos en decisiones inteligentes",
+      "description": "Aprende a leer tus números, medir tu rentabilidad y tomar decisiones basadas en evidencia, no en intuición. Sin fórmulas, sin miedo, con claridad.",
+      "canonical": "https://lobra.net/webinars/w-reportes"
+    },
+    "hero": {
+      "eyebrow": "Workshop “Mis números, mi poder”",
+      "title": "Convierte tus datos en [[decisiones con confianza]]",
+      "subtitle": "Crea un tablero [[simple]] que te revela qué funciona, qué no y cómo [[mejorar tus resultados]].",
+      "note": "Tu tercer paso hacia la tranquilidad financiera.",
+      "ctaText": "Quiero entender mis números",
+      "heroImageSrc": "/images/webinars/fin/reportes-v001/hero.jpg",
+      "heroImageAlt": "Taller LOBRÁ - Mis números, mi poder"
+    },
+    "clasePractica": {
+      "eyebrow": "Workshop aplicado a tu negocio",
+      "title": "Tus [[números claros]] al terminar la sesión",
+      "intro": "En 90 minutos construyes tu dashboard, entiendes tus indicadores clave y aprendes a leer la [[historia real]] detrás de tus finanzas.",
+      "leftTitle": "¿Te suena familiar?",
+      "bullets": [
+        "Sabes cuánto vendes, pero no si realmente estás ganando.",
+        "Cada mes sientes que trabajas más, pero ves menos dinero.",
+        "Tienes datos por todos lados y nada que te dé claridad.",
+        "No sabes si puedes invertir, subir precios o descansar sin culpa.",
+        "Abres tus hojas de cálculo… y terminas con más dudas que respuestas."
+      ],
+      "deliverableTitle": "Te llevas",
+      "deliverableBullets": [
+        "Tu dashboard financiero con indicadores [[claros y visuales]].",
+        "Reportes simples de ingresos, egresos y [[utilidad real]].",
+        "Plantilla lista para actualizar cada mes — sin fórmulas ni macros.",
+        "[[Confianza para decidir]] con base en datos, no en corazonadas."
+      ],
+      "priceLine": "$790 MXN",
+      "guarantee": "si no te aporta claridad, te devolvemos tu dinero. Sin preguntas, sin estrés.",
+      "ctaText": "Apartar mi lugar ahora"
+    }
+  },
+  "prelobby": {
+    "labels": {
+      "tooEarly": "Aún no abrimos la sala.",
+      "early": "Faltan pocos minutos.",
+      "open": "Prelobby disponible.",
+      "live": "Clase en vivo.",
+      "ended": "Sesión finalizada."
+    }
+  },
+  "checkout": {
+    "bullets": [
+      "Pierde el miedo a tus números.",
+      "Descubre si realmente estás ganando.",
+      "Crea tu dashboard y entiende qué impulsa tus resultados.",
+      "Decide con claridad y siente orgullo de tus finanzas."
+    ]
+  }
+},
 
   "w-planeacion": {
     "shared": {
       "slug": "w-planeacion",
-      "title": "Convierte tus números en decisiones inteligentes",
+      "title": "Dirección para decidir con claridad (y sin miedo)",
       "startAt": "2025-11-18T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
@@ -355,40 +357,40 @@
     },
     "sales": {
       "seo": {
-        "title": "Workshop “Planea tu 2026” · 18 nov 2025, 8:30 p. m. CDMX",
-        "description": "Usa tus datos para decidir con claridad: invertir, ajustar y planear el siguiente paso sin miedo ni confusión.",
+        "title": "Planea tu 2026 · Convierte tus números en decisiones con dirección",
+        "description": "Usa tus resultados reales para definir el siguiente paso: invertir, ajustar o crecer con estrategia. Planea 2026 con calma y claridad.",
         "canonical": "https://lobra.net/webinars/w-planeacion"
       },
       "hero": {
         "eyebrow": "Workshop “Planea tu 2026”",
-        "title": "Convierte tus finanzas en decisiones claras",
-        "subtitle": "Decide con confianza: cuándo invertir, cuánto ajustar y cómo proyectar tu negocio.",
-        "note": "No más corazonadas. Planea con calma y con datos que te respalden.",
+        "title": "Convierte tus números en [[decisiones con dirección]]",
+        "subtitle": "Usa tus datos para proyectar, invertir y avanzar con [[confianza]]. Menos improvisación, [[más control]].",
+        "note": "No más corazonadas. Planea con estrategia, claridad y calma.",
         "ctaText": "Quiero planear con inteligencia",
         "heroImageSrc": "/images/webinars/fin/planeacion-v001/hero.jpg",
-        "heroImageAlt": "Taller LOBRÁ - Estrategia y planeación financiera"
+        "heroImageAlt": "Taller LOBRÁ - Planeación y dirección financiera"
       },
       "clasePractica": {
         "eyebrow": "Workshop aplicado a tu negocio",
-        "title": "Tu [[plan financiero]] listo para guiar tus decisiones",
-        "intro": "Convierte tus reportes en una guía clara para el siguiente paso de tu negocio.",
+        "title": "Tu [[plan financiero 2026]] listo al terminar la sesión",
+        "intro": "En 90 minutos transformas tus reportes en una ruta clara para invertir, ahorrar o escalar con propósito.",
         "leftTitle": "¿Te suena familiar?",
         "bullets": [
-          "Ya sabes tus números… pero no sabes qué hacer con ellos.",
-          "Tienes utilidades, pero no sabes si puedes reinvertir o ahorrar.",
-          "Cada mes haces ajustes al aire sin un rumbo claro.",
-          "Quisieras planear el siguiente paso, pero no sabes por dónde empezar.",
-          "Te frena el miedo a tomar decisiones sin certeza."
+          "Ya conoces tus números, pero no sabes qué sigue.",
+          "Tienes utilidades, pero dudas si puedes reinvertir o guardar.",
+          "Cada mes ajustas sin una ruta clara.",
+          "Quieres crecer, pero no sabes por dónde empezar.",
+          "El miedo a equivocarte te impide avanzar con confianza."
         ],
         "deliverableTitle": "Te llevas",
         "deliverableBullets": [
-          "Método para convertir tus reportes en un plan financiero real.",
-          "Herramienta para proyectar escenarios simples.",
-          "Plantilla editable para decidir cuánto invertir o ahorrar.",
-          "Ruta práctica para tomar decisiones alineadas con lo que realmente quieres."
+          "Tu plan financiero 2026 con [[metas claras]] y alcanzables.",
+          "Herramienta simple para proyectar [[escenarios reales]].",
+          "Plantilla editable para decidir cuánto invertir, ahorrar o ajustar.",
+          "Método para tomar decisiones alineadas con lo que realmente quieres [[lograr]]."
         ],
         "priceLine": "$990 MXN",
-        "guarantee": "Garantía total: si no te sirve, te regresamos tu dinero.",
+        "guarantee": "Si no te aporta claridad ni dirección, te regresamos tu dinero.",
         "ctaText": "Quiero cerrar mi sistema financiero"
       }
     },
@@ -405,8 +407,8 @@
       "bullets": [
         "Deja de reaccionar mes a mes.",
         "Planea 2026 con objetivos claros y realistas.",
-        "Convierte metas en números que te respalden, no que te presionen.",
-        "Sal con dirección, control y tranquilidad para el año que viene."
+        "Convierte tus metas en números que te den dirección, no presión.",
+        "Cierra el año con la tranquilidad de tener un rumbo financiero claro."
       ]
     }
   }
