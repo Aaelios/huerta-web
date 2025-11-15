@@ -7,17 +7,18 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import type { ModuleDetail } from "@/lib/modules/loadModuleDetail";
+import { LocalDateTime } from "@/components/modules/common/LocalDateTime";
 
 type ModuleHeroProps = {
   module: ModuleDetail;
-  dateLabel: string;
+  dateLabel: string; // Se mantiene por compatibilidad, pero ya no se usa para la hora.
   priceLabel: string;
   ctaHref: string;
 };
 
 export function ModuleHero({
   module,
-  dateLabel,
+  dateLabel, // eslint-disable-line @typescript-eslint/no-unused-vars
   priceLabel,
   ctaHref,
 }: ModuleHeroProps) {
@@ -46,7 +47,8 @@ export function ModuleHero({
             </p>
 
             <p className="small u-maxw-prose">
-              <strong>Inicio del módulo:</strong> {dateLabel}
+              <strong>Inicio del módulo:</strong>{" "}
+              <LocalDateTime iso={module.nextStartAt} />
               <br />
               <strong>Inversión:</strong> {priceLabel}
             </p>

@@ -6,6 +6,7 @@ import React from "react";
 import Link from "next/link";
 import type { ModuleDetail } from "@/lib/modules/loadModuleDetail";
 import styles from "@/components/webinars/hub/WebinarsHub.module.css";
+import { LocalDateTime } from "@/components/modules/common/LocalDateTime";
 
 type ModuleClassesProps = {
   module: ModuleDetail;
@@ -32,8 +33,12 @@ export function ModuleClasses({ module }: ModuleClassesProps) {
 
   // 1) Orden por fecha ascendente; sin fecha se van al final.
   const sortedChildren = [...children].sort((a, b) => {
-    const timeA = a.nextStartAt ? new Date(a.nextStartAt).getTime() : Number.POSITIVE_INFINITY;
-    const timeB = b.nextStartAt ? new Date(b.nextStartAt).getTime() : Number.POSITIVE_INFINITY;
+    const timeA = a.nextStartAt
+      ? new Date(a.nextStartAt).getTime()
+      : Number.POSITIVE_INFINITY;
+    const timeB = b.nextStartAt
+      ? new Date(b.nextStartAt).getTime()
+      : Number.POSITIVE_INFINITY;
     return timeA - timeB;
   });
 
@@ -54,7 +59,9 @@ export function ModuleClasses({ module }: ModuleClassesProps) {
         <header className="u-text-center u-maxw-prose u-mb-6">
           <p className="small">Contenido del módulo</p>
           <h2 id="module-classes-title">
-            {renderAccent("[[Domina tu dinero]] con estos workshops prácticos en vivo")}
+            {renderAccent(
+              "[[Domina tu dinero]] con estos workshops prácticos en vivo"
+            )}
           </h2>
           <p className="u-lead">
             {renderAccent(
@@ -103,9 +110,10 @@ function renderChildCard({
   sharedPrimaryTopic,
 }: RenderChildCardParams): React.ReactElement {
   const isLiveClass = child.fulfillmentType === "live_class";
-  const dateLabel = formatDateTimeLabel(child.nextStartAt);
   const typeLabelBase = mapFulfillmentTypeLabel(child.fulfillmentType);
-  const typeLabel = isSupportSession ? "Sesión 1:1 · Personalizada" : typeLabelBase;
+  const typeLabel = isSupportSession
+    ? "Sesión 1:1 · Personalizada"
+    : typeLabelBase;
   const levelLabel = child.level ? formatLabelCase(child.level) : null;
 
   // Tema principal de la clase, respetando la regla:
@@ -151,9 +159,7 @@ function renderChildCard({
           style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}
         >
           <header className="u-mb-3">
-            <p className="small u-mb-1 u-color-subtle">
-              {typeLabel}
-            </p>
+            <p className="small u-mb-1 u-color-subtle">{typeLabel}</p>
 
             <h3
               className={`${styles.cardTitle} ${styles.titleClass}`}
@@ -194,10 +200,7 @@ function renderChildCard({
           </p>
 
           {detailHref && (
-            <div
-              className="u-mt-4"
-              style={{ marginTop: "auto" }}
-            >
+            <div className="u-mt-4" style={{ marginTop: "auto" }}>
               <Link
                 href={detailHref}
                 className="c-btn c-btn--outline c-btn--pill small"
@@ -223,10 +226,7 @@ function renderChildCard({
     >
       {/* Imagen de portada opcional tipo hub, con badge sólido para EN VIVO */}
       {child.cover && (
-        <div
-          className={styles.cardMedia}
-          style={{ position: "relative" }}
-        >
+        <div className={styles.cardMedia} style={{ position: "relative" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={child.cover}
@@ -260,9 +260,7 @@ function renderChildCard({
         style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}
       >
         <header className="u-mb-3">
-          <p className="small u-mb-1 u-color-subtle">
-            {typeLabel}
-          </p>
+          <p className="small u-mb-1 u-color-subtle">{typeLabel}</p>
 
           <h3
             className={`${styles.cardTitle} ${styles.titleClass}`}
@@ -285,7 +283,7 @@ function renderChildCard({
             >
               📅
             </span>
-            {dateLabel}
+            <LocalDateTime iso={child.nextStartAt} />
           </p>
 
           {hasLevelOrTopic && (
@@ -298,10 +296,7 @@ function renderChildCard({
         </div>
 
         {detailHref && (
-          <div
-            className="u-mt-4"
-            style={{ marginTop: "auto" }}
-          >
+          <div className="u-mt-4" style={{ marginTop: "auto" }}>
             <Link
               href={detailHref}
               className="c-btn c-btn--outline c-btn--pill small"
@@ -314,31 +309,6 @@ function renderChildCard({
       </div>
     </article>
   );
-}
-
-/**
- * Devuelve una etiqueta legible para la próxima fecha/hora.
- * Si no hay fecha, regresa un mensaje genérico.
- */
-function formatDateTimeLabel(nextStartAt: string | null): string {
-  if (!nextStartAt) {
-    return "Fechas por anunciar";
-  }
-
-  const date = new Date(nextStartAt);
-  if (Number.isNaN(date.getTime())) {
-    return "Fecha por confirmar";
-  }
-
-  try {
-    const formatter = new Intl.DateTimeFormat("es-MX", {
-      dateStyle: "full",
-      timeStyle: "short",
-    });
-    return formatter.format(date);
-  } catch {
-    return "Fecha por confirmar";
-  }
 }
 
 /**

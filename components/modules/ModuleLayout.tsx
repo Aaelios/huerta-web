@@ -9,6 +9,7 @@ import { ModuleSummary } from "@/components/modules/ModuleSummary";
 import { ModuleClasses } from "@/components/modules/ModuleClasses";
 import { ModuleStatement } from "@/components/modules/ModuleStatement";
 import { StickyCTA } from "@/components/modules/StickyCTA";
+import { LocalDateTime } from "@/components/modules/common/LocalDateTime";
 
 type ModuleLayoutProps = {
   module: ModuleDetail;
@@ -26,20 +27,20 @@ export function ModuleLayout({ module }: ModuleLayoutProps) {
    * - Usamos un CTA genérico hacia checkout por SKU.
    * - Si en el futuro se usa Stripe Embedded u otra ruta, este href se puede centralizar.
    */
-      /**
-     * Decisión de UI local:
-     * - Para módulos, construimos el checkout por slug público, no por SKU.
-     * - Tomamos la última parte de pageSlug (ej. "webinars/ms-foo" → "ms-foo").
-     * - Si por alguna razón no hubiera pageSlug, caemos al checkout por SKU.
-     */
-    const pageSlug = module.pageSlug;
-    const checkoutSlug =
-      typeof pageSlug === "string" && pageSlug.length > 0
-        ? pageSlug.split("/").pop() ?? module.sku
-        : module.sku;
+  /**
+   * Decisión de UI local:
+   * - Para módulos, construimos el checkout por slug público, no por SKU.
+   * - Tomamos la última parte de pageSlug (ej. "webinars/ms-foo" → "ms-foo").
+   * - Si por alguna razón no hubiera pageSlug, caemos al checkout por SKU.
+   */
+  const pageSlug = module.pageSlug;
+  const checkoutSlug =
+    typeof pageSlug === "string" && pageSlug.length > 0
+      ? pageSlug.split("/").pop() ?? module.sku
+      : module.sku;
 
-    const ctaHref = `/checkout/${checkoutSlug}?mode=payment`;
-    const hero = module.sales.hero;
+  const ctaHref = `/checkout/${checkoutSlug}?mode=payment`;
+  const hero = module.sales.hero;
 
   // Datos para el bloque introductorio corto debajo del hero.
   const beneficiosList = Array.isArray(module.sales.beneficios)
@@ -69,7 +70,6 @@ export function ModuleLayout({ module }: ModuleLayoutProps) {
 
       {/* 2) Resumen del módulo: statement responsivo y limpio */}
       <ModuleStatement text={module.sales.statement?.text ?? ""} />
-
 
       {/* 3–4) Bloques de resumen detallado */}
       <ModuleSummary sales={module.sales} />
@@ -137,7 +137,7 @@ export function ModuleLayout({ module }: ModuleLayoutProps) {
               </p>
 
               <p style={{ fontWeight: 600, marginBottom: "var(--space-3)" }}>
-                {dateLabel}
+                <LocalDateTime iso={module.nextStartAt} />
               </p>
 
               <p className="small u-mb-1" style={{ opacity: 0.85 }}>
@@ -241,6 +241,9 @@ function formatPriceLabel(
 /**
  * Devuelve una etiqueta legible para la próxima fecha/hora del módulo.
  * Si no hay fecha, regresa un mensaje genérico.
+ *
+ * Nota: esto sigue ejecutándose en server para el Hero.
+ * La hora del cliente se resuelve con LocalDateTime en las secciones donde se usa.
  */
 function formatDateTimeLabel(nextStartAt: string | null): string {
   if (!nextStartAt) {
