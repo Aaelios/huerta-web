@@ -1,0 +1,109 @@
+// data/views/sales_pages.jsonc
+// Propósito: Contiene el copy comercial por SKU para cualquier producto (webinar, bundle, 1–a–1).
+
+{
+  // -------------------------------------------------------------------
+  // Bundle / Módulo: Tranquilidad Financiera
+  // -------------------------------------------------------------------
+  "course-lobra-rhd-fin-finanzas-v001": {
+    "sku": "course-lobra-rhd-fin-finanzas-v001",
+
+    "hero": {
+      "eyebrow": "Programa completo para emprendedores",
+      "title": "Construye un sistema que te dé [[control real de tu dinero]]",
+      "subtitle": "Si tus ingresos [[suben y bajan]], no sabes [[a dónde se va el dinero]] y ya te cansaste de adivinar, este programa te enseña a ordenar tus ventas, controlar tus gastos y tomar decisiones claras que [[mejoran tus números]] desde la primera semana.",
+      "image": {
+        "src": "/images/modulos/finanzas/hero.jpg",
+        "alt": "Programa Tranquilidad Financiera LOBRÁ"
+      },
+      "ctaText": "Quiero empezar con claridad financiera",
+      "note": "Incluye 4 workshops en vivo + 1 sesión personalizada de apoyo."
+    },
+
+    "paraQuien": [
+      "Personas que ya venden, pero sienten que el dinero no alcanza.",
+      "Emprendedores que quieren [[dejar de adivinar]] y saber qué hacer con su dinero.",
+      "Quienes buscan control financiero [[sin complicaciones técnicas]].",
+      "Personas que quieren resultados rápidos sin perderse en Excel."
+    ],
+
+    "beneficios": [
+      "Ver con claridad [[cuánto ganas realmente]].",
+      "Controlar tus egresos [[sin caos ni confusión]].",
+      "Saber qué es [[rentable]] y qué no con un panel simple.",
+      "Tener un plan financiero claro para cada semana.",
+      "Acompañamiento real durante todo el proceso."
+    ],
+
+    "incluye": [
+      "4 workshops en vivo de 90 minutos.",
+      "Una sesión 1:1 personalizada de 30 minutos.",
+      "Acceso a plantillas [[listas para usar]].",
+      "Acompañamiento y soporte por correo durante el módulo."
+    ],
+
+    "aprendizaje": [
+      "Los fundamentos para tomar decisiones [[seguras y simples]].",
+      "Cómo usar tus números para saber [[qué hacer cada semana]].",
+      "La forma correcta de organizar ingresos y egresos sin complicarte."
+    ],
+
+    "seo": {
+      "title": "Tranquilidad Financiera · Módulo Completo",
+      "description": "Organiza tus ingresos, controla tus egresos y domina tus números con un sistema financiero simple y real.",
+      "canonical": "https://lobra.net/webinars/ms-tranquilidad-financiera"
+    },
+
+    "ctaMid": {
+      "title": "Da el paso y [[toma control real]] de tu dinero",
+      "body": "Aprende a ver cuánto entra y cuánto sale sin complicarte, toma decisiones simples que sí mejoran tus resultados y avanza con el módulo completo sin quedarte a medias."
+    },
+
+    "statement": {
+      "text": "Si hoy sientes que tu negocio no alcanza, aquí vas a [[ver con claridad cuánto entra y cuánto sale]] para que puedas tomar [[decisiones simples y seguras]] sin ansiedad ni adivinar más."
+    }
+  },
+
+  // -------------------------------------------------------------------
+  // Webinar individual: Ingresos
+  // -------------------------------------------------------------------
+  "liveclass-lobra-rhd-fin-ingresos-v001": {
+    "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
+
+    "hero": {
+      "eyebrow": "Workshop en vivo",
+      "title": "Organiza tus ingresos con precisión",
+      "subtitle": "Aprende a registrar, clasificar y entender tu flujo de ingresos sin confusión.",
+      "image": {
+        "src": "/images/webinars/fin/ingresos-v001/hero.jpg",
+        "alt": "Workshop de Ingresos LOBRÁ"
+      },
+      "ctaText": "Quiero dominar mis ingresos"
+    },
+
+    "beneficios": [
+      "Entiende de dónde viene tu dinero.",
+      "Detecta ingresos reales vs. ingresos fantasmas.",
+      "Construye control sin complicarte.",
+      "Base sólida para tu dashboard completo."
+    ],
+
+    "incluye": [
+      "Workshop en vivo de 90 minutos.",
+      "Plantilla profesional lista para usar.",
+      "Acceso a la grabación por 7 días."
+    ],
+
+    "paraQuien": [
+      "Emprendedoras que quieren claridad inmediata.",
+      "Negocios con ventas irregulares o múltiples servicios.",
+      "Personas que quieren dejar de perder rastros de ingresos."
+    ],
+
+    "seo": {
+      "title": "Workshop de Ingresos · LOBRÁ",
+      "description": "Aprende a registrar y entender tus ingresos con claridad y método.",
+      "canonical": "https://lobra.net/webinars/w-ingresos"
+    }
+  }
+}
