@@ -13,6 +13,7 @@ export default async function f_refetchInvoice(invoiceId: string): Promise<Strip
       'lines.data.price.product',
       'customer',
       'subscription',
+      'payment_intent',
     ],
   });
 
