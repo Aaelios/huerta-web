@@ -234,11 +234,11 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
               )}
 
               {/* Bullets */}
-              <ul className="list-check u-small u-mt-2">
-                {(ui.bullets || []).map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ul>
+                <ul className="list-check u-small u-mt-2">
+                  {(ui.bullets || []).map((b, i) => (
+                    <li key={i}>{renderAccent(b)}</li>
+                  ))}
+                </ul>
 
               {/* Precio y garantía */}
               <div className="stack-2 u-mt-3">

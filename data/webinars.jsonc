@@ -171,7 +171,7 @@
   "shared": {
     "slug": "w-gastos",
     "title": "Tranquilidad para saber a dónde se va tu dinero",
-    "startAt": "2025-12-03T20:30:00-06:00",
+    "startAt": "2025-12-02T20:30:00-06:00",
     "durationMin": 90,
     "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZWE2NGQxMmEtZGQ0OC00NzU2LTg4YTgtMGU2NDY5ODc1OTM5%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
     "supportEmail": "soporte@lobra.net",
@@ -253,7 +253,7 @@
   "shared": {
     "slug": "w-reportes",
     "title": "Poder para entender tus números (de verdad)",
-    "startAt": "2025-12-10T20:30:00-06:00",
+    "startAt": "2025-12-09T20:30:00-06:00",
     "durationMin": 90,
     "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MjljOWFkZDYtZDU0ZC00NzFhLWIyMzEtZjg1MzZmY2FkMmRk%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%22c51bb673-ad6a-4402-83a9-9b2efe668bc0%22%7d",
     "supportEmail": "soporte@lobra.net",
@@ -335,7 +335,7 @@
     "shared": {
       "slug": "w-planeacion",
       "title": "Dirección para decidir con claridad (y sin miedo)",
-      "startAt": "2025-112-17T20:30:00-06:00",
+      "startAt": "2025-12-16T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
       "supportEmail": "soporte@lobra.net",
@@ -410,6 +410,49 @@
         "Convierte tus metas en números que te den dirección, no presión.",
         "Cierra el año con la tranquilidad de tener un rumbo financiero claro."
       ]
+    }
+  },
+
+    "1a1-rhd": {
+    "shared": {
+      "slug": "1a1-rhd",
+      "title": "Sesión 1 a 1 con Roberto · 90 minutos",
+      "subtitle": null,
+      "startAt": "2025-12-16T20:30:00-06:00", // placeholder, no se usa para 1 a 1
+      "durationMin": 90,
+      "zoomJoinUrl": null,
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": false },
+      "calendar": { "mode": "generated" },
+      "sku": "one2one-lobra-rhd-090m-v001",
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": false
+      },
+      "pricing": {
+        "sku": "one2one-lobra-rhd-090m-v001",
+        "amountCents": 149000, // $1,490 MXN
+        "currency": "MXN",
+        "interval": "one_time"
+        // stripePriceId y stripeProductId se pueden agregar si quieres alinear totalmente con Stripe:
+        // "stripePriceId": "price_1SUDcwQ8dpmAG0o2nsVfovBj",
+        // "stripeProductId": "prod_TR5oVBGGj5tHVp"
+      }
+    },
+    "checkout": {
+      "bullets": [
+        "90 minutos enfocados solo en tu negocio y en tus dudas más urgentes.",
+        "Revisamos tus números y tu operación sin tecnicismos, con calma.",
+        "Sales con claridad sobre tus prioridades y próximos pasos concretos.",
+        "Te llevas acuerdos claros para avanzar con más control y menos ruido."
+      ],
+      "refundLine": "Si después de la sesión sientes que no recibiste claridad o valor, escríbeme en las siguientes 24 horas y lo revisamos personalmente.",
+      "legalLinks": {
+        "privacySlug": "privacidad",
+        "refundSlug": "reembolsos"
+      }
     }
   }
 }
