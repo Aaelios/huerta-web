@@ -283,15 +283,62 @@ async function handlePaymentIntentSucceeded_v2(
 ): Promise<TStripeWebhookResult> {
   const { session, payment_intent } = input;
 
-  if (!session || !payment_intent) {
+  // Sin PI sí es un error real
+  if (!payment_intent) {
     return {
       outcome: "error_fatal",
-      reason: "MISSING_SESSION_OR_PI",
+      reason: "MISSING_PI",
     };
   }
 
   const supabase = m_getSupabaseService();
 
+  // ---------------------------------------------------
+  // FIX: payment_intent.succeeded SIN session
+  // Caso típico: pagos por invoice. La orden ya se maneja
+  // en invoice.payment_succeeded; aquí solo marcamos el
+  // evento como procesado y, si existe, devolvemos orderId.
+  // ---------------------------------------------------
+  if (!session) {
+    try {
+      const { data: order, error } = await supabase
+        .from("order_headers")
+        .select("id")
+        .eq("stripe_payment_intent_id", payment_intent.id)
+        .maybeSingle();
+
+      if (error) {
+        return {
+          outcome: "error_transient",
+          reason: "PI_NO_SESSION_LOOKUP_FAILED",
+          details: { message: error.message },
+        };
+      }
+
+      const orderId = order?.id ?? null;
+
+      return {
+        outcome: "processed",
+        details: {
+          type: input.type,
+          orderId,
+          pi_id: payment_intent.id,
+          via: "PI_NO_SESSION",
+        },
+      };
+    } catch (dbError: any) {
+      return {
+        outcome: "error_transient",
+        reason: "PI_NO_SESSION_LOOKUP_EXCEPTION",
+        details: { message: dbError?.message || String(dbError) },
+      };
+    }
+  }
+
+  // ---------------------------------------------------
+  // Caso normal: payment_intent.succeeded con session
+  // (checkout). Se mantiene el flujo existente.
+  // ---------------------------------------------------
   try {
     const { data } = await supabase.rpc("f_payments_upsert_by_session", {
       p_payment_intent: payment_intent as any,
@@ -310,6 +357,7 @@ async function handlePaymentIntentSucceeded_v2(
         paymentId,
         orderId,
         pi_id: payment_intent.id,
+        via: "SESSION_AND_PI",
       },
     };
   } catch (dbError: any) {
@@ -330,7 +378,6 @@ async function handlePaymentIntentSucceeded_v2(
     };
   }
 }
-
 //
 // Orquestador principal v2
 //
