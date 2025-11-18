@@ -1,5 +1,6 @@
 // lib/supabase/f_ensureUserByEmail.ts
-// Versión v2 — core + wrapper (lanza error con {kind,reason})
+// Versión v3 — core + wrapper (lanza error con {kind,reason})
+// Ahora permite opcionalmente pasar nombre, teléfono y opt-in para guardarlos en auth.users.raw_user_meta_data
 
 import { m_getSupabaseService } from "./m_getSupabaseService";
 
@@ -25,6 +26,13 @@ type EnsureUserResult =
       retryable: false;
     };
 
+type EnsureUserOptions = {
+  fullName?: string | null;
+  phone?: string | null;
+  optInMarketing?: "si" | "no";
+  source?: string;
+};
+
 function normalizeAndValidateEmail(email: string): string {
   const v = (email || "").trim().toLowerCase();
   if (!v) {
@@ -35,10 +43,11 @@ function normalizeAndValidateEmail(email: string): string {
 }
 
 //
-// CORE v2
+// CORE v2 (extendido con options)
 //
 async function f_ensureUserByEmail_core(
-  email: string
+  email: string,
+  options?: EnsureUserOptions
 ): Promise<EnsureUserResult> {
   const pEmail = normalizeAndValidateEmail(email);
 
@@ -90,11 +99,33 @@ async function f_ensureUserByEmail_core(
   const backoff = [100, 300, 1000];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const baseMetadata: Record<string, any> = {
+      source: options?.source ?? "stripe_webhook",
+    };
+
+    const fullName =
+      typeof options?.fullName === "string" && options.fullName.trim()
+        ? options.fullName.trim()
+        : null;
+    const phone =
+      typeof options?.phone === "string" && options.phone.trim()
+        ? options.phone.trim()
+        : null;
+
+    if (fullName) {
+      baseMetadata.full_name = fullName;
+    }
+
+    if (typeof options?.optInMarketing === "string") {
+      baseMetadata.opt_in_marketing = options.optInMarketing;
+    }
+
     const { data: created, error: createErr } =
       await supabase.auth.admin.createUser({
         email: pEmail,
         email_confirm: true,
-        user_metadata: { source: "stripe_webhook" },
+        phone: phone ?? undefined,
+        user_metadata: baseMetadata,
       });
 
     // 2.a éxito directo
@@ -220,11 +251,12 @@ async function f_ensureUserByEmail_core(
 //
 // WRAPPER legacy (mantiene firma actual)
 // Lanza Error con {kind,reason} para que TS superior lo capture.
-// 
+//
 export default async function f_ensureUserByEmail(
-  email: string
+  email: string,
+  options?: EnsureUserOptions
 ): Promise<{ userId: string }> {
-  const result = await f_ensureUserByEmail_core(email);
+  const result = await f_ensureUserByEmail_core(email, options);
 
   if (result.kind === "success") {
     return { userId: result.userId };

@@ -97,6 +97,32 @@ function hasPricePath(obj: any): { expanded: boolean; compact: boolean } {
   };
 }
 
+function extractCustomerInfoFromSession(session: Stripe.Checkout.Session) {
+  const anySession = session as any;
+  const cd = anySession.customer_details ?? {};
+
+  const fullName =
+    typeof cd.name === "string" && cd.name.trim() ? cd.name.trim() : null;
+  const phone =
+    typeof cd.phone === "string" && cd.phone.trim() ? cd.phone.trim() : null;
+
+  let optIn: "si" | "no" | undefined;
+  const customFields: any[] = Array.isArray(anySession.custom_fields)
+    ? anySession.custom_fields
+    : [];
+  const optField = customFields.find((f) => f?.key === "opt_in_marketing");
+  const value = optField?.dropdown?.value as string | undefined;
+  if (value === "si" || value === "no") {
+    optIn = value;
+  }
+
+  return {
+    fullName,
+    phone,
+    optInMarketing: optIn,
+  };
+}
+
 //
 // Handlers v2
 //
@@ -110,11 +136,18 @@ async function handleCheckoutSessionCompleted_v2(
     return { outcome: "error_fatal", reason: "MISSING_SESSION_OBJECT" };
   }
 
+  const customerInfo = extractCustomerInfoFromSession(session);
+
   //
   // 1) Usuario
   //
   try {
-    await f_ensureUserByEmail(email);
+    await f_ensureUserByEmail(email, {
+      fullName: customerInfo.fullName,
+      phone: customerInfo.phone,
+      optInMarketing: customerInfo.optInMarketing,
+      source: "stripe_checkout",
+    });
   } catch (e: any) {
     const kind = e?.kind;
     const reason = e?.reason || "AUTH_UNKNOWN";
@@ -199,11 +232,27 @@ async function handleInvoicePaymentSucceeded_v2(
     return { outcome: "error_fatal", reason: "MISSING_INVOICE_OBJECT" };
   }
 
+  const anyInvoice = invoice as any;
+  const fullName =
+    typeof anyInvoice.customer_name === "string" &&
+    anyInvoice.customer_name.trim()
+      ? anyInvoice.customer_name.trim()
+      : null;
+  const phone =
+    typeof anyInvoice.customer_phone === "string" &&
+    anyInvoice.customer_phone.trim()
+      ? anyInvoice.customer_phone.trim()
+      : null;
+
   //
   // 1) Usuario
   //
   try {
-    await f_ensureUserByEmail(email);
+    await f_ensureUserByEmail(email, {
+      fullName,
+      phone,
+      source: "stripe_invoice",
+    });
   } catch (e: any) {
     const kind = e?.kind;
     const reason = e?.reason || "AUTH_UNKNOWN";
@@ -378,6 +427,7 @@ async function handlePaymentIntentSucceeded_v2(
     };
   }
 }
+
 //
 // Orquestador principal v2
 //
