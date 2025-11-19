@@ -2,7 +2,7 @@
   "ms-tranquilidad-financiera": {
     "shared": {
       "slug": "ms-tranquilidad-financiera",
-      "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada",
+      "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 6 Herramientas",
       "startAt": "2025-11-25T20:30:00-06:00",
       "durationMin": 90,
       "zoomJoinUrl": null,
@@ -18,15 +18,15 @@
       },
       "pricing": {
         "sku": "course-lobra-rhd-fin-finanzas-v001",
-        "amountCents": 299000,
+        "amountCents": 319900,
         "currency": "MXN",
         "interval": "one_time"
       }
     },
     "sales": {
       "seo": {
-        "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 1 sesión personalizada",
-        "description": "El recorrido completo para dominar tus finanzas: organiza ingresos, controla egresos, entiende tus números, planea tu futuro y consolida todo con una sesión personalizada.",
+        "title": "Programa “Tranquilidad Financiera” · 4 Workshops + 6 Herramientas",
+        "description": "El recorrido completo para dominar tus finanzas: organiza ingresos, controla egresos, entiende tus números y planea tu futuro.",
         "canonical": "https://lobra.net/webinars/ms-tranquilidad-financiera"
       },
       "hero": {
@@ -55,10 +55,10 @@
           "Sistema completo de [[control financiero]] funcionando desde el primer día — sin complicarte.",
           "Dashboard unificado con [[ingresos]], [[egresos]] y [[rentabilidad real]].",
           "Plan financiero [[2026]] con metas claras, realistas y alcanzables.",
-          "Sesión [[1:1 personalizada]] para ajustar tu sistema a tu caso específico.",
+          "6 herramientas listas para usar y adaptar a tu negocio.",
           "Ahorro significativo frente a adquirir cada workshop por separado."
         ],
-        "priceLine": "$2,990 MXN",
+        "priceLine": "$3,199 MXN",
         "guarantee": "Garantía total: si no te aporta [[claridad]], [[control]] ni [[tranquilidad]], te regresamos tu dinero. Sin preguntas. Sin estrés.",
         "ctaText": "Quiero iniciar mi transformación financiera"
       }
@@ -77,7 +77,7 @@
         "Deja atrás el [[estrés financiero]] y toma decisiones con datos reales.",
         "Controla tus [[ingresos]], [[egresos]] y [[rentabilidad]] desde un solo sistema.",
         "Construye tu [[plan financiero 2026]] con dirección y confianza.",
-        "Aplica todo a tu negocio con una [[sesión personalizada 1:1]].",
+        "6 herramientas [[listas para usar]] y adaptar a tu negocio.",
         "Termina con la [[claridad]], el [[control]] y la [[tranquilidad]] que buscabas."
       ]
     }
