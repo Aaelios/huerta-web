@@ -224,6 +224,16 @@ function formatPriceLabel(
 ): string {
   const amount = amountCents / 100;
 
+  // Override específico para MXN → "MXN$ 3,199"
+  if (currency === "MXN") {
+    const base = new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+
+    return `MXN$ ${base}`;
+  }
+
   try {
     const formatter = new Intl.NumberFormat("es-MX", {
       style: "currency",
