@@ -4,12 +4,26 @@ import Link from "next/link";
 import Script from "next/script";
 import { notFound } from "next/navigation";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 import { resolveNextStep } from "@/lib/postpurchase/resolveNextStep";
 import { getWebinarBySku } from "@/lib/webinars/getWebinarBySku";
 import type { Webinar } from "@/lib/webinars/schema";
+import type {
+  AnalyticsContentType,
+  AnalyticsItem,
+  AnalyticsEventBase,
+} from "@/lib/analytics/dataLayer";
+import { PurchaseTracker } from "./PurchaseTracker";
 
 // ==== Tipos locales estrictos ====
-type Variant = "prelobby" | "bundle" | "download" | "schedule" | "community" | "generic" | "none";
+type Variant =
+  | "prelobby"
+  | "bundle"
+  | "download"
+  | "schedule"
+  | "community"
+  | "generic"
+  | "none";
 
 type NextStepItem = { href: string; label?: string };
 type NextStep = {
@@ -20,10 +34,40 @@ type NextStep = {
 };
 
 type WebinarThankyou = { title?: string; body_md?: string };
-type WebinarShared = { supportEmail?: string; startAt?: string; durationMin?: number };
+type WebinarShared = {
+  supportEmail?: string;
+  startAt?: string;
+  durationMin?: number;
+};
 type WebinarExtra = Partial<{ thankyou: WebinarThankyou; shared: WebinarShared }>;
 
-const COPY_BY_VARIANT: Record<Variant, { title: string; lead: string; ctaLabel: string }> = {
+type OrderWithPaymentsRow = {
+  order_id: string;
+  order_total_cents: number;
+  currency: string | null;
+  is_paid: boolean;
+};
+
+type PurchaseEventPayload = AnalyticsEventBase & {
+  event: "purchase";
+  value: number;
+  currency: string;
+  content_id: string;
+  content_type: AnalyticsContentType;
+  items: AnalyticsItem[];
+  order_id: string;
+  stripe_session_id: string;
+  payment_status: "paid";
+  order_currency_raw?: string | null;
+  stripe_currency_raw?: string | null;
+  billing_type?: "one_time" | "subscription";
+  billing_interval?: string | null;
+};
+
+const COPY_BY_VARIANT: Record<
+  Variant,
+  { title: string; lead: string; ctaLabel: string }
+> = {
   prelobby: {
     title: "¡Pago confirmado, ya eres parte del webinar!",
     lead: "En minutos recibirás tu correo de acceso. En el lobby tendrás checklist y materiales previos.",
@@ -61,26 +105,161 @@ const COPY_BY_VARIANT: Record<Variant, { title: string; lead: string; ctaLabel: 
   },
 };
 
-// ==== Stripe helpers ====
+// ==== Stripe / Supabase helpers (server) ====
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  // En entorno de build, esto ayuda a detectar misconfig.
+  // En runtime, Supabase sólo se usa cuando hay session_id.
+  console.warn(
+    "[/gracias] SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurados"
+  );
+}
+
+const supabase =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false },
+      })
+    : null;
+
 async function fetchSession(sessionId: string) {
-  const key = process.env.STRIPE_SECRET_KEY || "";
-  if (!key) throw new Error("STRIPE_SECRET_KEY missing");
-  const stripe = new Stripe(key);
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY missing");
+  }
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ["line_items", "line_items.data.price.product"],
   });
   return session;
 }
 
+async function fetchOrderBySessionId(
+  sessionId: string
+): Promise<OrderWithPaymentsRow | null> {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("v_orders_with_payments")
+    .select("order_id, order_total_cents, currency, is_paid")
+    .eq("stripe_session_id", sessionId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[/gracias] Supabase error", error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    order_id: data.order_id,
+    order_total_cents: data.order_total_cents,
+    currency: data.currency ?? null,
+    is_paid: data.is_paid,
+  };
+}
+
 function extractSkuFulfillmentSuccess(session: Stripe.Checkout.Session) {
   const first = session.line_items?.data?.[0];
-  const priceMeta = (first?.price?.metadata ?? {}) as Record<string, string | undefined>;
+  const priceMeta = (first?.price?.metadata ??
+    {}) as Record<string, string | undefined>;
 
   const sku = (session.metadata?.sku ?? priceMeta.sku) as string | undefined;
-  const fulfillment_type = (session.metadata?.fulfillment_type ?? priceMeta.fulfillment_type) as string | undefined;
-  const success_slug = (session.metadata?.success_slug ?? priceMeta.success_slug) as string | undefined;
+  const fulfillment_type = (session.metadata?.fulfillment_type ??
+    priceMeta.fulfillment_type) as string | undefined;
+  const success_slug = (session.metadata?.success_slug ??
+    priceMeta.success_slug) as string | undefined;
 
   return { sku, fulfillment_type, success_slug };
+}
+
+function mapFulfillmentToContentType(
+  raw: string | undefined
+): AnalyticsContentType | undefined {
+  switch (raw) {
+    case "course":
+    case "template":
+    case "live_class":
+    case "one_to_one":
+    case "subscription_grant":
+    case "bundle":
+      return raw;
+    default:
+      return undefined;
+  }
+}
+
+function buildPurchasePayload(args: {
+  session: Stripe.Checkout.Session;
+  orderRow: OrderWithPaymentsRow | null;
+  sku: string | undefined;
+  fulfillment_type_raw: string | undefined;
+}): PurchaseEventPayload | null {
+  const { session, orderRow, sku, fulfillment_type_raw } = args;
+
+  if (!orderRow || !orderRow.is_paid) return null;
+  if (!sku) return null;
+
+  const content_type = mapFulfillmentToContentType(fulfillment_type_raw);
+  if (!content_type) return null;
+
+  const orderTotalCents =
+    typeof orderRow.order_total_cents === "number"
+      ? orderRow.order_total_cents
+      : 0;
+  if (!Number.isFinite(orderTotalCents) || orderTotalCents <= 0) return null;
+
+  const value = Math.round(orderTotalCents / 100);
+  if (value <= 0) return null;
+
+  const orderCurrencyRaw = orderRow.currency || null;
+  const stripeCurrencyRaw =
+    typeof session.currency === "string" ? session.currency : null;
+  const currencyRaw = orderCurrencyRaw || stripeCurrencyRaw || "mxn";
+  const currency = currencyRaw.toUpperCase();
+
+  let billingType: "one_time" | "subscription" = "one_time";
+  let billingInterval: string | null = null;
+
+  if (session.mode === "subscription") {
+    billingType = "subscription";
+    const li0 = session.line_items?.data?.[0];
+    const price = li0?.price;
+    if (price && price.type === "recurring") {
+      billingInterval = price.recurring?.interval ?? null;
+    }
+  }
+
+  const item: AnalyticsItem = {
+    sku,
+    fulfillment_type: content_type,
+    quantity: 1,
+    unit_amount: orderTotalCents,
+    amount_total: orderTotalCents,
+    currency,
+  };
+
+  const payload: PurchaseEventPayload = {
+    event: "purchase",
+    value,
+    currency,
+    content_id: sku,
+    content_type,
+    items: [item],
+    order_id: orderRow.order_id,
+    stripe_session_id: session.id,
+    payment_status: "paid",
+    order_currency_raw: orderCurrencyRaw,
+    stripe_currency_raw: stripeCurrencyRaw,
+    billing_type: billingType,
+    billing_interval: billingInterval,
+  };
+
+  return payload;
 }
 
 function getSupportEmail(w: Webinar | (Webinar & WebinarExtra) | null): string {
@@ -107,7 +286,7 @@ function applyThankyouOverrides(
 function safeDate(iso?: string): Date | null {
   if (!iso || typeof iso !== "string") return null;
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? null : d;
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 function toISO(d: Date | null | undefined): string | undefined {
   if (!d) return undefined;
@@ -150,12 +329,36 @@ export default async function GraciasPage({
 }) {
   const sp = await searchParams;
   const sessionId =
-    typeof sp.session_id === "string" ? sp.session_id : Array.isArray(sp.session_id) ? sp.session_id[0] : undefined;
+    typeof sp.session_id === "string"
+      ? sp.session_id
+      : Array.isArray(sp.session_id)
+      ? sp.session_id[0]
+      : undefined;
   if (!sessionId) return notFound();
 
   const session = await fetchSession(sessionId);
-  const { sku, fulfillment_type, success_slug } = extractSkuFulfillmentSuccess(session);
+  const { sku, fulfillment_type, success_slug } =
+    extractSkuFulfillmentSuccess(session);
   if (!sku || !fulfillment_type) return notFound();
+
+  const orderRow = await fetchOrderBySessionId(session.id);
+  const purchasePayload = buildPurchasePayload({
+    session,
+    orderRow,
+    sku,
+    fulfillment_type_raw: fulfillment_type,
+  });
+
+  if (process.env.NEXT_PUBLIC_DEBUG === "1") {
+    console.log("[/gracias][purchase-check]", {
+      session_id: session.id,
+      session_status: session.payment_status,
+      has_order: !!orderRow,
+      is_paid: orderRow?.is_paid ?? null,
+      order_id: orderRow?.order_id ?? null,
+      will_fire_purchase: !!purchasePayload,
+    });
+  }
 
   // Resolver siguiente paso
   const nextRaw = await resolveNextStep({
@@ -169,7 +372,9 @@ export default async function GraciasPage({
     href: (nextRaw as NextStep).href,
     label: (nextRaw as NextStep).label,
     items: Array.isArray((nextRaw as NextStep).items)
-      ? ((nextRaw as NextStep).items || []).filter((x): x is NextStepItem => !!x && typeof x.href === "string")
+      ? ((nextRaw as NextStep).items || []).filter(
+          (x): x is NextStepItem => !!x && typeof x.href === "string"
+        )
       : undefined,
   };
 
@@ -194,7 +399,10 @@ export default async function GraciasPage({
 
     const start = safeDate((webinar as WebinarExtra)?.shared?.startAt);
     const dur = (webinar as WebinarExtra)?.shared?.durationMin;
-    const end = start && typeof dur === "number" ? new Date(start.getTime() + Math.max(0, Math.trunc(dur)) * 60_000) : null;
+    const end =
+      start && typeof dur === "number"
+        ? new Date(start.getTime() + Math.max(0, Math.trunc(dur)) * 60_000)
+        : null;
 
     if (start) {
       tzDisplay = formatScheduleInSiteTZ(start, end ?? undefined);
@@ -203,38 +411,10 @@ export default async function GraciasPage({
     }
   }
 
-  if (process.env.NEXT_PUBLIC_DEBUG === "1") {
-    console.log("[/gracias]", { variant: next.variant, sku, href: next.href || null });
-  }
-
-  const gaValue = typeof session.amount_total === "number" ? session.amount_total / 100 : undefined;
-  const gaCurrency = session.currency?.toUpperCase();
-
   return (
     <main className="container u-py-8">
-      {/* GTM purchase event (opcional) */}
-      {process.env.NEXT_PUBLIC_GTM_ID && (
-        <Script id="gracias-purchase" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({
-              event: 'purchase',
-              ecommerce: {
-                transaction_id: '${session.id}',
-                value: ${gaValue ?? "undefined"},
-                currency: '${gaCurrency ?? ""}',
-                items: [{
-                  item_id: '${sku}',
-                  item_name: '${sku}',
-                  item_category: '${fulfillment_type}',
-                  price: ${gaValue ?? "undefined"},
-                  quantity: 1
-                }]
-              }
-            });
-          `}
-        </Script>
-      )}
+      {/* Tracker de compra, sin duplicados */}
+      {purchasePayload ? <PurchaseTracker payload={purchasePayload} /> : null}
 
       <section className="l-stack-6 u-text-center">
         <h1 className="h2">{title}</h1>
@@ -246,7 +426,8 @@ export default async function GraciasPage({
             <p className="u-small text-strong">Fecha y horario</p>
             <p className="u-small">{tzDisplay}</p>
             <p className="u-small text-weak">
-              En tu hora local: <span id="local-schedule">{/* filled by script */}</span>
+              En tu hora local:{" "}
+              <span id="local-schedule">{/* filled by script */}</span>
             </p>
 
             {/* Script cliente para hora local */}
@@ -300,13 +481,22 @@ export default async function GraciasPage({
         {next.variant === "bundle" && next.items && next.items.length > 0 ? (
           <div className="l-stack-4 u-center">
             {next.items.map((it, i) => (
-              <Link key={i} href={it.href} className="c-btn c-btn--solid" prefetch={false}>
+              <Link
+                key={i}
+                href={it.href}
+                className="c-btn c-btn--solid"
+                prefetch={false}
+              >
                 {it.label || "Abrir"}
               </Link>
             ))}
           </div>
         ) : next.variant !== "none" && next.href ? (
-          <Link href={next.href} className="c-btn c-btn--solid" prefetch={false}>
+          <Link
+            href={next.href}
+            className="c-btn c-btn--solid"
+            prefetch={false}
+          >
             {next.label || ctaLabel}
           </Link>
         ) : null}
@@ -318,7 +508,8 @@ export default async function GraciasPage({
             <li>Revisa spam o promociones.</li>
             <li>Busca el remitente “LOBRÁ &lt;no-reply@mail.lobra.net&gt;”.</li>
             <li>
-              Si no lo encuentras, escribe a <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+              Si no lo encuentras, escribe a{" "}
+              <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
             </li>
           </ul>
         </div>

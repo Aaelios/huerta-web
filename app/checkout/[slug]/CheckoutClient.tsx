@@ -8,6 +8,11 @@ import type { Webinar } from '@/lib/webinars/schema';
 import type { CheckoutUI } from '@/lib/ui_checkout/buildCheckoutUI';
 import type { SessionPayload } from '@/lib/ui_checkout/buildSessionPayload';
 import { renderAccent } from '@/lib/ui/renderAccent';
+import {
+  initDataLayer,
+  pushAnalyticsEvent,
+  type AnalyticsItem,
+} from '@/lib/analytics/dataLayer';
 
 type Props = {
   slug: string;
@@ -66,39 +71,19 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
   const debugOn = process.env.NEXT_PUBLIC_DEBUG === '1';
   const idemRef = useRef<string>(makeIdempotencyKey());
   const mountOnceRef = useRef(false);
+  const beginCheckoutSentRef = useRef(false);
 
   useEffect(() => setMounted(true), []);
 
-  // Analytics: begin_checkout
+  // Inicializa dataLayer en cliente
   useEffect(() => {
-    try {
-      const value =
-        typeof webinar?.shared?.pricing?.amountCents === 'number'
-          ? webinar.shared.pricing.amountCents / 100
-          : undefined;
-      window.dataLayer = window.dataLayer ?? [];
-      const payload: Record<string, unknown> = {
-        event: 'begin_checkout',
-        sku: sessionPayload.sku,
-        price_id: sessionPayload.price_id,
-        product_id: sessionPayload.product_id,
-        mode: sessionPayload.mode,
-        currency: sessionPayload.currency,
-        value,
-        ui_title: ui.title,
-        ui_price_display: ui.priceDisplay,
-      };
-      if (ui.schedule?.startISO) payload['start_at'] = ui.schedule.startISO;
-      if (ui.schedule?.endISO) payload['end_at'] = ui.schedule.endISO;
-      window.dataLayer.push(payload);
-    } catch {
-      // noop
-    }
-  }, [sessionPayload, webinar, ui.title, ui.priceDisplay, ui.schedule?.startISO, ui.schedule?.endISO]);
+    initDataLayer();
+  }, []);
 
-  // Session creation
+  // Session creation + begin_checkout analytics
   useEffect(() => {
     let cancelled = false;
+
     async function createSession(): Promise<void> {
       if (!publishableKey) {
         setError('Falta configuración: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY');
@@ -125,18 +110,63 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
         if ('error' in data && data.error) throw new Error(data.error);
         if (!('client_secret' in data) || !data.client_secret) throw new Error('Falta client_secret');
 
-        if (!cancelled) setClientSecret(data.client_secret);
+        if (!cancelled) {
+          // Analytics: begin_checkout (una sola vez por intento exitoso)
+          const sku = sessionPayload.sku ?? webinar.shared?.sku;
+          const amountCents =
+            typeof webinar.shared?.pricing?.amountCents === 'number'
+              ? webinar.shared.pricing.amountCents
+              : undefined;
+          if (sku && !beginCheckoutSentRef.current) {
+            const value =
+              typeof amountCents === 'number' ? Math.round(amountCents / 100) : undefined;
+
+            const item: AnalyticsItem = {
+              sku,
+              fulfillment_type: 'live_class',
+              quantity: 1,
+              unit_amount: amountCents,
+              amount_total: amountCents,
+              currency: 'MXN',
+              price_id: sessionPayload.price_id,
+              product_id: sessionPayload.product_id,
+              mode: sessionPayload.mode,
+            };
+
+            pushAnalyticsEvent({
+              event: 'begin_checkout',
+              content_id: sku,
+              content_type: 'live_class',
+              value,
+              currency: 'MXN',
+              items: [item],
+              sku,
+              price_id: sessionPayload.price_id,
+              product_id: sessionPayload.product_id,
+              mode: sessionPayload.mode,
+              ui_title: ui.title,
+              ui_price_display: ui.priceDisplay,
+              start_at: ui.schedule?.startISO,
+              end_at: ui.schedule?.endISO,
+            });
+
+            beginCheckoutSentRef.current = true;
+          }
+
+          setClientSecret(data.client_secret);
+        }
       } catch (e: unknown) {
         if (!cancelled) setError(getErrorMessage(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
+
     createSession();
     return () => {
       cancelled = true;
     };
-  }, [attempt, publishableKey, sessionPayload]);
+  }, [attempt, publishableKey, sessionPayload, webinar, ui]);
 
   // Mount Stripe Embedded
   useEffect(() => {
@@ -187,6 +217,7 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
     setMountedProgrammatic(false);
     setShowFallback(false);
     mountOnceRef.current = false;
+    beginCheckoutSentRef.current = false;
     setAttempt((n) => n + 1);
   };
 
@@ -212,55 +243,57 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
       {/* Grid */}
       <section className="grid-2 gap-6">
         {/* Resumen */}
-          <aside className="section--surface" role="complementary" aria-labelledby="resumen-heading">
-            <div className="c-card stack-4">
-              <h2 id="resumen-heading" className="h4">Resumen de tu compra</h2>
+        <aside className="section--surface" role="complementary" aria-labelledby="resumen-heading">
+          <div className="c-card stack-4">
+            <h2 id="resumen-heading" className="h4">
+              Resumen de tu compra
+            </h2>
 
-              {/* Título y descripción */}
-              <div className="stack-2">
-                <p className="text-strong">{renderAccent(ui.title)}</p>
-                <p className="u-small text-weak u-mt-1">{renderAccent(ui.desc)}</p>
-              </div>
+            {/* Título y descripción */}
+            <div className="stack-2">
+              <p className="text-strong">{renderAccent(ui.title)}</p>
+              <p className="u-small text-weak u-mt-1">{renderAccent(ui.desc)}</p>
+            </div>
 
-              {/* Fecha y horario */}
-              {ui.schedule && (
-                <div className="stack-2 u-mt-2 u-mb-1">
-                  <p className="u-small text-strong">Fecha y horario</p>
-                  <p className="u-small">{ui.schedule.tzDisplay.replace('GMT-6', '').trim()}</p>
-                  <p className="u-small text-weak">
-                    En tu hora local: {localScheduleDisplay || 'detectando…'}
-                  </p>
-                </div>
-              )}
-
-              {/* Bullets */}
-                <ul className="list-check u-small u-mt-2">
-                  {(ui.bullets || []).map((b, i) => (
-                    <li key={i}>{renderAccent(b)}</li>
-                  ))}
-                </ul>
-
-              {/* Precio y garantía */}
-              <div className="stack-2 u-mt-3">
-                <div className="flex-between">
-                  <span className="u-small text-strong">Total </span>
-                  <strong className="price accent">{ui.priceDisplay}</strong>
-                </div>
-                <p className="u-small text-weak">Sin cargos ocultos.</p>
+            {/* Fecha y horario */}
+            {ui.schedule && (
+              <div className="stack-2 u-mt-2 u-mb-1">
+                <p className="u-small text-strong">Fecha y horario</p>
+                <p className="u-small">{ui.schedule.tzDisplay.replace('GMT-6', '').trim()}</p>
                 <p className="u-small text-weak">
-                  {ui.refundLine || 'Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.'}
+                  En tu hora local: {localScheduleDisplay || 'detectando…'}
                 </p>
               </div>
+            )}
 
-              {/* Soporte */}
-              <p className="u-small u-mt-2 u-mb-3">
-                ¿Necesitas ayuda?{' '}
-                <a href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`} className="link text-weak">
-                  {ui.supportEmail || 'soporte@lobra.net'}
-                </a>
+            {/* Bullets */}
+            <ul className="list-check u-small u-mt-2">
+              {(ui.bullets || []).map((b, i) => (
+                <li key={i}>{renderAccent(b)}</li>
+              ))}
+            </ul>
+
+            {/* Precio y garantía */}
+            <div className="stack-2 u-mt-3">
+              <div className="flex-between">
+                <span className="u-small text-strong">Total </span>
+                <strong className="price accent">{ui.priceDisplay}</strong>
+              </div>
+              <p className="u-small text-weak">Sin cargos ocultos.</p>
+              <p className="u-small text-weak">
+                {ui.refundLine || 'Garantía LOBRÁ: 7 días. Si no te aporta valor, te devolvemos el dinero.'}
               </p>
             </div>
-          </aside>
+
+            {/* Soporte */}
+            <p className="u-small u-mt-2 u-mb-3">
+              ¿Necesitas ayuda?{' '}
+              <a href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`} className="link text-weak">
+                {ui.supportEmail || 'soporte@lobra.net'}
+              </a>
+            </p>
+          </div>
+        </aside>
 
         {/* Stripe */}
         <div className="section--surface">
@@ -276,8 +309,12 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
                 <p className="text-strong">No pudimos iniciar el checkout.</p>
                 <p className="u-small break-words">{error}</p>
                 <div className="stack-row gap-2">
-                  <button className="c-btn" onClick={retry}>Reintentar</button>
-                  <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>Pedir ayuda</a>
+                  <button className="c-btn" onClick={retry}>
+                    Reintentar
+                  </button>
+                  <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>
+                    Pedir ayuda
+                  </a>
                 </div>
               </div>
             </div>
@@ -298,8 +335,12 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
                 <div className="u-small mt-3">
                   <p className="mb-2">Si el formulario no aparece, intenta de nuevo o contáctanos.</p>
                   <div className="stack-row gap-2">
-                    <button className="c-btn" onClick={retry}>Reintentar</button>
-                    <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>Soporte por email</a>
+                    <button className="c-btn" onClick={retry}>
+                      Reintentar
+                    </button>
+                    <a className="c-btn c-btn--ghost" href={`mailto:${ui.supportEmail || 'soporte@lobra.net'}`}>
+                      Soporte por email
+                    </a>
                   </div>
                 </div>
               )}
@@ -321,8 +362,9 @@ function Inner({ webinar, ui, sessionPayload }: Props) {
           {mounted && debugOn && (
             <div className="u-small text-weak mt-4">
               <p>
-                Estado: pk {publishableKey ? 'ok' : 'faltante'} · script {stripeReady ? 'ok' : 'cargando'} · client_secret{' '}
-                {clientSecret ? 'ok' : 'pendiente'} · modo {mountedProgrammatic ? 'programático' : 'pendiente'}
+                Estado: pk {publishableKey ? 'ok' : 'faltante'} · script {stripeReady ? 'ok' : 'cargando'} ·
+                client_secret {clientSecret ? 'ok' : 'pendiente'} · modo{' '}
+                {mountedProgrammatic ? 'programático' : 'pendiente'}
               </p>
             </div>
           )}

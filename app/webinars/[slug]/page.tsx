@@ -8,6 +8,7 @@ import SalesClase from "@/components/webinars/SalesClase";
 import { getCheckoutUrl } from "@/lib/ui_checkout/getCheckoutUrl";
 import { loadModuleDetail } from "@/lib/modules/loadModuleDetail";
 import { ModuleLayout } from "@/components/modules/ModuleLayout";
+import { ViewContentTracker } from "@/components/analytics/ViewContentTracker";
 
 // ---- Helpers
 
@@ -43,13 +44,6 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Normaliza el slug de la ruta pública `/webinars/[slug]`
- * al `page_slug` usado en products para módulos.
- *
- * - `/webinars/ms-tranquilidad-financiera` → slug = "ms-tranquilidad-financiera"
- *   → "webinars/ms-tranquilidad-financiera"
- */
 function resolveModulePageSlug(slug: string): string {
   return slug.startsWith("webinars/") ? slug : `webinars/${slug}`;
 }
@@ -63,7 +57,6 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
 
-  // 1) Intentar módulo (bundle) primero
   const modulePageSlug = resolveModulePageSlug(slug);
   const moduleDetail = await loadModuleDetail(modulePageSlug);
 
@@ -84,12 +77,9 @@ export async function generateMetadata({
     };
   }
 
-  // 2) Fallback a webinar actual
   const w = await getWebinar(slug);
 
-  if (!w.sales || !w.sales.seo) {
-    return {};
-  }
+  if (!w.sales || !w.sales.seo) return {};
 
   return {
     title: w.sales.seo.title,
@@ -115,19 +105,24 @@ export default async function Page({
 }) {
   const { slug } = await params;
 
-  // 1) Intentar camino MÓDULO (bundle)
+  // 1) MÓDULO / BUNDLE
   const modulePageSlug = resolveModulePageSlug(slug);
   const moduleDetail = await loadModuleDetail(modulePageSlug);
 
   if (moduleDetail) {
     return (
       <main>
+        <ViewContentTracker
+          contentType="bundle"
+          contentId={moduleDetail.sku}
+          title={moduleDetail.title}
+        />
         <ModuleLayout module={moduleDetail} />
       </main>
     );
   }
 
-  // 2) Fallback: camino WEBINAR (comportamiento existente)
+  // 2) WEBINAR / LIVE_CLASS
   const webinar = await getWebinar(slug);
   const { shared, sales } = webinar;
   if (!sales) notFound();
@@ -138,13 +133,18 @@ export default async function Page({
     shared.pricing.currency
   );
 
-  // CTA → /checkout/[slug] con modo opcional si es recurrente
   const ctaHref = getCheckoutUrl(shared.slug, {
     mode: shared.pricing.interval === "recurring" ? "subscription" : "payment",
   });
 
   return (
     <main>
+      <ViewContentTracker
+        contentType="live_class"
+        contentId={shared.sku}
+        title={sales.hero.title}
+      />
+
       <SalesHero
         eyebrow={sales.hero.eyebrow}
         title={sales.hero.title}

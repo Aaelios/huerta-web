@@ -4,25 +4,49 @@
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import {
+  initDataLayer,
+  pushAnalyticsEvent,
+  pushAnalyticsTestEvent,
+} from "@/lib/analytics/dataLayer";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
+const SEND_TEST_EVENT = process.env.NEXT_PUBLIC_GTM_SEND_TEST_EVENT === "true";
 
 export default function Gtm() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Page view SPA tracking
   useEffect(() => {
-    if (!GTM_ID) return;
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
+    if (!GTM_ID) {
+      return;
+    }
+
+    const queryString = searchParams?.toString();
+    const url = pathname + (queryString ? `?${queryString}` : "");
+
+    initDataLayer();
+    pushAnalyticsEvent({
       event: "page_view",
       page_path: url,
       page_title: document.title,
     });
   }, [pathname, searchParams]);
 
-  if (!GTM_ID) return null;
+  // Dummy test event para validar infraestructura en GTM Preview
+  useEffect(() => {
+    if (!GTM_ID || !SEND_TEST_EVENT) {
+      return;
+    }
+
+    initDataLayer();
+    pushAnalyticsTestEvent("gtm_client_init");
+  }, []);
+
+  if (!GTM_ID) {
+    return null;
+  }
 
   return (
     <Script id="gtm-base" strategy="afterInteractive">{`
