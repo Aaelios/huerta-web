@@ -1,11 +1,13 @@
 // app/webinars/page.tsx
 /**
  * Módulo UI — /webinars · Webinars Hub v1
- * Página server (RSC) con ISR=900. Consume /api/webinars/search.
- * Secciones: Destacados (fijos) → Módulos/Bundles → Clases. Filtros y paginación via querystring.
+ * Página server (RSC) con SSG + ISR=900. Consume /api/webinars/search.
+ * Secciones: Destacados (fijos) → Módulos/Bundles → Clases.
+ * Filtros y paginación usan querystring desde cliente (pendiente de refactor).
  * Compatible con Next.js 15.5 y ESLint (TS/ESM). Server-only.
  */
 
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { HubItemDTO, HubApiResponse } from '@/components/webinars/hub/types';
@@ -23,8 +25,8 @@ export const metadata = buildMetadata({
   pathname: '/webinars',
 });
 
-export const revalidate = 900;
 const REVALIDATE_SECONDS = 900;
+export const revalidate = REVALIDATE_SECONDS;
 
 /** Extensión del contrato: añade destacados y facetas globales */
 type HubSearchResponse = HubApiResponse & {
@@ -40,11 +42,14 @@ type ApiMaybeWrappedOrDisabled = ApiMaybeWrapped | { maintenance: true };
 function isWrapped(x: unknown): x is { data: HubSearchResponse } {
   return typeof x === 'object' && x !== null && 'data' in x;
 }
+
 function unwrapApi(x: ApiMaybeWrapped): HubSearchResponse {
   return isWrapped(x) ? x.data : x;
 }
 
-// --- Helpers SSR ---
+// --- Helpers SSR/ISR ---
+// Nota: en 04B usamos parámetros por defecto para preservar SSG + ISR.
+// La lectura real de querystring para filtros se moverá a capa cliente en un bloque posterior.
 function parseQS(searchParams: Record<string, string | string[] | undefined>) {
   const page = Number(Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page) || 1;
   const page_size_raw =
@@ -74,7 +79,7 @@ async function fetchHub(params: ReturnType<typeof parseQS>): Promise<ApiMaybeWra
   for (const t of params.topic) qs.append('topic', t);
 
   const url = `${process.env.APP_URL ?? ''}/api/webinars/search?${qs.toString()}`;
-  const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } }); // sin 'no-store'
+  const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
   if (!res.ok) {
     if (res.status === 403) return { maintenance: true };
     if (res.status === 404) notFound();
@@ -84,13 +89,10 @@ async function fetchHub(params: ReturnType<typeof parseQS>): Promise<ApiMaybeWra
 }
 
 // --- Página principal ---
-export default async function WebinarsPage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const spRaw = (await searchParams) ?? {};
-  const sp = parseQS(spRaw);
+// Importante: no usamos `searchParams` en la firma para mantener SSG + ISR.
+export default async function WebinarsPage() {
+  // Defaults estáticos para la versión base del hub (page=1, sort=recent, sin filtros)
+  const sp = parseQS({});
 
   const raw = await fetchHub(sp);
   if ('maintenance' in raw) {
@@ -106,7 +108,7 @@ export default async function WebinarsPage({
 
   const { items, featured_items, facets, page, page_size: pageSize, total } = unwrapApi(raw);
 
-  analytics.view_item_list({ page: sp.page, sort: sp.sort, pageSize: sp.page_size });
+  analytics.view_item_list({ page: sp.page, pageSize: sp.page_size, sort: sp.sort });
 
   const { modulesBundles, classes } = splitItems(items);
   const hasResults = total > 0;
@@ -127,11 +129,13 @@ export default async function WebinarsPage({
       )}
 
       <div className={`section ${s.filtersBar}`}>
-        <FiltersBar
-          topics={facets.topics}
-          levelOptions={facets.levels}
-          selected={{ topics: sp.topic, level: sp.level, sort: sp.sort }}
-        />
+        <Suspense fallback={null}>
+          <FiltersBar
+            topics={facets.topics}
+            levelOptions={facets.levels}
+            selected={{ topics: sp.topic, level: sp.level, sort: sp.sort }}
+          />
+        </Suspense>
       </div>
 
       {modulesBundles.length > 0 && (
@@ -152,7 +156,9 @@ export default async function WebinarsPage({
 
       {hasResults && (
         <div className="section">
-          <Pagination page={page} pageSize={pageSize} total={total} />
+          <Suspense fallback={null}>
+            <Pagination page={page} pageSize={pageSize} total={total} />
+          </Suspense>
         </div>
       )}
     </div>
