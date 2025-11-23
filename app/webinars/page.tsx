@@ -25,8 +25,9 @@ export const metadata = buildMetadata({
   pathname: '/webinars',
 });
 
+// Config de página: valor literal requerido por Next
+export const revalidate = 900;
 const REVALIDATE_SECONDS = 900;
-export const revalidate = REVALIDATE_SECONDS;
 
 /** Extensión del contrato: añade destacados y facetas globales */
 type HubSearchResponse = HubApiResponse & {
