@@ -1,11 +1,17 @@
 // app/(legal)/reembolsos/page.tsx
+// Página legal estática — Política de Reembolsos LOBRÁ
+// Metadata centralizada vía buildMetadata (seoConfig + buildMetadata)
+
+import { buildMetadata } from "@/lib/seo/buildMetadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Política de Reembolsos | LOBRÁ",
+export const metadata: Metadata = buildMetadata({
+  typeId: "legal",
+  pathname: "/reembolsos",
+  title: "Política de Reembolsos",
   description:
-    "Reglas claras y justas para reembolsos de webinars, cursos, plantillas y sesiones 1-a-1. Aplica en México. Marca LOBRÁ operada por Corporativo Huerta Elek.",
-};
+    "Reglas de reembolsos de LOBRÁ para webinars, cursos, plantillas y sesiones 1-a-1. Condiciones claras aplicables en México.",
+});
 
 export default function Page() {
   return (
@@ -36,8 +42,10 @@ export default function Page() {
         <h2>Plantillas, descargas y herramientas digitales</h2>
         <ul>
           <li><strong>No reembolsables</strong> una vez descargadas o accedidas.</li>
-          <li>Excepción: <strong>error técnico imputable</strong> a nosotros (archivo
-            corrupto, acceso no otorgado). En ese caso, reembolso completo.</li>
+          <li>
+            Excepción: <strong>error técnico imputable</strong> a nosotros (archivo
+            corrupto, acceso no otorgado). En ese caso, reembolso completo.
+          </li>
         </ul>
 
         <h2>Sesiones 1-a-1 / consultoría</h2>
@@ -61,17 +69,28 @@ export default function Page() {
 
         <h2>Moneda, comisiones y tiempos</h2>
         <ul>
-          <li>La devolución se realiza por el <strong>mismo medio de pago</strong> y en
-            la <strong>misma moneda</strong> de la compra.</li>
-          <li>Variaciones cambiarias y cargos de banca emisora corren por cuenta del cliente.</li>
-          <li>Procesamiento: <strong>5–10 días hábiles</strong> desde la aprobación.</li>
+          <li>
+            La devolución se realiza por el <strong>mismo medio de pago</strong> y en
+            la <strong>misma moneda</strong> de la compra.
+          </li>
+          <li>
+            Variaciones cambiarias y cargos de banca emisora corren por cuenta del cliente.
+          </li>
+          <li>
+            Procesamiento: <strong>5–10 días hábiles</strong> desde la aprobación.
+          </li>
         </ul>
 
         <h2>Cómo solicitar un reembolso</h2>
         <ol>
-          <li>Escribe a <a href="mailto:legal@lobra.net">legal@lobra.net</a> con asunto “Solicitud de reembolso”.</li>
+          <li>
+            Escribe a <a href="mailto:legal@lobra.net">legal@lobra.net</a> con asunto
+            “Solicitud de reembolso”.
+          </li>
           <li>Incluye correo de compra, número de pedido, fecha y producto.</li>
-          <li>Describe el motivo y, si aplica, evidencia del problema técnico.</li>
+          <li>
+            Describe el motivo y, si aplica, evidencia del problema técnico.
+          </li>
         </ol>
 
         <h2>Excepciones y prevalencia legal</h2>

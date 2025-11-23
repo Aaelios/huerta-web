@@ -1,0 +1,60 @@
+// data/redirects.business.jsonc
+// Catálogo central de reglas de redirección 301 para LOBRÁ.
+// Toda redirección de negocio debe documentarse aquí antes de impactar next.config.mjs.
+
+{
+  "version": "v1",
+  "updatedAt": "2025-11-22T00:00:00.000Z",
+
+  "rules": [
+    // -------------------------------------------------------------------------
+    // EJEMPLO ILUSTRATIVO — NO SE ACTIVA (comentado).
+    // Usar este ejemplo como guía para crear nuevas reglas.
+    //
+    // CAMPOS:
+    //   id: string                       → Identificador único y estable.
+    //
+    //   source: string                   → Ruta exacta. Path relativo. Debe iniciar con "/".
+    //                                      Match VÁLIDO (v1): "/algo/anterior".
+    //
+    //   destination: string              → Ruta exacta. Path relativo. Debe iniciar con "/".
+    //                                      No puede ser rutas privadas ni APIs:
+    //                                      Prohibidos: /checkout, /gracias, /cancelado,
+    //                                                 /mi-cuenta, /mis-compras, /comunidad,
+    //                                                 /api, /admin.
+    //
+    //   type: "permanent" | "temporary"  → Usar "permanent" 99% de los casos (301).
+    //
+    //   match: "exact"                   → ÚNICO tipo permitido en v1.
+    //
+    //   kind:                            → Clasificación de negocio. Valores permitidos:
+    //        "slug_migration"
+    //      | "legacy_platform"
+    //      | "typo_fix"
+    //      | "business_decision"
+    //
+    //   enabled: boolean                 → true para activar, false para desactivar.
+    //
+    //   notes: string                    → Motivo breve. Contexto humano.
+    //
+    // RESTRICCIONES:
+    //   - Prohibido generar cadenas A→B→C.
+    //   - source no puede duplicarse.
+    //   - destination debe ser una ruta actual válida y pública.
+    //   - Nunca redirigir a páginas privadas o noindex.
+    // -------------------------------------------------------------------------
+
+    /*
+    {
+      "id": "ejemplo-cambio-slug-intro-finanzas",
+      "source": "/webinars/intro-a-las-finanzas",
+      "destination": "/webinars/ms-tranquilidad-financiera",
+      "type": "permanent",
+      "match": "exact",
+      "kind": "slug_migration",
+      "enabled": true,
+      "notes": "Cambio de slug por rebranding del webinar inicial. Ejemplo ilustrativo."
+    }
+    */
+  ]
+}

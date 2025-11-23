@@ -1,11 +1,17 @@
 // app/(legal)/privacidad/page.tsx
+// Página legal estática — Aviso de Privacidad LOBRÁ
+// Metadata centralizada vía buildMetadata (seoConfig + buildMetadata)
+
+import { buildMetadata } from "@/lib/seo/buildMetadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Privacidad | LOBRÁ",
+export const metadata: Metadata = buildMetadata({
+  typeId: "legal",
+  pathname: "/privacidad",
+  title: "Privacidad",
   description:
     "Aviso de privacidad de LOBRÁ. Datos recabados, uso, cookies y ejercicio de derechos ARCO.",
-};
+});
 
 export default function Page() {
   return (

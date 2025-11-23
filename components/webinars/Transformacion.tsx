@@ -1,8 +1,10 @@
 // components/webinars/Transformacion.tsx
 "use client";
 
+// Transformacion (webinars) — Bloque emocional 'De la confusión a la tranquilidad financiera'.
+// UI y analítica se conservan. Sin JSON-LD inline; los schemas viven en la capa SEO central.
+
 import Link from "next/link";
-import Script from "next/script";
 import { useCallback, useMemo } from "react";
 
 type Props = {
@@ -10,7 +12,10 @@ type Props = {
   ctaText?: string;
 };
 
-export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad financiera hoy" }: Props) {
+export default function Transformacion({
+  ctaHref,
+  ctaText = "Quiero mi claridad financiera hoy",
+}: Props) {
   const track = useCallback((label: string) => {
     try {
       window.dataLayer?.push({ event: "cta_click", placement: "mid_section", label });
@@ -30,7 +35,7 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
       "Ansiedad al no saber qué pasará con tu negocio mañana.",
       "Frustración de compararte con otros que avanzan más rápido.",
     ],
-    []
+    [],
   );
 
   const after = useMemo(
@@ -41,7 +46,7 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
       "Alegría de disfrutar tus avances sin culpa ni comparación.",
       "Paz de tener claridad y decidir sin miedo.",
     ],
-    []
+    [],
   );
 
   // Pasos L-O-B-R
@@ -49,50 +54,47 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
     () => [
       {
         id: "L",
-        title: <>Logro inicial: <span className="accent">claridad inmediata</span></>,
+        title: (
+          <>
+            Logro inicial: <span className="accent">claridad inmediata</span>
+          </>
+        ),
         plainTitle: "Logro inicial: claridad inmediata",
         desc: "Alivio de ver por fin tus ingresos reales y dejar la incertidumbre atrás.",
       },
       {
         id: "O",
-        title: <>Organizar piezas: <span className="accent">orden y control</span></>,
+        title: (
+          <>
+            Organizar piezas: <span className="accent">orden y control</span>
+          </>
+        ),
         plainTitle: "Organizar piezas: orden y control",
         desc: "Seguridad al descubrir qué fuente de ingreso te da más valor y cuáles no.",
       },
       {
         id: "B",
-        title: <>Base sólida: <span className="accent">prioridades claras</span></>,
+        title: (
+          <>
+            Base sólida: <span className="accent">prioridades claras</span>
+          </>
+        ),
         plainTitle: "Base sólida: prioridades claras",
         desc: "Confianza al enfocarte en lo que sí da frutos y soltar lo que drena tu energía.",
       },
       {
         id: "R",
-        title: <>Red integral: <span className="accent">visión de crecimiento</span></>,
+        title: (
+          <>
+            Red integral: <span className="accent">visión de crecimiento</span>
+          </>
+        ),
         plainTitle: "Red integral: visión de crecimiento",
         desc: "Orgullo de sentirte dueño de tus decisiones y proyectar estabilidad.",
       },
     ],
-    []
+    [],
   );
-
-  // JSON-LD Steps
-  const itemListJSON = useMemo(() => {
-    const elements = [
-      ...steps.map((s, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
-        name: `${s.id} · ${s.plainTitle}`,
-        url: ctaHref,
-      })),
-      { "@type": "ListItem", position: steps.length + 1, name: "Á · Alcance logrado", url: ctaHref },
-    ];
-    return JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      itemListElement: elements,
-      name: "Pasos LOBRÁ",
-    });
-  }, [steps, ctaHref]);
 
   return (
     <section className="section" aria-labelledby="transf-title">
@@ -126,12 +128,34 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
               {after.map((text, i) => (
                 <li key={`a-${i}`} role="listitem">
                   <p>
-                    {text.startsWith("Confianza") ? <><span className="accent">Confianza</span>{text.replace("Confianza", "")}</> :
-                    text.startsWith("Orgullo") ? <><span className="accent">Orgullo</span>{text.replace("Orgullo", "")}</> :
-                    text.startsWith("Tranquilidad") ? <><span className="accent">Tranquilidad</span>{text.replace("Tranquilidad", "")}</> :
-                    text.startsWith("Alegría") ? <><span className="accent">Alegría</span>{text.replace("Alegría", "")}</> :
-                    text.startsWith("Paz") ? <><span className="accent">Paz</span>{text.replace("Paz", "")}</> :
-                    text}
+                    {text.startsWith("Confianza") ? (
+                      <>
+                        <span className="accent">Confianza</span>
+                        {text.replace("Confianza", "")}
+                      </>
+                    ) : text.startsWith("Orgullo") ? (
+                      <>
+                        <span className="accent">Orgullo</span>
+                        {text.replace("Orgullo", "")}
+                      </>
+                    ) : text.startsWith("Tranquilidad") ? (
+                      <>
+                        <span className="accent">Tranquilidad</span>
+                        {text.replace("Tranquilidad", "")}
+                      </>
+                    ) : text.startsWith("Alegría") ? (
+                      <>
+                        <span className="accent">Alegría</span>
+                        {text.replace("Alegría", "")}
+                      </>
+                    ) : text.startsWith("Paz") ? (
+                      <>
+                        <span className="accent">Paz</span>
+                        {text.replace("Paz", "")}
+                      </>
+                    ) : (
+                      text
+                    )}
                   </p>
                 </li>
               ))}
@@ -146,9 +170,17 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
           <ol className="l-stepsGrid u-grid-auto l-stonesRow is-compact" role="list">
             {steps.map((s) => (
               <li key={s.id} role="listitem" id={`step-mid-${s.id}`}>
-                <article className="c-card c-step" role="group" aria-labelledby={`step-mid-${s.id}-title`}>
-                  <span className="c-step__num accent" aria-hidden="true">{s.id}</span>
-                  <h4 id={`step-mid-${s.id}-title`} className="c-step__title">{s.title}</h4>
+                <article
+                  className="c-card c-step"
+                  role="group"
+                  aria-labelledby={`step-mid-${s.id}-title`}
+                >
+                  <span className="c-step__num accent" aria-hidden="true">
+                    {s.id}
+                  </span>
+                  <h4 id={`step-mid-${s.id}-title`} className="c-step__title">
+                    {s.title}
+                  </h4>
                   <p className="c-step__desc">{s.desc}</p>
                 </article>
               </li>
@@ -161,17 +193,22 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
             role="group"
             aria-labelledby="step-mid-goal-title"
           >
-            <span className="c-step__num accent" aria-hidden="true">Á</span>
-            <h4 id="step-mid-goal-title" className="c-step__title">Alcance logrado</h4>
+            <span className="c-step__num accent" aria-hidden="true">
+              Á
+            </span>
+            <h4 id="step-mid-goal-title" className="c-step__title">
+              Alcance logrado
+            </h4>
             <p className="c-step__desc">Claridad y tranquilidad que te devuelven la confianza.</p>
             <p className="c-step__desc fg-60">
-              Control claro de tus ingresos que se traduce en paz, seguridad y orgullo de decidir sin miedo.
+              Control claro de tus ingresos que se traduce en paz, seguridad y orgullo de decidir sin
+              miedo.
             </p>
           </article>
 
           {/* CTA */}
           <div className="u-text-center l-stoneCTA is-band">
-            <div className="cluster-3">           
+            <div className="cluster-3">
               <Link
                 href={ctaHref}
                 className="c-btn c-btn--solid c-btn--pill"
@@ -188,13 +225,6 @@ export default function Transformacion({ ctaHref, ctaText = "Quiero mi claridad 
           </div>
         </div>
       </div>
-
-      {/* JSON-LD */}
-      <Script
-        id="transformacion-itemlist"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: itemListJSON }}
-      />
     </section>
   );
 }

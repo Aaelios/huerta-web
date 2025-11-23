@@ -15,6 +15,13 @@ import { Pagination } from '@/components/webinars/hub/Pagination';
 import * as analytics from '@/components/webinars/hub/analytics';
 import s from '@/components/webinars/hub/WebinarsHub.module.css';
 import { renderAccent } from '@/lib/ui/renderAccent';
+import { buildMetadata } from '@/lib/seo/buildMetadata';
+
+// Metadata SEO centralizada para el hub de webinars
+export const metadata = buildMetadata({
+  typeId: 'webinars_hub',
+  pathname: '/webinars',
+});
 
 export const revalidate = 900;
 const REVALIDATE_SECONDS = 900;

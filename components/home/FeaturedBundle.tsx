@@ -3,7 +3,7 @@
  * FeaturedBundle — Render de módulo o bundle destacado (Client)
  * - Muestra título, resumen, precio y CTA.
  * - Analítica: featured_view (una vez) y cta_click.
- * - JSON-LD: schema.org/Product.
+ * - Sin JSON-LD inline; los schemas se manejan desde la capa SEO central.
  */
 
 "use client";
@@ -34,11 +34,11 @@ function pick<T = string>(obj: unknown, keys: string[]): T | undefined {
 }
 
 function pickTitle(dto: FeaturedDTO): string {
-  return (pick<string>(dto, ["title", "name"]) ?? "Módulo destacado");
+  return pick<string>(dto, ["title", "name"]) ?? "Módulo destacado";
 }
 
 function pickSummary(dto: FeaturedDTO): string {
-  return (pick<string>(dto, ["summary", "description"]) ?? "Accede al contenido completo del módulo.");
+  return pick<string>(dto, ["summary", "description"]) ?? "Accede al contenido completo del módulo.";
 }
 
 function pickImage(dto: FeaturedDTO): string | undefined {
@@ -75,38 +75,14 @@ export default function FeaturedBundle({ dto, href }: Props) {
     if (viewedRef.current) return;
     viewedRef.current = true;
     const sku = (dto as unknown as { sku?: string }).sku || "";
-    const t: FulfillmentType =
-      (dto as unknown as { type?: FulfillmentType }).type ?? "bundle";
+    const t: FulfillmentType = (dto as unknown as { type?: FulfillmentType }).type ?? "bundle";
     track("featured_view", { placement: "home_featured", sku, type: t });
   }, [dto]);
-
-  // JSON-LD Product
-  const jsonLd = useMemo(() => {
-    const sku = (dto as unknown as { sku?: string }).sku || "";
-    const img = imageUrl ? [imageUrl] : undefined;
-    const base: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: title,
-      description: summary,
-      ...(img ? { image: img } : {}),
-      sku,
-      offers: {
-        "@type": "Offer",
-        priceCurrency: "MXN",
-        price: priceMXN,
-        url: href,
-        availability: "https://schema.org/InStock",
-      },
-    };
-    return JSON.stringify(base);
-  }, [dto, href, title, summary, priceMXN, imageUrl]);
 
   // Click handler con analítica
   const onCtaClick = () => {
     const sku = (dto as unknown as { sku?: string }).sku || "";
-    const t: FulfillmentType =
-      (dto as unknown as { type?: FulfillmentType }).type ?? "bundle";
+    const t: FulfillmentType = (dto as unknown as { type?: FulfillmentType }).type ?? "bundle";
     track("cta_click", { placement: "home_featured", sku, type: t });
   };
 
@@ -154,8 +130,6 @@ export default function FeaturedBundle({ dto, href }: Props) {
           </div>
         </div>
       </div>
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </section>
   );
 }

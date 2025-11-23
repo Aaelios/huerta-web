@@ -1,63 +1,78 @@
 // app/sitemap.ts
+// Sitemap XML para LOBRÁ (lobra.net).
+// Expone solo rutas públicas indexables a partir de rutas estáticas, webinars y módulos.
+
 import type { MetadataRoute } from "next";
+import { loadWebinars } from "@/lib/webinars/loadWebinars";
+import { loadModulesIndex } from "@/lib/modules/loadModulesIndex";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const lastMod = new Date();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = "https://lobra.net";
+  const now = new Date();
 
-  return [
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: "https://lobra.net/",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 1.0,
+      url: `${baseUrl}/`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/que-es-lobra",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      url: `${baseUrl}/webinars`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/webinars",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      url: `${baseUrl}/que-es-lobra`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/webinars/oct-2025-01",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      url: `${baseUrl}/servicios/1a1-rhd`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/sobre-mi",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      url: `${baseUrl}/sobre-mi`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/contacto",
-      lastModified: lastMod,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      url: `${baseUrl}/contacto`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/privacidad",
-      lastModified: lastMod,
-      changeFrequency: "monthly",
-      priority: 0.6,
+      url: `${baseUrl}/privacidad`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/terminos",
-      lastModified: lastMod,
-      changeFrequency: "monthly",
-      priority: 0.6,
+      url: `${baseUrl}/terminos`,
+      lastModified: now,
     },
     {
-      url: "https://lobra.net/reembolsos",
-      lastModified: lastMod,
-      changeFrequency: "monthly",
-      priority: 0.6,
+      url: `${baseUrl}/reembolsos`,
+      lastModified: now,
     },
   ];
+
+  // Webinars individuales: /webinars/w-[slug]
+  const webinars = await loadWebinars();
+  const webinarRoutes: MetadataRoute.Sitemap = Object.keys(webinars).map(
+    (slug) => ({
+      url: `${baseUrl}/webinars/w-${slug}`,
+      lastModified: now,
+    })
+  );
+
+  // Módulos (bundles): pageSlug viene de products.page_slug (ej. "webinars/ms-tranquilidad-financiera")
+  const modulesIndex = await loadModulesIndex();
+  const moduleRoutes: MetadataRoute.Sitemap = modulesIndex.map((module) => {
+    const path = module.pageSlug.startsWith("/")
+      ? module.pageSlug
+      : `/${module.pageSlug}`;
+
+    const lastModified =
+      module.updatedAt !== null ? new Date(module.updatedAt) : now;
+
+    return {
+      url: `${baseUrl}${path}`,
+      lastModified,
+    };
+  });
+
+  return [...staticRoutes, ...webinarRoutes, ...moduleRoutes];
 }

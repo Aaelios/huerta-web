@@ -1,14 +1,47 @@
 // app/webinars/[slug]/page.tsx
+// Página de detalle de webinars y módulos (venta pública).
+// Metadata SEO centralizada vía buildMetadata (seoConfig + buildMetadata).
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getWebinar } from "@/lib/webinars/load";
+import { loadWebinars } from "@/lib/webinars/loadWebinars";
+import { loadModulesIndex } from "@/lib/modules/loadModulesIndex";
 import SalesHero from "@/components/webinars/SalesHero";
 import SalesClase from "@/components/webinars/SalesClase";
 import { getCheckoutUrl } from "@/lib/ui_checkout/getCheckoutUrl";
 import { loadModuleDetail } from "@/lib/modules/loadModuleDetail";
 import { ModuleLayout } from "@/components/modules/ModuleLayout";
 import { ViewContentTracker } from "@/components/analytics/ViewContentTracker";
+import { buildMetadata } from "@/lib/seo/buildMetadata";
+
+// ISR para páginas de detalle de webinar/módulo (venta pública)
+export const revalidate = 3600;
+
+/**
+ * generateStaticParams
+ * Pre-genera páginas de:
+ * - Webinars definidos en data/webinars.jsonc
+ * - Módulos/bundles cuyo pageSlug empieza con "webinars/"
+ * Normaliza pageSlug → [slug] removiendo el prefijo "webinars/".
+ */
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  const [webinarsMap, modulesIndex] = await Promise.all([
+    loadWebinars(),
+    loadModulesIndex(),
+  ]);
+
+  const webinarSlugs = Object.keys(webinarsMap);
+
+  const moduleSlugs = modulesIndex
+    .map((item) => item.pageSlug)
+    .filter((pageSlug) => pageSlug.startsWith("webinars/"))
+    .map((pageSlug) => pageSlug.replace(/^webinars\//, ""));
+
+  const uniqueSlugs = Array.from(new Set([...webinarSlugs, ...moduleSlugs]));
+
+  return uniqueSlugs.map((slug) => ({ slug }));
+}
 
 // ---- Helpers
 
@@ -48,7 +81,7 @@ function resolveModulePageSlug(slug: string): string {
   return slug.startsWith("webinars/") ? slug : `webinars/${slug}`;
 }
 
-// ---- Metadata
+// ---- Metadata (SEO centralizado)
 
 export async function generateMetadata({
   params,
@@ -56,44 +89,41 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const pathname = `/webinars/${slug}`;
 
+  // 1) Intento como MÓDULO / BUNDLE (sales_pages.jsonc)
   const modulePageSlug = resolveModulePageSlug(slug);
   const moduleDetail = await loadModuleDetail(modulePageSlug);
 
   if (moduleDetail?.sales?.seo) {
     const seo = moduleDetail.sales.seo;
-    return {
-      title: seo.title,
+    return buildMetadata({
+      typeId: "module",
+      pathname,
+      title: seo.title, // título crudo, sin "| LOBRÁ"
       description: seo.description,
-      alternates: { canonical: seo.canonical },
-      openGraph: {
-        title: seo.title,
-        description: seo.description,
-        type: "article",
-        locale: "es_MX",
-        url: seo.canonical,
-      },
-      robots: { index: true, follow: true },
-    };
+    });
   }
 
-  const w = await getWebinar(slug);
+  // 2) Fallback: WEBINAR / LIVE_CLASS (webinars.jsonc)
+  const webinar = await getWebinar(slug);
 
-  if (!w.sales || !w.sales.seo) return {};
+  if (!webinar.sales || !webinar.sales.seo) {
+    // Sin SEO explícito: usa defaults del tipo "webinar".
+    return buildMetadata({
+      typeId: "webinar",
+      pathname,
+    });
+  }
 
-  return {
-    title: w.sales.seo.title,
-    description: w.sales.seo.description,
-    alternates: { canonical: w.sales.seo.canonical },
-    openGraph: {
-      title: w.sales.seo.title,
-      description: w.sales.seo.description,
-      type: "article",
-      locale: "es_MX",
-      url: w.sales.seo.canonical,
-    },
-    robots: { index: true, follow: true },
-  };
+  const seo = webinar.sales.seo;
+
+  return buildMetadata({
+    typeId: "webinar",
+    pathname,
+    title: seo.title, // crudo
+    description: seo.description,
+  });
 }
 
 // ---- Page
@@ -130,7 +160,7 @@ export default async function Page({
   const dateLabel = formatDateLabel(shared.startAt);
   const priceLabel = formatPriceLabel(
     shared.pricing.amountCents,
-    shared.pricing.currency
+    shared.pricing.currency,
   );
 
   const ctaHref = getCheckoutUrl(shared.slug, {

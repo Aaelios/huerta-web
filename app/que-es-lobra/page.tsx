@@ -4,11 +4,16 @@ import Transformacion from "../../components/QueEsLobra/Transformacion";
 import Diferenciadores from "../../components/QueEsLobra/Diferenciadores";
 import CTAFinal from "../../components/QueEsLobra/CTAFinal";
 
-export const metadata = {
-  title: "¿Qué es LOBRÁ? | lobra.net",
+import { buildMetadata } from "@/lib/seo/buildMetadata";
+
+// Metadata SEO centralizada para página informativa pública
+export const metadata = buildMetadata({
+  typeId: "static",
+  pathname: "/que-es-lobra",
+  title: "¿Qué es LOBRÁ?",
   description:
-    "Más ingresos, más tiempo libre y confianza en ti mismo. Descubre qué es LOBRÁ, el método práctico que convierte cada hora en un logro real para tu negocio y tu vida.",
-};
+    "Descubre qué es LOBRÁ y cómo te ayuda a construir claridad, ingresos estables y confianza real para avanzar en tu negocio.",
+});
 
 export default function Page() {
   return (

@@ -3,7 +3,7 @@
  * FeaturedOneToOne — Render de 1-a-1 destacado (Client)
  * - Título, resumen, precio y CTA.
  * - Analítica: featured_view (una vez) y cta_click.
- * - JSON-LD: schema.org/Service.
+ * - Sin JSON-LD inline; los schemas se manejan desde la capa SEO central.
  */
 
 "use client";
@@ -83,30 +83,6 @@ export default function FeaturedOneToOne({ dto, href }: Props) {
     track("featured_view", { placement: "home_featured", sku, type: t });
   }, [dto]);
 
-  // JSON-LD Service
-  const jsonLd = useMemo(() => {
-    const sku = (dto as unknown as { sku?: string }).sku || "";
-    const img = imageUrl ? [imageUrl] : undefined;
-    const base: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      name: title,
-      description: summary,
-      ...(img ? { image: img } : {}),
-      ...(sku ? { sku } : {}),
-      offers: {
-        "@type": "Offer",
-        priceCurrency: "MXN",
-        price: priceMXN,
-        url: href,
-        availability: "https://schema.org/InStock",
-      },
-      provider: { "@type": "Organization", name: "Huerta Consulting" },
-      areaServed: "MX",
-    };
-    return JSON.stringify(base);
-  }, [dto, href, title, summary, priceMXN, imageUrl]);
-
   // Click handler con analítica
   const onCtaClick = () => {
     const sku = (dto as unknown as { sku?: string }).sku || "";
@@ -159,8 +135,6 @@ export default function FeaturedOneToOne({ dto, href }: Props) {
           </div>
         </div>
       </div>
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </section>
   );
 }

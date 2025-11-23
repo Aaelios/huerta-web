@@ -1,5 +1,8 @@
 // app/checkout/[slug]/page.tsx
+// Página dinámica · Checkout (no index) — Metadata vía buildMetadata
+
 import { notFound } from 'next/navigation';
+import { buildMetadata } from '@/lib/seo/buildMetadata';
 import { loadWebinars } from '../../../lib/webinars/loadWebinars';
 import type { Webinar } from '@/lib/webinars/schema';
 import { buildCheckoutUI, type CheckoutDefaults } from '../../../lib/ui_checkout/buildCheckoutUI';
@@ -14,6 +17,19 @@ type PageProps = {
 
 export const dynamic = 'force-static';
 
+// --- Metadata wiring ---
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  return buildMetadata({
+    typeId: 'checkout',
+    pathname: `/checkout/${slug}`,
+    title: 'Checkout',
+    description: 'Completa tu compra de forma segura.',
+  });
+}
+
+// --- Static params ---
 export async function generateStaticParams() {
   const raw = await loadWebinars();
   const list = toArray(raw);
@@ -33,7 +49,6 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   const qp = normalizeSearchParams(sp);
 
-  // Normaliza UTM a Record<string,string>
   const utmClean: Record<string, string> = Object.fromEntries(
     Object.entries(qp.utm ?? {}).filter(([, v]) => typeof v === 'string')
   ) as Record<string, string>;

@@ -1,8 +1,10 @@
-// components/home/SteppingStones.tsx 
+// components/home/SteppingStones.tsx
 "use client";
 
+// SteppingStones — Pasos L-O-B-R-Á como guía visual de avance.
+// Sin JSON-LD inline; los schemas se manejan desde la capa SEO central.
+
 import Link from "next/link";
-import Script from "next/script";
 import { useCallback, useMemo } from "react";
 
 export default function SteppingStones() {
@@ -16,36 +18,59 @@ export default function SteppingStones() {
   const steps = useMemo(
     () =>
       [
-        { id: "L", title: "Logro inicial", desc: "Primer resultado práctico en 1–2 horas.", href: "/webinars", cta: "Empezar aquí", label: "L-logro" },
-        { id: "O", title: "Organizar piezas", desc: "Conecta resultados aislados en un mismo tema.", href: "/webinars", cta: "Ver cómo", label: "O-organizar" },
-        { id: "B", title: "Base sólida", desc: "Dominas un área completa y usable.", href: "/webinars", cta: "Construir base", label: "B-base" },
-        { id: "R", title: "Red integral", desc: "Integras varias competencias en un sistema.", href: "/webinars", cta: "Integrar sistema", label: "R-red" },
-        { id: "Á", title: "Alcance logrado", desc: "Más ingresos, tiempo libre y confianza.", href: "/webinars", cta: "Alcanzar esto", label: "A-alcance" },
+        {
+          id: "L",
+          title: "Logro inicial",
+          desc: "Primer resultado práctico en 1–2 horas.",
+          href: "/webinars",
+          cta: "Empezar aquí",
+          label: "L-logro",
+        },
+        {
+          id: "O",
+          title: "Organizar piezas",
+          desc: "Conecta resultados aislados en un mismo tema.",
+          href: "/webinars",
+          cta: "Ver cómo",
+          label: "O-organizar",
+        },
+        {
+          id: "B",
+          title: "Base sólida",
+          desc: "Dominas un área completa y usable.",
+          href: "/webinars",
+          cta: "Construir base",
+          label: "B-base",
+        },
+        {
+          id: "R",
+          title: "Red integral",
+          desc: "Integras varias competencias en un sistema.",
+          href: "/webinars",
+          cta: "Integrar sistema",
+          label: "R-red",
+        },
+        {
+          id: "Á",
+          title: "Alcance logrado",
+          desc: "Más ingresos, tiempo libre y confianza.",
+          href: "/webinars",
+          cta: "Alcanzar esto",
+          label: "A-alcance",
+        },
       ] as const,
-    []
+    [],
   );
-
-  // JSON-LD para los pasos
-  const itemListJSON = useMemo(() => {
-    const elements = steps.map((s, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: `${s.id} · ${s.title}`,
-      url: s.href,
-    }));
-    return JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      itemListElement: elements,
-      name: "Pasos LOBRÁ",
-    });
-  }, [steps]);
 
   return (
     <section className="section section--dark l-steps" aria-labelledby="steps-title" role="region">
       <div className="container u-text-center">
-        <h2 id="steps-title">Los pasos para avanzar con <span className="accent">LOBRÁ</span></h2>
-        <p className="u-small">Cinco piedras que convierten tu aprendizaje en resultados acumulativos.</p>
+        <h2 id="steps-title">
+          Los pasos para avanzar con <span className="accent">LOBRÁ</span>
+        </h2>
+        <p className="u-small">
+          Cinco piedras que convierten tu aprendizaje en resultados acumulativos.
+        </p>
       </div>
 
       {/* Lista L-O-B-R-Á */}
@@ -87,16 +112,16 @@ export default function SteppingStones() {
 
       {/* Bloque final: PTR reforzado */}
       <div className="container u-text-center" aria-labelledby="resultados-title">
-        <h3 id="resultados-title" className="u-center">Resultados que sientes desde el primer paso</h3>
+        <h3 id="resultados-title" className="u-center">
+          Resultados que sientes desde el primer paso
+        </h3>
         <p className="u-small">
           Con LOBRÁ no necesitas terminar todo para ver cambios. Cada paso te da{" "}
-          <span className="accent">libertad</span> y{" "}
-          <span className="accent">tranquilidad</span>, con un negocio que realmente{" "}
-          <span className="accent">te impulsa</span>. Al completar el recorrido, el impacto se multiplica.
+          <span className="accent">libertad</span> y <span className="accent">tranquilidad</span>, con
+          un negocio que realmente <span className="accent">te impulsa</span>. Al completar el
+          recorrido, el impacto se multiplica.
         </p>
       </div>
-
-      <Script id="steps-itemlist" type="application/ld+json" dangerouslySetInnerHTML={{ __html: itemListJSON }} />
     </section>
   );
 }

@@ -1,8 +1,10 @@
 // app/components/QueEsLobra/Transformacion.tsx
 "use client";
 
+// Transformacion — Bloque 'De la confusión a la claridad' en Qué es LOBRÁ.
+// UI y analítica se conservan. Sin JSON-LD inline; los schemas viven en la capa SEO central.
+
 import Link from "next/link";
-import Script from "next/script";
 import { useCallback, useMemo } from "react";
 
 export default function Transformacion() {
@@ -21,7 +23,8 @@ export default function Transformacion() {
 
   // Encabezado de sección
   const headline = "De la confusión a la claridad que impulsa tu negocio.";
-  const sub = "Convierte horas de aprendizaje en avances visibles y utilizables, paso a paso con LOBRÁ.";
+  const sub =
+    "Convierte horas de aprendizaje en avances visibles y utilizables, paso a paso con LOBRÁ.";
 
   // Antes / Después (emocional, genérico al método)
   const before = useMemo(
@@ -32,7 +35,7 @@ export default function Transformacion() {
       "Ansiedad por no saber cuál es el siguiente paso.",
       "Dependencia de terceros para tareas básicas.",
     ],
-    []
+    [],
   );
 
   const after = useMemo(
@@ -43,7 +46,7 @@ export default function Transformacion() {
       "Ruta clara: sabes dónde estás y qué sigue.",
       "Avanzas con tus propias manos y decides con confianza.",
     ],
-    []
+    [],
   );
 
   // Pasos L-O-B-R (stepping stones)
@@ -90,32 +93,8 @@ export default function Transformacion() {
         desc: "Integras varias competencias en un sistema que produce resultados consistentes.",
       },
     ],
-    []
+    [],
   );
-
-  // JSON-LD (ItemList) para los pasos
-  const itemListJSON = useMemo(() => {
-    const elements = [
-      ...steps.map((s, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
-        name: `${s.id} · ${s.plainTitle}`,
-        url: ctaHref,
-      })),
-      {
-        "@type": "ListItem",
-        position: steps.length + 1,
-        name: "Á · Alcance logrado",
-        url: ctaHref,
-      },
-    ];
-    return JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      itemListElement: elements,
-      name: "Pasos LOBRÁ",
-    });
-  }, [steps, ctaHref]);
 
   return (
     <section className="section" aria-labelledby="transf-title">
@@ -162,7 +141,11 @@ export default function Transformacion() {
           <ol className="l-stepsGrid u-grid-auto l-stonesRow is-compact" role="list">
             {steps.map((s) => (
               <li key={s.id} role="listitem" id={`step-${s.id}`}>
-                <article className="c-card c-step" role="group" aria-labelledby={`step-${s.id}-title`}>
+                <article
+                  className="c-card c-step"
+                  role="group"
+                  aria-labelledby={`step-${s.id}-title`}
+                >
                   <span className="c-step__num accent" aria-hidden="true">
                     {s.id}
                   </span>
@@ -176,7 +159,11 @@ export default function Transformacion() {
           </ol>
 
           {/* Á: PTR como cierre */}
-          <article className="c-card c-step c-step--goal is-emphasis l-stoneGoal" role="group" aria-labelledby="step-goal-title">
+          <article
+            className="c-card c-step c-step--goal is-emphasis l-stoneGoal"
+            role="group"
+            aria-labelledby="step-goal-title"
+          >
             <span className="c-step__num accent" aria-hidden="true">
               Á
             </span>
@@ -184,7 +171,9 @@ export default function Transformacion() {
               Alcance logrado
             </h4>
             <p className="c-step__desc">Más ingresos, más tiempo libre y confianza en ti mismo.</p>
-            <p className="c-step__desc fg-60">Resultados visibles que sostienen tu autonomía y tranquilidad.</p>
+            <p className="c-step__desc fg-60">
+              Resultados visibles que sostienen tu autonomía y tranquilidad.
+            </p>
           </article>
 
           {/* CTA */}
@@ -206,9 +195,6 @@ export default function Transformacion() {
           </div>
         </div>
       </div>
-
-      {/* JSON-LD */}
-      <Script id="que-es-lobra-transformacion-itemlist" type="application/ld+json" dangerouslySetInnerHTML={{ __html: itemListJSON }} />
     </section>
   );
 }

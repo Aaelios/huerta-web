@@ -4,7 +4,7 @@
  * - Preserva la UI actual del bloque destacado.
  * - Fecha en zona horaria del cliente con Intl.DateTimeFormat.
  * - Analítica: featured_view (una vez) y cta_click.
- * - JSON-LD: schema.org/Event.
+ * - Sin JSON-LD inline; los schemas se manejan desde la capa SEO central.
  */
 
 "use client";
@@ -21,8 +21,8 @@ import { track } from "@/lib/analytics/track";
 // ============================
 
 type Props = {
-  dto: FeaturedDTO;     // Datos unificados del featured
-  href: string;         // Normalizado por el servidor: "/{slug}" o "/webinars"
+  dto: FeaturedDTO; // Datos unificados del featured
+  href: string; // Normalizado por el servidor: "/{slug}" o "/webinars"
 };
 
 function formatClientDate(iso?: string): { iso?: string; human?: string } {
@@ -50,11 +50,11 @@ function pick<T = string>(obj: unknown, keys: string[]): T | undefined {
 }
 
 function pickTitle(dto: FeaturedDTO): string {
-  return (pick<string>(dto, ["title", "name"]) ?? "Webinar en vivo");
+  return pick<string>(dto, ["title", "name"]) ?? "Webinar en vivo";
 }
 
 function pickSummary(dto: FeaturedDTO): string {
-  return (pick<string>(dto, ["summary", "description"]) ?? "Sesión en vivo para dueños de negocio.");
+  return pick<string>(dto, ["summary", "description"]) ?? "Sesión en vivo para dueños de negocio.";
 }
 
 function pickImage(dto: FeaturedDTO): string | undefined {
@@ -110,7 +110,7 @@ export default function FeaturedWebinar({ dto, href }: Props) {
   const nextStartAt = (dto as unknown as { next_start_at?: string }).next_start_at;
   const { iso: dateISO, human: dateHuman } = useMemo(
     () => formatClientDate(nextStartAt),
-    [nextStartAt]
+    [nextStartAt],
   );
 
   // Analítica: featured_view una sola vez
@@ -123,35 +123,6 @@ export default function FeaturedWebinar({ dto, href }: Props) {
       (dto as unknown as { type?: FulfillmentType }).type ?? "live_class";
     track("featured_view", { placement: "home_featured", sku, type: t });
   }, [dto]);
-
-  // JSON-LD: Event
-  const jsonLd = useMemo(() => {
-    const sku = (dto as unknown as { sku?: string }).sku || "";
-    const img = imageUrl ? [imageUrl] : undefined;
-    const offers: Record<string, unknown> = {
-      "@type": "Offer",
-      url: href,
-      priceCurrency: "MXN",
-      price: priceMXN,
-      availability: "https://schema.org/InStock",
-      ...(dateISO ? { validFrom: dateISO } : {}),
-    };
-    const base: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": "Event",
-      name: title,
-      description: summary,
-      eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-      eventStatus: "https://schema.org/EventScheduled",
-      ...(dateISO ? { startDate: dateISO } : {}),
-      organizer: { "@type": "Organization", name: "Huerta Consulting" },
-      location: { "@type": "VirtualLocation", url: href },
-      ...(img ? { image: img } : {}),
-      offers,
-      ...(sku ? { sku } : {}),
-    };
-    return JSON.stringify(base);
-  }, [title, summary, dateISO, href, imageUrl, priceMXN, dto]);
 
   // Click handler con analítica
   const onCtaClick = () => {
@@ -182,7 +153,9 @@ export default function FeaturedWebinar({ dto, href }: Props) {
             <p className="featured-meta small">
               {dateHuman ? (
                 <>
-                  <span role="img" aria-hidden="true">📅</span>{" "}
+                  <span role="img" aria-hidden="true">
+                    📅
+                  </span>{" "}
                   <time dateTime={dateISO}>{dateHuman}</time>
                 </>
               ) : (
@@ -233,8 +206,6 @@ export default function FeaturedWebinar({ dto, href }: Props) {
           </div>
         </div>
       </div>
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </section>
   );
 }

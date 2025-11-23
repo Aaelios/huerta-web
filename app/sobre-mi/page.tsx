@@ -1,4 +1,8 @@
 // app/sobre-mi/page.tsx
+// Página estática — Sobre mí (LOBRÁ)
+// Metadata centralizada vía buildMetadata (seoConfig + buildMetadata)
+
+import { buildMetadata } from "@/lib/seo/buildMetadata";
 import type { Metadata } from "next";
 import {
   Hero,
@@ -6,21 +10,19 @@ import {
   MiniBio,
   EnQueAyudo,
   CTA,
-  Schema,
 } from "@/components/sobreMi";
 
-export const metadata: Metadata = {
-  title: "Sobre mí | Huerta Consulting",
+export const metadata: Metadata = buildMetadata({
+  typeId: "sobre_mi",
+  pathname: "/sobre-mi",
+  title: "Sobre mí",
   description:
     "Consultoría práctica para emprendedores en LATAM. Visión integral de negocio y uso real de IA para ordenar, vender y crecer con resultados tangibles.",
-  alternates: { canonical: "/sobre-mi" },
-};
+});
 
 export default function SobreMiPage() {
   return (
     <>
-      <Schema />
-
       <section className="section--dark">
         <Hero />
       </section>

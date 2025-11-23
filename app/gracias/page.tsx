@@ -14,6 +14,16 @@ import type {
   AnalyticsEventBase,
 } from "@/lib/analytics/dataLayer";
 import { PurchaseTracker } from "./PurchaseTracker";
+import { buildMetadata } from "@/lib/seo/buildMetadata";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = buildMetadata({
+  typeId: "thankyou",
+  pathname: "/gracias",
+  title: "Pago confirmado",
+  description:
+    "Validamos tu compra y activamos tus accesos. Desde aquí puedes entrar a tu webinar, módulo o sesión 1 a 1 según tu compra.",
+});
 
 // ==== Tipos locales estrictos ====
 type Variant =
@@ -165,8 +175,10 @@ async function fetchOrderBySessionId(
 
 function extractSkuFulfillmentSuccess(session: Stripe.Checkout.Session) {
   const first = session.line_items?.data?.[0];
-  const priceMeta = (first?.price?.metadata ??
-    {}) as Record<string, string | undefined>;
+  const priceMeta = (first?.price?.metadata ?? {}) as Record<
+    string,
+    string | undefined
+  >;
 
   const sku = (session.metadata?.sku ?? priceMeta.sku) as string | undefined;
   const fulfillment_type = (session.metadata?.fulfillment_type ??

@@ -1,11 +1,18 @@
 // middleware.ts
+// Middleware global para LOBRÁ (lobra.net).
+// - Bloquea probes comunes (WordPress, Joomla, Drupal, backups, archivos sensibles).
+// - Aplica cabecera X-Robots-Tag según entorno y dominio:
+//   * Solo indexable si es producción y host lobra.net / www.lobra.net.
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname.toLowerCase();
 
-  // Bloqueo 404 para probes comunes (WordPress, Joomla, Drupal, archivos sensibles, backups)
+  /* -------------------------------------------------------------------------- */
+  /* 1) Bloqueo 404 para probes comunes                                        */
+  /* -------------------------------------------------------------------------- */
   if (
     // WordPress
     /^\/wp(\/|$)/.test(p) ||
@@ -47,19 +54,33 @@ export function middleware(req: NextRequest) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  // --- No-index para entorno Preview ---
-  const host = req.headers.get("host") || "";
-  if (host.includes("preview.lobra.net")) {
+  /* -------------------------------------------------------------------------- */
+  /* 2) Lógica de indexación por entorno y dominio                             */
+  /* -------------------------------------------------------------------------- */
+  const host = req.headers.get("host")?.toLowerCase() || "";
+  const isProdEnv = process.env.VERCEL_ENV === "production";
+
+  const isProdHost =
+    host === "lobra.net" || host === "www.lobra.net";
+
+  const isIndexable = isProdEnv && isProdHost;
+
+  // Si NO es indexable, forzamos noindex/nofollow
+  if (!isIndexable) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex,nofollow");
     return res;
   }
 
-  // Respuesta normal para el resto
+  /* -------------------------------------------------------------------------- */
+  /* 3) Producción real: sin modificar cabeceras                               */
+  /* -------------------------------------------------------------------------- */
   return NextResponse.next();
 }
 
-// Solo se ejecuta en rutas de páginas, no en estáticos ni APIs
+/* -------------------------------------------------------------------------- */
+/* Se ejecuta solo en rutas de páginas (excluye _next, assets, APIs, files)   */
+/* -------------------------------------------------------------------------- */
 export const config = {
   matcher: ["/((?!_next|api|.*\\..*).*)"],
 };

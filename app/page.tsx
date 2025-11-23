@@ -1,4 +1,4 @@
-// /app/page.tsx
+// app/page.tsx
 import {
   Hero,
   Transformacion,
@@ -10,9 +10,19 @@ import {
   CTACierre,
 } from "@/components/home";
 import { pickFeaturedForHome } from "@/lib/webinars/homeFeatured";
+import { buildMetadata } from "@/lib/seo/buildMetadata";
+
+// Metadata SEO centralizada para Home, usando la infraestructura del Bloque 01A
+export const metadata = buildMetadata({
+  typeId: "home",
+  pathname: "/",
+});
+
+// ISR para Home: se regenera como máximo cada 15 minutos
+export const revalidate = 3600;
 
 export default async function Home() {
-  // obtiene el evento destacado (o el más próximo) ya mapeado a props
+  // Obtiene el evento destacado (o el más próximo) ya mapeado a props
   const featured = await pickFeaturedForHome();
 
   return (

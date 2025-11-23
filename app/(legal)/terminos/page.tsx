@@ -1,11 +1,17 @@
 // app/(legal)/terminos/page.tsx
+// Página legal estática — Términos y Condiciones LOBRÁ
+// Metadata centralizada vía buildMetadata (seoConfig + buildMetadata)
+
+import { buildMetadata } from "@/lib/seo/buildMetadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Términos y Condiciones | LOBRÁ",
+export const metadata: Metadata = buildMetadata({
+  typeId: "legal",
+  pathname: "/terminos",
+  title: "Términos y Condiciones",
   description:
-    "Condiciones de uso del sitio y de los productos digitales de LOBRÁ, marca registrada de Corporativo Huerta Elek. Licencia personal, propiedad intelectual, reembolsos, conducta y afiliados.",
-};
+    "Condiciones de uso del sitio y de los productos digitales de LOBRÁ. Licencia personal, propiedad intelectual, reembolsos, conducta y afiliados.",
+});
 
 export default function Page() {
   return (
@@ -122,7 +128,6 @@ export default function Page() {
         <p>
           Dudas sobre estos Términos:{" "}
           <a href="mailto:legal@lobra.net">legal@lobra.net</a>
-          {/* TODO: confirmar mailbox final en chat de control */}
         </p>
 
         <h2>Cambios a estos Términos</h2>

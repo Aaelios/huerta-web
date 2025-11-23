@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "@/components/webinars/hub/WebinarsHub.module.css";
+import { buildMetadata } from "@/lib/seo/buildMetadata";
 
 const PRICE_LABEL = "$1,490 MXN";
 const CTA_HREF = "/checkout/1a1-rhd?mode=payment";
@@ -22,8 +23,7 @@ const HERO_CONTENT = {
 const STATEMENT_TEXT =
   "Sesión para dueños que siguen con [[muchas cosas encima]], números poco claros y sin saber [[qué mover primero]]. Aquí [[aterrizamos lo importante]] y sales con un [[plan simple y accionable]] para las próximas semanas.";
 
-
-  const PARA_QUIEN_LIST: string[] = [
+const PARA_QUIEN_LIST: string[] = [
   "Trabajas mucho, pero sientes que el dinero no refleja ese esfuerzo.",
   "Traes [[mil cosas encima]] y ya te cansaste de adivinar qué mover primero.",
   "Intentaste organizarte sola(o), pero tus números siguen [[poco claros]].",
@@ -47,6 +47,15 @@ const CTA_MID_TITLE =
   "Reserva tu asesoría [[1 a 1]] y convierte tu desorden en decisiones claras";
 const CTA_MID_BODY =
   "Aquí trabajamos sobre tu negocio real: sales con prioridades claras y un plan simple para las próximas semanas.";
+
+// Metadata SEO centralizada para la página de servicio 1 a 1 RHD
+export const metadata = buildMetadata({
+  typeId: "static",
+  pathname: "/servicios/1a1-rhd",
+  title: "Asesoría 1 a 1 RHD de 90 minutos",
+  description:
+    "Sesión 1 a 1 de 90 minutos para revisar tus números, priorizar qué mover primero y salir con un plan claro y accionable para tu negocio.",
+});
 
 export default function Servicio1a1RHDPage() {
   return (

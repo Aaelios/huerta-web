@@ -1,4 +1,6 @@
 // app/layout.tsx
+// Root layout global de LOBRÁ: fuentes, GTM, header/footer y metadata base sin formatear títulos.
+
 import "./globals.css";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -23,10 +25,7 @@ const satoshi = localFont({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "LOBRÁ",
-    template: "%s | LOBRÁ",
-  },
+  title: "LOBRÁ",
   description:
     "LOBRÁ es una plataforma para emprendedores en Latinoamérica que ofrece cursos, plantillas y asesoría para lograr rentabilidad, claridad financiera y crecimiento sostenible.",
   metadataBase: new URL("https://lobra.net"),
