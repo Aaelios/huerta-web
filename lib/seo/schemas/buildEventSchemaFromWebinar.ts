@@ -1,23 +1,15 @@
 // lib/seo/schemas/buildEventSchemaFromWebinar.ts
-// Builder de JSON-LD Event para páginas de webinars a partir del tipo Webinar.
+// Builder de JSON-LD Event para páginas de webinars a partir de SchemaWebinarInput.
 
-import type { Webinar } from "@/lib/types/webinars";
+import type { SchemaWebinarInput } from "./jsonLdTypes";
 
-// Entrada mínima necesaria para construir el Event.
-// Se mantiene desacoplada del origen real (JSONC, Supabase, etc.).
-export interface SchemaWebinarInput {
-  slug: string;
-  seoTitle: string;
-  seoDescription: string;
-  seoCanonical: string;
-  startAt: string;
-  durationMin?: number;
-}
-
-// Tipo del objeto Event que este builder devuelve.
-// @context se agrega a nivel global en la infraestructura de schemas.
+/**
+ * Tipo del objeto Event que este builder devuelve.
+ * @context se agrega a nivel global en la infraestructura de schemas.
+ */
 export interface EventSchema {
   "@type": "Event";
+  "@id": string;
   name: string;
   description: string;
   startDate: string;
@@ -36,45 +28,68 @@ export interface EventSchema {
 }
 
 /**
+ * El contenido de marketing usa [[...]] para énfasis visual.
+ * Para JSON-LD los limpiamos para evitar ruido en SEO.
+ */
+function stripEmphasisMarkers(text: string): string {
+  return text.replace(/\[\[/g, "").replace(/\]\]/g, "");
+}
+
+/**
  * buildEventSchemaFromWebinar
  * Builder principal para el schema Event de un webinar.
- * - Recibe el contrato completo Webinar.
- * - Internamente mapea a SchemaWebinarInput.
- * - Aplica reglas de negocio para fechas, estado y descripción.
- * - Si el evento ya no es relevante, devuelve null (no se genera Event).
+ *
+ * Reglas:
+ * - Usa SchemaWebinarInput (DTO ya normalizado por 02G).
+ * - Requiere canonical no vacío y startDateIso válido.
+ * - Omite Event si el evento ya no es relevante temporalmente.
  */
-export function buildEventSchemaFromWebinar(
-  webinar: Webinar,
-  now: Date = new Date()
-): EventSchema | null {
-  const input = mapWebinarToSchemaInput(webinar);
-  const endDateIso = computeEndDateIso(input.startAt, input.durationMin);
+export function buildEventSchemaFromWebinar(params: {
+  data: SchemaWebinarInput;
+  canonical: string;
+  now?: Date;
+}): EventSchema | null {
+  const { data, canonical, now = new Date() } = params;
 
-  if (!isEventStillRelevant(input.startAt, endDateIso, now)) {
-    // Regla AI-first: si no hay próxima fecha vigente, omitimos Event.
+  const trimmedCanonical = canonical.trim();
+  if (!trimmedCanonical) {
     return null;
   }
 
-  const eventStatus = resolveEventStatus(input.startAt, endDateIso, now);
+  const startAtIso = data.startDateIso;
+  if (!startAtIso) {
+    return null;
+  }
+
+  const endDateIso = data.endDateIso;
+
+  // Filtro de relevancia temporal (AI-first):
+  if (!isEventStillRelevant(startAtIso, endDateIso, now)) {
+    return null;
+  }
+
+  const eventStatus = resolveEventStatus(startAtIso, endDateIso, now);
   if (!eventStatus) {
-    // Si no podemos determinar un estado coherente, es más seguro omitir el Event.
+    // Si no podemos determinar un estado coherente, omitimos el Event.
     return null;
   }
 
-  const description = resolveDescription(input, webinar);
+  const description = resolveDescription(data);
 
   const base: EventSchema = {
     "@type": "Event",
-    name: input.seoTitle,
+    "@id": buildEventId(trimmedCanonical, data.slug),
+    name: stripEmphasisMarkers(data.title),
     description,
-    startDate: input.startAt,
+    startDate: startAtIso,
     eventStatus,
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
     location: {
       "@type": "VirtualLocation",
-      url: input.seoCanonical,
+      url: trimmedCanonical,
     },
     organizer: {
+      // Mantener alineado con el Organization global definido en 02A.
       "@id": "https://lobra.net/#organization",
     },
   };
@@ -87,76 +102,28 @@ export function buildEventSchemaFromWebinar(
 }
 
 /**
- * mapWebinarToSchemaInput
- * Encapsula el mapeo desde el contrato completo Webinar
- * hacia la entrada mínima requerida por el builder.
+ * buildEventId
+ * Construye el @id del Event a partir del canonical y el slug.
+ * Regla: @id = canonical + "#event-{slug}".
  */
-function mapWebinarToSchemaInput(webinar: Webinar): SchemaWebinarInput {
-  const seoTitle = webinar.sales?.seo.title ?? webinar.shared.title;
-  const seoDescription = webinar.sales?.seo.description ?? "";
-  const seoCanonical = webinar.sales?.seo.canonical ?? "";
-
-  return {
-    slug: webinar.shared.slug,
-    seoTitle,
-    seoDescription,
-    seoCanonical,
-    startAt: webinar.shared.startAt,
-    durationMin: webinar.shared.durationMin,
-  };
+function buildEventId(canonical: string, slug: string): string {
+  const safeSlug = slug || "webinar";
+  return `${canonical}#event-${safeSlug}`;
 }
 
 /**
  * resolveDescription
- * Aplica la prioridad acordada para la descripción del Event:
- * 1) sales.seo.description
- * 2) shared.subtitle
- * 3) sales.hero.subtitle
- * 4) seoTitle (último recurso)
+ * Usa la descripción ya normalizada en SchemaWebinarInput.
+ * Si viene vacía, cae a title como último recurso.
+ * Siempre limpia los marcadores [[...]].
  */
-function resolveDescription(
-  input: SchemaWebinarInput,
-  webinar: Webinar
-): string {
-  const trimmedSeoDescription = input.seoDescription.trim();
-  if (trimmedSeoDescription.length > 0) {
-    return trimmedSeoDescription;
+function resolveDescription(data: SchemaWebinarInput): string {
+  const descRaw = data.description ?? "";
+  const desc = stripEmphasisMarkers(descRaw).trim();
+  if (desc.length > 0) {
+    return desc;
   }
-
-  const sharedSubtitle = webinar.shared.subtitle ?? "";
-  if (sharedSubtitle.trim().length > 0) {
-    return sharedSubtitle.trim();
-  }
-
-  const heroSubtitle = webinar.sales?.hero.subtitle ?? "";
-  if (heroSubtitle.trim().length > 0) {
-    return heroSubtitle.trim();
-  }
-
-  return input.seoTitle;
-}
-
-/**
- * computeEndDateIso
- * Calcula endDate a partir de startAt + durationMin.
- * - Si durationMin no es válida, se omite endDate.
- * - Devuelve ISO en UTC (toISOString), válido para schema.org.
- */
-function computeEndDateIso(
-  startAtIso: string,
-  durationMin?: number
-): string | undefined {
-  if (!durationMin || !Number.isFinite(durationMin) || durationMin <= 0) {
-    return undefined;
-  }
-
-  const startDate = new Date(startAtIso);
-  if (Number.isNaN(startDate.getTime())) {
-    return undefined;
-  }
-
-  const endDate = new Date(startDate.getTime() + durationMin * 60 * 1000);
-  return endDate.toISOString();
+  return stripEmphasisMarkers(data.title);
 }
 
 /**

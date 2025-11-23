@@ -1,6 +1,7 @@
 // app/webinars/[slug]/page.tsx
 // Página de detalle de webinars y módulos (venta pública).
 // Metadata SEO centralizada vía buildMetadata (seoConfig + buildMetadata).
+// Aquí también se cablean los schemas JSON-LD específicos (webinar / módulo).
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -14,6 +15,13 @@ import { loadModuleDetail } from "@/lib/modules/loadModuleDetail";
 import { ModuleLayout } from "@/components/modules/ModuleLayout";
 import { ViewContentTracker } from "@/components/analytics/ViewContentTracker";
 import { buildMetadata } from "@/lib/seo/buildMetadata";
+import type {
+  JsonLdObject,
+  SchemaWebinarInput,
+} from "@/lib/seo/schemas/jsonLdTypes";
+import { buildSchemasForWebinar } from "@/lib/seo/schemas/buildSchemasForWebinar";
+import { buildSchemasForModule } from "@/lib/seo/schemas/buildSchemasForModule";
+import { mergeSchemas } from "@/lib/seo/schemas/mergeSchemas";
 
 // ISR para páginas de detalle de webinar/módulo (venta pública)
 export const revalidate = 3600;
@@ -23,7 +31,6 @@ export const revalidate = 3600;
  * Pre-genera páginas de:
  * - Webinars definidos en data/webinars.jsonc
  * - Módulos/bundles cuyo pageSlug empieza con "webinars/"
- * Normaliza pageSlug → [slug] removiendo el prefijo "webinars/".
  */
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const [webinarsMap, modulesIndex] = await Promise.all([
@@ -72,13 +79,17 @@ function formatPriceLabel(amountCents: number, currency: string): string {
   }).format(amount);
 }
 
-function capitalize(s: string) {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function resolveModulePageSlug(slug: string): string {
   return slug.startsWith("webinars/") ? slug : `webinars/${slug}`;
+}
+
+function buildCanonical(slug: string): string {
+  return `https://lobra.net/webinars/${slug}`;
 }
 
 // ---- Metadata (SEO centralizado)
@@ -91,7 +102,6 @@ export async function generateMetadata({
   const { slug } = await params;
   const pathname = `/webinars/${slug}`;
 
-  // 1) Intento como MÓDULO / BUNDLE (sales_pages.jsonc)
   const modulePageSlug = resolveModulePageSlug(slug);
   const moduleDetail = await loadModuleDetail(modulePageSlug);
 
@@ -100,16 +110,14 @@ export async function generateMetadata({
     return buildMetadata({
       typeId: "module",
       pathname,
-      title: seo.title, // título crudo, sin "| LOBRÁ"
+      title: seo.title,
       description: seo.description,
     });
   }
 
-  // 2) Fallback: WEBINAR / LIVE_CLASS (webinars.jsonc)
   const webinar = await getWebinar(slug);
 
   if (!webinar.sales || !webinar.sales.seo) {
-    // Sin SEO explícito: usa defaults del tipo "webinar".
     return buildMetadata({
       typeId: "webinar",
       pathname,
@@ -121,7 +129,7 @@ export async function generateMetadata({
   return buildMetadata({
     typeId: "webinar",
     pathname,
-    title: seo.title, // crudo
+    title: seo.title,
     description: seo.description,
   });
 }
@@ -134,12 +142,21 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const canonical = buildCanonical(slug);
 
   // 1) MÓDULO / BUNDLE
   const modulePageSlug = resolveModulePageSlug(slug);
   const moduleDetail = await loadModuleDetail(modulePageSlug);
 
   if (moduleDetail) {
+    const moduleSchemas = buildSchemasForModule({
+      data: moduleDetail,
+      canonical,
+      instructorIds: ["https://lobra.net/#person-roberto"],
+    });
+
+    const pageSchemas = mergeSchemas(moduleSchemas) as JsonLdObject[];
+
     return (
       <main>
         <ViewContentTracker
@@ -148,6 +165,16 @@ export default async function Page({
           title={moduleDetail.title}
         />
         <ModuleLayout module={moduleDetail} />
+
+        {pageSchemas.length > 0 && (
+          <script
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(pageSchemas),
+            }}
+          />
+        )}
       </main>
     );
   }
@@ -155,6 +182,7 @@ export default async function Page({
   // 2) WEBINAR / LIVE_CLASS
   const webinar = await getWebinar(slug);
   const { shared, sales } = webinar;
+
   if (!sales) notFound();
 
   const dateLabel = formatDateLabel(shared.startAt);
@@ -164,8 +192,34 @@ export default async function Page({
   );
 
   const ctaHref = getCheckoutUrl(shared.slug, {
-    mode: shared.pricing.interval === "recurring" ? "subscription" : "payment",
+    mode:
+      shared.pricing.interval === "recurring" ? "subscription" : "payment",
   });
+
+  const webinarInput: SchemaWebinarInput = {
+    id: shared.sku ?? shared.slug,
+    slug: shared.slug,
+    title: sales.hero.title,
+    description:
+      sales.hero.subtitle ??
+      sales.clasePractica.intro ??
+      sales.hero.title,
+    startDateIso: shared.startAt,
+    imageUrl: sales.hero.heroImageSrc,
+    sku: shared.sku,
+    priceCents: shared.pricing.amountCents,
+    priceCurrency: shared.pricing.currency,
+    isLive: true,
+    hasReplay: false,
+  };
+
+  const webinarSchemas = buildSchemasForWebinar({
+    data: webinarInput,
+    canonical,
+    instructorIds: ["https://lobra.net/#person-roberto"],
+  });
+
+  const pageSchemas = mergeSchemas(webinarSchemas) as JsonLdObject[];
 
   return (
     <main>
@@ -201,6 +255,16 @@ export default async function Page({
         ctaHref={ctaHref}
         ctaText={sales.clasePractica.ctaText}
       />
+
+      {pageSchemas.length > 0 && (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(pageSchemas),
+          }}
+        />
+      )}
     </main>
   );
 }

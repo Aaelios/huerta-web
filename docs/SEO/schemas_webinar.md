@@ -1,284 +1,243 @@
+# **02C — Webinars Schema · LOBRÁ**
+Implementación real de **Event**, **Product**, **Person** y **FAQPage**  
+para páginas individuales de webinar:
 
-````md
-# Schemas para Webinars · LOBRÁ  
-Bloques 02C (Event) y 02D (Product)
+``/webinars/[slug]``
 
-Documento de referencia para la construcción de los nodos **Event** y **Product**  
-en las páginas de webinars:
-
-- `/webinars/w-[slug]`
-
-Usando:
-
-- `Webinar` (`lib/types/webinars.ts`)
-- Builders dedicados:
+Basado en:
+- `SchemaWebinarInput` (DTO único 02G)
+- Builders:
   - `buildEventSchemaFromWebinar.ts`
   - `buildProductSchemaFromWebinar.ts`
-- Infraestructura global:
-  - `docs/seo/arquitectura_seo_tecnico.md`
-  - `docs/seo/schemas_infraestructura.md`
-  - `docs/seo/schemas_globales.md`
-
-Este documento cubre **Event** y **Product**.  
-Otros nodos (FAQ, Person, etc.) se documentan en sus propios bloques.
+  - `buildSchemasForWebinar.ts`
+- Infraestructura:
+  - `schemaUrlUtils.ts`
+  - `mergeSchemas.ts`
+  - Schema global en `layout.tsx`
 
 ---
 
-# 0) Objetivo
+# **0) Objetivo del bloque**
 
-Definir cómo construir los nodos:
+Convertir un webinar (DTO normalizado) en nodos JSON-LD válidos:
 
-- **Event** (si el webinar tiene fecha vigente)
-- **Product** (si el webinar está en catálogo)
+- **Event**  
+- **Product**  
+- **Person**  
+- **FAQPage**
 
-Ambos nodos se agregan al `@graph` de la página mediante la infraestructura global.
-
----
-
-# 1) Fuente de datos
-
-Ambos builders reciben el contrato completo:
-
-- `Webinar`  
-- Proveniente hoy de `data/webinars.jsonc` (futuro: Supabase)
+Todo se inserta en el `@graph` único de la página.  
+No se repite `@context`.  
+No se repite `Organization` ni `WebSite`.
 
 ---
 
-# 2) Tipo mínimo común: `SchemaWebinarInput`
+# **1) Entrada única — DTO 02G**
 
-Ambos builders usan el mismo enfoque:
+El builder recibe:
 
 ```ts
 interface SchemaWebinarInput {
+  id: string;
   slug: string;
-  seoTitle: string;
-  seoDescription: string;
-  seoCanonical: string;
-  startAt: string;
-  durationMin?: number;
+  title: string;
+  description: string;
+  startDateIso: string;
+  endDateIso?: string;
+  imageUrl?: string;
+  sku?: string;
+  priceCents?: number;
+  priceCurrency?: string;
+  isLive: boolean;
+  hasReplay: boolean;
 }
-````
+```
 
-Reglas de origen:
+Más:
 
-* `seoTitle` ← `sales.seo.title` → fallback: `shared.title`
-* `seoDescription` ← `sales.seo.description` → fallback vacío
-* `seoCanonical` ← `sales.seo.canonical`
-* `startAt` ← `shared.startAt`
-* `durationMin` ← `shared.durationMin`
-
----
-
-# 3) Descripción compartida (`resolveDescription`)
-
-Ambos schemas (Event y Product) usan la misma prioridad:
-
-1. `sales.seo.description`
-2. `shared.subtitle`
-3. `sales.hero.subtitle`
-4. `seoTitle` (último recurso)
-
-Motivo:
-Evitar depender de textos emocionales y mantener estabilidad SEO.
+```ts
+canonical: string;
+instructorIds: string[];
+instructors?: SchemaPerson[];
+faqItems?: SchemaFaqItem[];
+```
 
 ---
 
-# 4) Schema **Event** · Bloque 02C
+# **2) Event Schema**
 
-Solo existe si el webinar es **temporalmente relevante**.
+### Cuándo existe
+Solo si el webinar es **temporalmente relevante**:
 
-## 4.1) Cuándo existe
+- Con endDate: `now <= endDate`
+- Sin endDate: `now <= startDateIso`
 
-`Event` se genera **solo si**:
+### Reglas principales
 
-* El webinar tiene una fecha futura o está en progreso.
-* Evaluado por `isEventStillRelevant(startAt, endDate, now)`:
+- `@id = canonical + "#event-" + slug`
+- `eventStatus`:
+  - Antes del inicio → `EventScheduled`
+  - En progreso → `EventInProgress`
+- Se omite si ya terminó.
+- Usa `description` del DTO (prioridad definida en 02G).
 
-  * Con endDate: `now <= endDate`
-  * Sin endDate: `now <= startAt`
-
-Si no cumple → `Event = null`.
-
-## 4.2) Forma final
+### Forma final
 
 ```json
 {
   "@type": "Event",
-  "name": "...",
+  "@id": "https://lobra.net/webinars/w-ingresos#event-w-ingresos",
+  "name": "Mis ingresos, mi claridad",
   "description": "...",
   "startDate": "...",
-  "endDate": "...?",
-  "eventStatus": "EventScheduled | EventInProgress",
-  "eventAttendanceMode": "OnlineEventAttendanceMode",
+  "endDate": "...",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
   "location": {
     "@type": "VirtualLocation",
-    "url": "https://lobra.net/webinars/w-[slug]"
+    "url": "https://lobra.net/webinars/w-ingresos"
   },
   "organizer": {
     "@id": "https://lobra.net/#organization"
-  }
+  },
+  "performer": [
+    { "@id": "https://lobra.net/#person-rhd" }
+  ]
 }
 ```
 
-## 4.3) Reglas clave
-
-* `startDate` = `shared.startAt`
-* `endDate` = `startAt + durationMin` (UTC)
-* `eventStatus`:
-
-  * Antes del inicio → `EventScheduled`
-  * En progreso → `EventInProgress`
-
-No representamos:
-
-* `canceled`
-* `rescheduled`
-* `postponed`
-
-Si el evento terminó → simplemente no se genera.
-
 ---
 
-# 5) Schema **Product** · Bloque 02D
+# **3) Product Schema**
 
-El Product **siempre se genera mientras el webinar esté en catálogo**,
-incluso si el Event ya no existe.
+### Cuándo existe
+Siempre que el webinar esté “en catálogo”:
 
-## 5.1) Cuándo existe el Product
+- `priceCents > 0`
+- `priceCurrency` válido
+- `sku` válido
+- `canonical` válido
 
-Se considera “en catálogo” si:
+### Reglas
 
-* Existe `sales.seo.canonical`
-* Existe `shared.pricing` con:
+- `@id = canonical + "#product-" + slug"`
+- `name = title`
+- `description = description`
+- `price = priceCents / 100`
+- `availability`:
+  - Fecha futura → `InStock`
+  - Fecha pasada / inválida → `PreOrder`
+- `offers.url = canonical`
 
-  * `amountCents > 0`
-  * `currency` no vacío
-
-Si falla algo → `Product = null`.
-
-## 5.2) Forma final
+### Forma final
 
 ```json
 {
   "@type": "Product",
-  "name": "...",
+  "@id": "https://lobra.net/webinars/w-ingresos#product-w-ingresos",
+  "name": "Mis ingresos, mi claridad",
   "description": "...",
-  "sku": "...",
+  "sku": "liveclass-lobra-rhd-fin-ingresos-v001",
   "offers": {
     "@type": "Offer",
     "price": "690",
     "priceCurrency": "MXN",
-    "availability": "https://schema.org/InStock | PreOrder",
-    "url": "https://lobra.net/webinars/w-[slug]"
+    "availability": "https://schema.org/InStock",
+    "url": "https://lobra.net/webinars/w-ingresos"
   }
 }
 ```
 
-## 5.3) Reglas de `name` y `description`
+---
 
-Usan exactamente la misma lógica que Event.
+# **4) Person Schema**
 
-* `name` = `seoTitle`
-* `description` = `resolveDescription(...)`
+### Reglas
 
-## 5.4) Regla de `sku`
+- Solo si el ID existe en `instructorIds`.
+- `@id = origin + "#person-" + person.id`
+- No se inventan datos.
 
-Prioridad:
+Forma:
 
-1. `shared.pricing.sku`
-2. `shared.sku`
-
-## 5.5) Regla de precio
-
-* `price = amountCents / 100`
-  Ejemplo: `69000 → "690"`
-* `priceCurrency = shared.pricing.currency`
-  Fallback: `"MXN"`
-
-## 5.6) Regla de disponibilidad
-
-Basado en fecha:
-
-* Si el webinar tiene fecha futura → `"https://schema.org/InStock"`
-* Si ya pasó / sin fecha → `"https://schema.org/PreOrder"`
-
-No usamos:
-
-* SoldOut
-* LimitedAvailability
-
-## 5.7) Regla de `offers.url`
-
-Siempre:
-
-`offers.url = sales.seo.canonical`
-
-Nunca:
-
-* prelobby
-* zoom
-* checkout
-
-## 5.8) `priceValidUntil`
-
-**No se incluye.**
-Solo aplicará cuando haya promociones reales o pricing dinámico.
+```json
+{
+  "@type": "Person",
+  "@id": "https://lobra.net/#person-rhd",
+  "name": "Roberto Huerta",
+  "url": "https://lobra.net/webinars/w-ingresos"
+}
+```
 
 ---
 
-# 6) Cómo interactúan Event y Product
+# **5) FAQPage Schema**
 
-Casos:
+### Cuándo existe
+Solo si llega al menos 1 pregunta válida.
 
-1. Webinar con próxima fecha
+### Reglas
 
-* **Event = sí**
-* **Product = sí (InStock)**
+- `@id = canonical + "#faq"`
+- Preguntas individuales:
+  - `@id = canonical + "#faq-q{n}"`
 
-2. Webinar ya pasado pero se vende on-demand
+Ejemplo:
 
-* **Event = no**
-* **Product = sí (PreOrder)**
-
-3. Webinar sin pricing o sin canonical
-
-* **Event = depende de fecha**
-* **Product = no**
-
----
-
-# 7) Integración con la infraestructura global
-
-Ambos builders devuelven:
-
-* Objeto válido → se agrega al `@graph`
-* `null` → no se agrega nada
-
-El `@context` y wrapper `<script>` viven en Bloque 02A/02B.
-
----
-
-# 8) Consideraciones futuras (Supabase)
-
-Cuando el origen sea Supabase:
-
-* Product se genera si `products.status ∈ ['active', 'sunsetting']`
-* No se genera si `status ∈ ['planned', 'discontinued']`
-* Precio puede estar condicionado por `product_prices.valid_until`
-
-Estos puntos ya están considerados pero **no implementados** en 02D.
+```json
+{
+  "@type": "FAQPage",
+  "@id": "https://lobra.net/webinars/w-ingresos#faq",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "@id": "https://lobra.net/webinars/w-ingresos#faq-q1",
+      "name": "¿Dura 90 minutos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí."
+      }
+    }
+  ]
+}
+```
 
 ---
 
-# 9) Checklist de calidad SEO
+# **6) Implementación (builder compuesto)**
 
-* Canonical válido
-* name / description consistentes
-* Precio numérico sin formateo de moneda
-* Availability coherente
-* Sin duplicar `Organization` ni `Website`
-* JSON-LD siempre dentro del `@graph`
-* Sin inventar fechas o estados
+`buildSchemasForWebinar`:
+
+- Llama Event → opcional  
+- Llama Product → opcional  
+- Crea Persons  
+- Crea FAQPage  
+- Vincula Event → Person vía `performer`
+
+Devuelve un `JsonLdObject[]` listo para 02G.
 
 ---
+
+# **7) Interacción con el Bloque 02G (cableado)**
+
+- La página `/webinars/[slug]` arma el DTO `SchemaWebinarInput`.
+- Llama `buildSchemasForWebinar`.
+- Dedup con `mergeSchemas`.
+- Renderiza un **solo** `<script type="application/ld+json">`.
+
+El layout imprime solo:  
+`Organization + WebSite`
+
+---
+
+# **8) Checklist SEO**
+
+- Canonical válido  
+- IDs estables  
+- Descripciones coherentes  
+- Event solo cuando aplica  
+- Product sin precios formateados  
+- FAQ con preguntas reales  
+- Sin duplicar contextos  
+- Sin inventar información  
 

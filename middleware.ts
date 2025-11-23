@@ -3,9 +3,38 @@
 // - Bloquea probes comunes (WordPress, Joomla, Drupal, backups, archivos sensibles).
 // - Aplica cabecera X-Robots-Tag según entorno y dominio:
 //   * Solo indexable si es producción y host lobra.net / www.lobra.net.
+//   * Incluso en producción, rutas sensibles llevan siempre: X-Robots-Tag: noindex,nofollow.
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+/**
+ * Rutas sensibles que deben ser siempre noindex,nofollow vía header,
+ * incluso en producción:
+ * - /checkout, /checkout/*
+ * - /gracias
+ * - /webinars/[slug]/prelobby
+ * - /mi-cuenta
+ * - /mis-compras
+ */
+function isSensitiveNoIndexPath(p: string): boolean {
+  // Checkout (dinámico por slug de webinar/precio)
+  if (/^\/checkout(\/|$)/.test(p)) return true;
+
+  // Página de gracias
+  if (/^\/gracias(\/|$)/.test(p)) return true;
+
+  // Prelobby de webinars
+  if (/^\/webinars\/[^/]+\/prelobby(\/|$)/.test(p)) return true;
+
+  // Área privada (futuro): mi cuenta
+  if (/^\/mi-cuenta(\/|$)/.test(p)) return true;
+
+  // Área privada (futuro): mis compras
+  if (/^\/mis-compras(\/|$)/.test(p)) return true;
+
+  return false;
+}
 
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname.toLowerCase();
@@ -65,7 +94,7 @@ export function middleware(req: NextRequest) {
 
   const isIndexable = isProdEnv && isProdHost;
 
-  // Si NO es indexable, forzamos noindex/nofollow
+  // Si NO es indexable, forzamos noindex/nofollow para todo
   if (!isIndexable) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex,nofollow");
@@ -73,9 +102,15 @@ export function middleware(req: NextRequest) {
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 3) Producción real: sin modificar cabeceras                               */
+  /* 3) Producción real: solo endurecer rutas sensibles                         */
   /* -------------------------------------------------------------------------- */
-  return NextResponse.next();
+  const res = NextResponse.next();
+
+  if (isSensitiveNoIndexPath(p)) {
+    res.headers.set("X-Robots-Tag", "noindex,nofollow");
+  }
+
+  return res;
 }
 
 /* -------------------------------------------------------------------------- */

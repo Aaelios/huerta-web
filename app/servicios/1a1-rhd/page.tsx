@@ -6,9 +6,16 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "@/components/webinars/hub/WebinarsHub.module.css";
 import { buildMetadata } from "@/lib/seo/buildMetadata";
+import type {
+  JsonLdObject,
+  SchemaServiceInput,
+} from "@/lib/seo/schemas/jsonLdTypes";
+import { buildSchemasForService } from "@/lib/seo/schemas/buildSchemasForService";
+import { mergeSchemas } from "@/lib/seo/schemas/mergeSchemas";
 
 const PRICE_LABEL = "$1,490 MXN";
 const CTA_HREF = "/checkout/1a1-rhd?mode=payment";
+const CANONICAL = "https://lobra.net/servicios/1a1-rhd";
 
 const HERO_CONTENT = {
   eyebrow: "ASESORÍA PERSONALIZADA · 90 MINUTOS",
@@ -48,6 +55,24 @@ const CTA_MID_TITLE =
 const CTA_MID_BODY =
   "Aquí trabajamos sobre tu negocio real: sales con prioridades claras y un plan simple para las próximas semanas.";
 
+// DTO estático para schemas del servicio 1 a 1 RHD.
+const SERVICE_SCHEMA_INPUT: SchemaServiceInput = {
+  id: "one2one-lobra-rhd-090m-v001",
+  slug: "1a1-rhd",
+  name: "Asesoría 1 a 1 RHD de 90 minutos",
+  description:
+    "Sesión 1 a 1 de 90 minutos para revisar tus números, priorizar qué mover primero y salir con un plan claro y accionable para tu negocio.",
+  sku: "one2one-lobra-rhd-090m-v001",
+  // $1,490 MXN → 149000 centavos.
+  priceCents: 149000,
+  priceCurrency: "MXN",
+  isActive: true,
+  imageUrl: "/images/asesorias/hero.jpg",
+  serviceType: "FinancialConsulting",
+  areaServed: "Latinoamérica",
+  durationMinutes: 90,
+};
+
 // Metadata SEO centralizada para la página de servicio 1 a 1 RHD
 export const metadata = buildMetadata({
   typeId: "static",
@@ -58,6 +83,14 @@ export const metadata = buildMetadata({
 });
 
 export default function Servicio1a1RHDPage() {
+  const serviceSchemas = buildSchemasForService({
+    data: SERVICE_SCHEMA_INPUT,
+    canonical: CANONICAL,
+    instructorIds: ["https://lobra.net/#person-roberto"],
+  });
+
+  const pageSchemas = mergeSchemas(serviceSchemas) as JsonLdObject[];
+
   return (
     <main aria-labelledby="servicio-1a1-hero-title">
       {/* 1) Hero principal */}
@@ -77,7 +110,8 @@ export default function Servicio1a1RHDPage() {
               </p>
 
               <p className="small u-maxw-prose">
-                <strong>Duración:</strong> 90 minutos<br />
+                <strong>Duración:</strong> 90 minutos
+                <br />
                 <strong>Inversión:</strong> {PRICE_LABEL}
               </p>
 
@@ -182,9 +216,7 @@ export default function Servicio1a1RHDPage() {
               aria-label="Para quién es esta sesión y beneficios clave"
             >
               <div>
-                <h3 className="u-mb-3">
-                  {renderAccent("¿Para quién?")}
-                </h3>
+                <h3 className="u-mb-3">{renderAccent("¿Para quién?")}</h3>
                 <ul className="u-maxw-prose" role="list">
                   {PARA_QUIEN_LIST.map((item, index) => (
                     <SummaryLi key={`pq-${index.toString()}`} icon="✅">
@@ -195,9 +227,7 @@ export default function Servicio1a1RHDPage() {
               </div>
 
               <div>
-                <h3 className="u-mb-3">
-                  {renderAccent("Beneficios")}
-                </h3>
+                <h3 className="u-mb-3">{renderAccent("Beneficios")}</h3>
                 <ul className="u-maxw-prose" role="list">
                   {BENEFICIOS_LIST.map((item, index) => (
                     <SummaryLi key={`b-${index.toString()}`} icon="✅">
@@ -215,9 +245,7 @@ export default function Servicio1a1RHDPage() {
               aria-label="Qué incluye la sesión 1 a 1"
             >
               <div>
-                <h3 className="u-mb-3">
-                  {renderAccent("¿Qué incluye?")}
-                </h3>
+                <h3 className="u-mb-3">{renderAccent("¿Qué incluye?")}</h3>
                 <ul className="u-maxw-prose" role="list">
                   {INCLUYE_LIST.map((item, index) => (
                     <SummaryLi key={`i-${index.toString()}`} icon="✅">
@@ -310,7 +338,8 @@ export default function Servicio1a1RHDPage() {
                   opacity: 0.9,
                 }}
               >
-                Un acompañamiento práctico para recuperar control y paz con tu negocio.
+                Un acompañamiento práctico para recuperar control y paz con tu
+                negocio.
               </p>
             </div>
 
@@ -331,6 +360,16 @@ export default function Servicio1a1RHDPage() {
           </div>
         </div>
       </section>
+
+      {pageSchemas.length > 0 && (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(pageSchemas),
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -371,7 +410,7 @@ function renderAccent(input: string): ReactNode {
     parts.push(
       <span key={match.index} className="accent">
         {match[1]}
-      </span>
+      </span>,
     );
     lastIndex = regex.lastIndex;
   }

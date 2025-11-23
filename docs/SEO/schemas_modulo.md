@@ -418,3 +418,140 @@ Ejemplo simplificado de salida (conceptual, no copia literal del código):
   - Schemas de webinars (Bloque 02C y 02D).
   - Infraestructura global de JSON-LD (02A–02B).
 
+## 02G — Cableado global JSON-LD para Módulos/Cursos
+
+### 1) Objetivo
+
+Definir cómo se conectan los schemas de **módulo/curso compuesto** generados por `buildSchemasForModule` con la página real de venta, garantizando:
+
+* Un solo script específico de módulo por página.
+* Reutilización de los `@id` globales definidos en 02B (Organization, Person).
+* Separación clara entre globales y específicos de contenido.
+
+Alcance en este documento:
+
+* Páginas de módulos/bundles que viven bajo:
+
+  * `/webinars/[slug]` cuando el `slug` corresponde a un módulo.
+* Uso del builder:
+
+  * `buildSchemasForModule` (`lib/seo/schemas/buildSchemasForModule.ts`)
+
+### 2) Punto de inyección en la app
+
+Los schemas de módulo se inyectan **solo** en el server component de página:
+
+* Archivo:
+  `/app/webinars/[slug]/page.tsx`
+* Rama de ejecución:
+
+  * Cuando `loadModuleDetail(resolveModulePageSlug(slug))` devuelve un `ModuleDetail` válido.
+
+Flujo:
+
+1. La página resuelve primero si el slug corresponde a un módulo (bundle).
+2. Si hay `moduleDetail`, se llama a:
+
+```ts
+const moduleSchemas = buildSchemasForModule({
+  data: moduleDetail,
+  canonical,
+  instructorIds: ["https://lobra.net/#person-roberto"],
+});
+```
+
+3. Se normaliza y deduplica con `mergeSchemas`:
+
+```ts
+const pageSchemas = mergeSchemas(moduleSchemas);
+```
+
+4. Solo si `pageSchemas.length > 0` se renderiza el `<script>`:
+
+```tsx
+{pageSchemas.length > 0 && (
+  <script
+    type="application/ld+json"
+    suppressHydrationWarning
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify(pageSchemas),
+    }}
+  />
+)}
+```
+
+El script global (`Organization` + `WebSite`) viene del layout raíz y no se toca en este archivo.
+
+### 3) Contenido del array de schemas para módulos
+
+Según lo definido en este documento (02E), el builder puede devolver:
+
+* Siempre que haya configuración válida:
+
+  * `Course`
+  * `Product`
+* Opcional:
+
+  * `FAQPage` cuando se proporcionan `faqItems`.
+
+Desde la perspectiva de 02G:
+
+* El array **no se manipula** ni se filtra por tipo.
+* Se renderiza tal como lo entrega `buildSchemasForModule`, tras `mergeSchemas`.
+
+Ejemplo de estructura final (simplificada):
+
+```json
+[
+  {
+    "@type": "Course",
+    "name": "Tranquilidad Financiera · Módulo Completo",
+    "provider": { "@id": "https://lobra.net/#organization" },
+    "instructor": { "@id": "https://lobra.net/#person-roberto" },
+    "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+    "timeRequired": "PT360M",
+    "teaches": ["...", "..."],
+    "image": "https://lobra.net/..."
+  },
+  {
+    "@type": "Product",
+    "name": "Tranquilidad Financiera · Módulo Completo",
+    "sku": "course-lobra-rhd-fin-finanzas-v001",
+    "offers": {
+      "@type": "Offer",
+      "price": 3199,
+      "priceCurrency": "MXN",
+      "availability": "https://schema.org/InStock",
+      "url": "https://lobra.net/webinars/ms-tranquilidad-financiera"
+    }
+  }
+]
+```
+
+El `@context` y los schemas globales no se repiten aquí; están en el layout.
+
+### 4) Regla de scripts en páginas de módulo
+
+Para una URL `/webinars/[slug]` que represente un **módulo/curso compuesto**:
+
+1. **Script global único** (layout):
+
+   * `Organization` + `WebSite`.
+2. **Script específico de módulo único** (página):
+
+   * Array con `Course`, `Product` y opcionalmente `FAQPage`.
+
+No se permite:
+
+* Renderizar JSON-LD desde:
+
+  * `ModuleLayout`
+  * Otros componentes bajo `components/modules/*`
+* Duplicar `Organization` / `WebSite` dentro del array de schemas de módulo.
+
+La única fuente de JSON-LD para módulos es la combinación:
+
+* `buildSchemasForModule` → `mergeSchemas` → `<script type="application/ld+json">` en `/app/webinars/[slug]/page.tsx`.
+
+```
+```

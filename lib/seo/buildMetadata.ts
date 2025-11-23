@@ -28,6 +28,21 @@ export type BuildMetadataInput = {
 };
 
 /**
+ * Tipos de página que son siempre noindex, nofollow por diseño.
+ * Se usan para endurecer la protección de páginas sensibles:
+ * - checkout
+ * - thankyou (/gracias)
+ * - prelobby de webinars
+ * - private (área privada genérica, incl. futuras /mi-cuenta, /mis-compras)
+ */
+const HARD_NOINDEX_TYPES: SeoPageTypeId[] = [
+  "checkout",
+  "thankyou",
+  "prelobby",
+  "private",
+];
+
+/**
  * Define si un tipo de página debe llevar sufijo de marca (" | LOBRÁ").
  * Home queda como excepción para evitar sobrecargar el título principal.
  */
@@ -75,6 +90,7 @@ const resolveDescription = (
 
 /**
  * Aplica todas las reglas de robots:
+ * 0. HARD_NOINDEX_TYPES → siempre { index: false, follow: false }.
  * 1. Si el entorno NO es producción → noindex global siempre.
  * 2. Si el tipo es hard noindex → nunca index.
  * 3. forceNoIndex → tiene prioridad.
@@ -87,6 +103,14 @@ const resolveRobots = (
 ): MetadataRobots => {
   const base = getBaseRobotsForType(typeId);
 
+  // Regla 0: tipos endurecidos siempre noindex, nofollow
+  if (HARD_NOINDEX_TYPES.includes(typeId)) {
+    return {
+      index: false,
+      follow: false,
+    };
+  }
+
   // Regla 1: noindex global para preview/dev
   if (SEO_GLOBAL_CONFIG.globalNoIndex) {
     return {
@@ -95,7 +119,7 @@ const resolveRobots = (
     };
   }
 
-  // Regla 2: tipos con noindex rígido
+  // Regla 2: tipos con noindex rígido (definidos en seoConfig)
   if (isHardNoIndexType(typeId)) {
     return {
       index: false,
@@ -146,7 +170,7 @@ export const buildMetadata = (input: BuildMetadataInput): Metadata => {
   // Descripción final
   const finalDescription = resolveDescription(typeId, description);
 
-  // Robots final
+  // Robots final (incluye endurecimiento para tipos sensibles)
   const robots = resolveRobots(typeId, forceIndex, forceNoIndex);
 
   return {

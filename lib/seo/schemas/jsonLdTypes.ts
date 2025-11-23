@@ -39,6 +39,66 @@ export interface SchemaWebinarInput {
 export type SchemaModuleInput = ModuleDetail;
 
 /**
+ * Entrada para schemas de un servicio (páginas /servicios/*).
+ * Pensado para asesorías 1 a 1 y futuros servicios.
+ */
+export interface SchemaServiceInput {
+  /**
+   * Identificador interno estable del servicio.
+   * Puede alinearse con sku (recomendado) o slug.
+   * Ejemplo: "one2one-lobra-rhd-090m-v001".
+   */
+  id: string;
+  /**
+   * Slug de la página del servicio (sin el prefijo /servicios/).
+   * Ejemplo: "1a1-rhd".
+   */
+  slug: string;
+  /**
+   * Nombre del servicio ya normalizado para SEO (sin [[...]]).
+   */
+  name: string;
+  /**
+   * Descripción principal del servicio, sin marcadores [[...]].
+   */
+  description: string;
+  /**
+   * SKU del servicio en catálogo (Stripe / Supabase).
+   */
+  sku: string;
+  /**
+   * Precio en centavos de moneda. Ejemplo: 149000 para 1,490.00 MXN.
+   */
+  priceCents?: number;
+  /**
+   * Moneda del precio. Ejemplo: "MXN".
+   */
+  priceCurrency?: string;
+  /**
+   * Bandera de disponibilidad general del servicio.
+   */
+  isActive: boolean;
+  /**
+   * URL de la imagen principal del servicio (absoluta o relativa).
+   */
+  imageUrl?: string;
+  /**
+   * Tipo de servicio. Puede alinearse con serviceType de schema.org
+   * o usar texto libre como "FinancialConsulting".
+   */
+  serviceType?: string;
+  /**
+   * Zona geográfica atendida. Ejemplo: "Latinoamérica".
+   */
+  areaServed?: string;
+  /**
+   * Duración típica de la sesión en minutos, si aplica.
+   * Ejemplo: 90 para una asesoría de 90 minutos.
+   */
+  durationMinutes?: number;
+}
+
+/**
  * Persona relevante para schemas (instructor, autor, etc.).
  */
 export interface SchemaPerson {

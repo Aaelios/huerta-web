@@ -1,16 +1,19 @@
 // lib/seo/schemas/buildProductSchemaFromWebinar.ts
-// Builder de JSON-LD Product para páginas de webinars a partir del tipo Webinar.
+// Builder de JSON-LD Product para páginas de webinars a partir de SchemaWebinarInput.
 
-import type { Webinar } from "@/lib/types/webinars";
-import type { SchemaWebinarInput } from "@/lib/seo/schemas/buildEventSchemaFromWebinar";
+import type { SchemaWebinarInput } from "./jsonLdTypes";
 
-// Tipo del objeto Product que este builder devuelve.
-// @context y @graph se agregan a nivel global en la infraestructura de schemas.
+/**
+ * Tipo del objeto Product que este builder devuelve.
+ * @context y @graph se agregan a nivel global en la infraestructura de schemas.
+ */
 export interface ProductSchema {
   "@type": "Product";
+  "@id": string;
   name: string;
   description: string;
   sku: string;
+  image?: string;
   offers: {
     "@type": "Offer";
     price: string;
@@ -21,41 +24,57 @@ export interface ProductSchema {
 }
 
 /**
+ * El contenido de marketing usa [[...]] para énfasis visual.
+ * Para JSON-LD los limpiamos para evitar ruido en SEO.
+ */
+function stripEmphasisMarkers(text: string): string {
+  return text.replace(/\[\[/g, "").replace(/\]\]/g, "");
+}
+
+/**
  * buildProductSchemaFromWebinar
  * Builder principal para el schema Product de un webinar.
- * - Recibe el contrato completo Webinar.
- * - Internamente mapea a SchemaWebinarInput (lógica local, desacoplada de origen).
- * - Aplica reglas de negocio para precio, disponibilidad y descripción.
- * - Si el webinar no está en catálogo, devuelve null (no se genera Product).
+ *
+ * Reglas:
+ * - Usa SchemaWebinarInput (DTO ya normalizado por 02G).
+ * - Requiere canonical no vacío, sku y pricing válido.
+ * - Product puede existir incluso si el Event ya no es relevante.
  */
-export function buildProductSchemaFromWebinar(
-  webinar: Webinar,
-  now: Date = new Date()
-): ProductSchema | null {
-  if (!isWebinarInCatalog(webinar)) {
-    // Regla AI-first: si no hay datos mínimos de venta, no se expone Product.
+export function buildProductSchemaFromWebinar(params: {
+  data: SchemaWebinarInput;
+  canonical: string;
+  now?: Date;
+}): ProductSchema | null {
+  const { data, canonical, now = new Date() } = params;
+
+  const trimmedCanonical = canonical.trim();
+  if (!trimmedCanonical) {
     return null;
   }
 
-  const input = mapWebinarToSchemaInputForProduct(webinar);
-
-  // Normalizamos precio y moneda desde shared.pricing.
-  const { price, priceCurrency } = resolvePrice(webinar);
-
-  // Disponibilidad basada en la fecha del webinar.
-  const availability = resolveAvailability(webinar.shared.startAt, now);
-
-  const description = resolveProductDescription(input, webinar);
-  const sku = resolveSku(webinar);
-
-  // Si por alguna razón crítica no tenemos canonical o sku, omitimos Product.
-  if (!input.seoCanonical || !sku) {
+  // Validación mínima de catálogo.
+  if (!isInCatalog(data)) {
     return null;
   }
 
-  return {
+  const sku = resolveSku(data);
+  if (!sku) {
+    return null;
+  }
+
+  const { price, priceCurrency } = resolvePrice(data);
+  if (price === "0") {
+    // Sin precio útil no tiene sentido exponer Product.
+    return null;
+  }
+
+  const description = resolveDescription(data);
+  const availability = resolveAvailability(data.startDateIso, now);
+
+  const base: ProductSchema = {
     "@type": "Product",
-    name: input.seoTitle,
+    "@id": buildProductId(trimmedCanonical, data.slug),
+    name: stripEmphasisMarkers(data.title),
     description,
     sku,
     offers: {
@@ -63,27 +82,41 @@ export function buildProductSchemaFromWebinar(
       price,
       priceCurrency,
       availability,
-      url: input.seoCanonical,
+      url: trimmedCanonical,
     },
   };
+
+  if (data.imageUrl && data.imageUrl.trim().length > 0) {
+    base.image = data.imageUrl.trim();
+  }
+
+  return base;
 }
 
 /**
- * isWebinarInCatalog
- * Determina si el webinar tiene datos mínimos para considerarse "en catálogo".
- * - Debe tener bloque sales con canonical.
- * - Debe tener pricing con amountCents > 0 y currency no vacía.
+ * buildProductId
+ * Construye el @id del Product a partir del canonical y el slug.
+ * Regla: @id = canonical + "#product-{slug}".
  */
-function isWebinarInCatalog(webinar: Webinar): boolean {
-  const canonical = webinar.sales?.seo.canonical ?? "";
-  const pricing = webinar.shared.pricing;
+function buildProductId(canonical: string, slug: string): string {
+  const safeSlug = slug || "webinar";
+  return `${canonical}#product-${safeSlug}`;
+}
 
-  if (!canonical.trim()) return false;
-  if (!pricing) return false;
-  if (!Number.isFinite(pricing.amountCents) || pricing.amountCents <= 0) {
+/**
+ * isInCatalog
+ * Determina si la entrada tiene datos mínimos para considerarse "en catálogo".
+ * - Debe tener priceCents > 0
+ * - Debe tener priceCurrency no vacío
+ */
+function isInCatalog(data: SchemaWebinarInput): boolean {
+  const { priceCents, priceCurrency } = data;
+
+  if (!Number.isFinite(priceCents ?? NaN) || (priceCents ?? 0) <= 0) {
     return false;
   }
-  if (!pricing.currency || !pricing.currency.trim()) {
+
+  if (!priceCurrency || !priceCurrency.trim()) {
     return false;
   }
 
@@ -91,80 +124,40 @@ function isWebinarInCatalog(webinar: Webinar): boolean {
 }
 
 /**
- * mapWebinarToSchemaInputForProduct
- * Mapea Webinar hacia SchemaWebinarInput con la misma lógica de Event:
- * - seoTitle ← sales.seo.title || shared.title
- * - seoDescription ← sales.seo.description || ""
- * - seoCanonical ← sales.seo.canonical || ""
+ * resolveSku
+ * Prioridad de sku para Product:
+ * 1) data.sku
+ * 2) data.id
+ * 3) data.slug
  */
-function mapWebinarToSchemaInputForProduct(
-  webinar: Webinar
-): SchemaWebinarInput {
-  const seoTitle = webinar.sales?.seo.title ?? webinar.shared.title;
-  const seoDescription = webinar.sales?.seo.description ?? "";
-  const seoCanonical = webinar.sales?.seo.canonical ?? "";
+function resolveSku(data: SchemaWebinarInput): string {
+  const fromSku = (data.sku ?? "").trim();
+  if (fromSku) return fromSku;
 
-  return {
-    slug: webinar.shared.slug,
-    seoTitle,
-    seoDescription,
-    seoCanonical,
-    startAt: webinar.shared.startAt,
-    durationMin: webinar.shared.durationMin,
-  };
-}
+  const fromId = (data.id ?? "").trim();
+  if (fromId) return fromId;
 
-/**
- * resolveProductDescription
- * Reutiliza la misma prioridad conceptual que Event:
- * 1) sales.seo.description
- * 2) shared.subtitle
- * 3) sales.hero.subtitle
- * 4) seoTitle (último recurso)
- */
-function resolveProductDescription(
-  input: SchemaWebinarInput,
-  webinar: Webinar
-): string {
-  const trimmedSeoDescription = (input.seoDescription ?? "").trim();
-  if (trimmedSeoDescription.length > 0) {
-    return trimmedSeoDescription;
-  }
-
-  const sharedSubtitle = webinar.shared.subtitle ?? "";
-  if (sharedSubtitle.trim().length > 0) {
-    return sharedSubtitle.trim();
-  }
-
-  const heroSubtitle = webinar.sales?.hero.subtitle ?? "";
-  if (heroSubtitle.trim().length > 0) {
-    return heroSubtitle.trim();
-  }
-
-  return input.seoTitle;
+  return (data.slug ?? "").trim();
 }
 
 /**
  * resolvePrice
- * Convierte amountCents a precio legible para schema.org.
- * - Usa shared.pricing.amountCents / 100.
+ * Convierte priceCents a precio legible para schema.org.
+ * - Usa data.priceCents / 100.
  * - Devuelve price como string sin formateo de moneda.
- * - priceCurrency se toma directamente de shared.pricing.currency
- *   con fallback explícito a "MXN".
+ * - priceCurrency se toma de data.priceCurrency con fallback a "MXN".
  */
-function resolvePrice(webinar: Webinar): {
+function resolvePrice(data: SchemaWebinarInput): {
   price: string;
   priceCurrency: string;
 } {
-  const { amountCents, currency } = webinar.shared.pricing;
+  const cents = data.priceCents ?? 0;
 
   const normalizedPrice =
-    Number.isFinite(amountCents) && amountCents > 0
-      ? amountCents / 100
-      : 0;
+    Number.isFinite(cents) && cents > 0 ? cents / 100 : 0;
 
   const price = normalizedPrice.toString();
-  const priceCurrency = (currency || "MXN").trim() || "MXN";
+  const priceCurrency = (data.priceCurrency || "MXN").trim() || "MXN";
 
   return { price, priceCurrency };
 }
@@ -172,8 +165,11 @@ function resolvePrice(webinar: Webinar): {
 /**
  * resolveAvailability
  * Determina availability según la fecha del webinar:
- * - InStock: startAt en el futuro.
- * - PreOrder: sin próxima fecha (startAt pasado o inválido).
+ * - InStock: startDateIso en el futuro.
+ * - PreOrder: sin próxima fecha (startDateIso pasado o inválido).
+ *
+ * Nota: para programas o 1 a 1 que compartan este DTO,
+ * la fecha se sigue usando como referencia conservadora.
  */
 function resolveAvailability(
   startAtIso: string,
@@ -195,16 +191,16 @@ function resolveAvailability(
 }
 
 /**
- * resolveSku
- * Prioridad de sku para Product:
- * 1) shared.pricing.sku
- * 2) shared.sku
+ * resolveDescription
+ * Usa la descripción ya normalizada en SchemaWebinarInput.
+ * Si viene vacía, cae a title como último recurso.
+ * Siempre limpia los marcadores [[...]].
  */
-function resolveSku(webinar: Webinar): string {
-  const pricingSku = webinar.shared.pricing.sku?.trim();
-  if (pricingSku) {
-    return pricingSku;
+function resolveDescription(data: SchemaWebinarInput): string {
+  const descRaw = data.description ?? "";
+  const desc = stripEmphasisMarkers(descRaw).trim();
+  if (desc.length > 0) {
+    return desc;
   }
-
-  return webinar.shared.sku?.trim() ?? "";
+  return stripEmphasisMarkers(data.title);
 }
