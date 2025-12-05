@@ -9,15 +9,15 @@
   "sku": "course-lobra-rhd-fin-finanzas-v001",
 
   "hero": {
-    "eyebrow": "Programa completo para emprendedores",
-    "title": "Construye un sistema que te dé [[control real de tu dinero]]",
-    "subtitle": "Si tus ingresos [[suben y bajan]], no sabes [[a dónde se va el dinero]] y ya te cansaste de adivinar, este programa te enseña a ordenar tus ventas, controlar tus gastos y tomar decisiones claras que [[mejoran tus números]] desde la primera semana.",
+    "eyebrow": "Control financiero para emprendedoras",
+    "title": "Deja de adivinar y [[toma control real de tu dinero]]",
+    "subtitle": "En la primera semana verás exactamente [[cuánto entra]] y qué productos realmente te dejan dinero. Dejas de sentir culpa al gastar porque ahora decides con [[intención]]. Tomas decisiones simples que te regresan [[tranquilidad cada día]].",
     "image": {
-      "src": "/images/modulos/finanzas/hero.jpg",
+      "src": "/images/modulos/finanzas/pre_venta.png",
       "alt": "Programa Tranquilidad Financiera LOBRÁ"
     },
-    "ctaText": "Quiero empezar con claridad financiera",
-    "note": "Incluye 4 workshops en vivo + kit de herramientas personalizables."
+    "ctaText": "Obtener precio de preventa",
+    "note": "Precio especial hasta el 20 de Diciembre, solo 10 lugares disponibles."
   },
 
   "paraQuien": [
@@ -60,7 +60,7 @@
   },
 
   "statement": {
-    "text": "Si hoy sientes que tu negocio no alcanza, aquí vas a [[ver con claridad cuánto entra y cuánto sale]] para que puedas tomar [[decisiones simples y seguras]] sin ansiedad ni adivinar más."
+    "text": "Registrar es solo el inicio. Aquí vas a [[tomar control]] de tu negocio con un [[plan claro]] para cada semana, y avanzar [[sin ansiedad]]."
   }
 },
 

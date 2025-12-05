@@ -50,7 +50,7 @@ export function ModuleHero({
               <strong>Inicio del módulo:</strong>{" "}
               <LocalDateTime iso={module.nextStartAt} />
               <br />
-              <strong>Inversión:</strong> {priceLabel}
+              <strong>Precio sin descuento:</strong> {priceLabel}
             </p>
 
             <div className="cluster-3">

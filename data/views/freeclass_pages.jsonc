@@ -1,0 +1,154 @@
+// data/views/freeclass_pages.jsonc
+// Propósito: Contiene el copy y configuración por SKU para landings de clases gratuitas.
+
+{
+  // -------------------------------------------------------------------
+  // Clase gratuita · Intro Tranquilidad Financiera
+  // ------------------------------------------------------------------
+  "liveclass-lobra-rhd-fin-freeintro-v001": {
+    "sku": "liveclass-lobra-rhd-fin-freeintro-v001",
+    "slugLanding": "fin-freeintro",
+    "prelobbyRoute": null,
+
+    "hero": {
+      "eyebrow": "Regístrate a la clase gratuita",
+      "title": "[[Haz que]] tus propósitos de Año Nuevo [[se cumplan]] en 2026",
+      "subtitle": "En esta clase gratuita convertirás en un plan real los propósitos que requieren dinero para lograrse. En solo 45 minutos aprenderás un sistema simple para avanzar cada mes sin afectar tu negocio ni tu estabilidad.",
+      "image": {
+        "src": "/images/webinars/fin/freeintro-v001/main.png",
+        "alt": "Foto de Roberto Huerta impartiendo clase de claridad financiera."
+      },
+      "ctaText": "Registrarme a la clase gratuita",
+      "note": "Convierte tus propósitos que requieren dinero en un plan que sí puedes seguir sin perder estabilidad."
+    },
+
+    "paraQuien": [
+      "Para emprendedores que sienten que el dinero entra pero no es claro en qué se va.",
+      "Para quienes venden bien pero nunca alcanza para cubrir todo sin estrés.",
+      "Para dueñas y dueños que quieren decisiones claras sin volverse contadores."
+    ],
+
+    "queAprenderas": [
+      "El mapa completo de ingresos, egresos, reportes y planeación aplicado a negocios reales.",
+      "Por qué sientes desorden aunque vendas y qué pieza está faltando en tu sistema.",
+      "Qué información ver cada semana para saber si tu negocio realmente funciona."
+    ],
+
+    "queSeLlevan": [
+      "Un plan claro para convertir tus propósitos de Año Nuevo en metas alcanzables.",
+      "Una forma simple de decidir cuánto va a tu negocio, cuánto es para ti y cuánto dedicar a tus metas.",
+      "Un sistema mensual de 10 minutos para seguir tu avance y ajustar a tiempo.",
+      "Claridad sin tecnicismos para tomar mejores decisiones con tu dinero."
+    ],
+
+    "titles": {
+      "queAprenderas": "Lo que vas a aprender en la clase",
+      "testimonios": "Lo que dicen quienes ya aplicaron el mapa"
+    },
+
+    "autor": {
+      "name": "Roberto Huerta",
+      "role": "Consultor en claridad financiera para emprendedores",
+      "business": "LOBRÁ",
+      "bio": "Ayudo a emprendedoras y emprendedores a pasar de la confusión con el dinero a tomar decisiones simples y seguras usando sistemas financieros diseñados para negocios reales, no para corporativos.",
+      "miniBio": "Fundador de [[LOBRÁ]]. He ayudado a emprendedoras a dejar la confusión con el dinero y tomar decisiones simples y seguras con sistemas hechos para negocios reales. Para recuperar tiempo libre y tranquilidad.",
+      "imageSrc": "/images/instructores/rhd/roberto_huerta_horizontal.jpg",
+      "imageAlt": "Foto de Roberto Huerta, consultor en claridad financiera para emprendedores.",
+      "personId": "Roberto-Huerta"
+    },
+
+    "comoFunciona": {
+      "resumen": "Clase online en vivo donde revisamos el mapa de tranquilidad financiera y cómo se conectan sus 4 piezas.",
+      "bullets": [
+        "Regístrate con tu nombre y correo en esta página.",
+        "Recibirás el enlace para conectarte en la fecha y hora indicadas.",
+        "Vemos durante 45 minutos el mapa completo con ejemplos reales.",
+        "Sales con claridad sobre qué ajustar primero en tu negocio."
+      ]
+    },
+
+"testimonios": [
+  {
+    "name": "[[Natalia Rodríguez]]",
+    "role": "Dueña",
+    "business": "Nat Rodriguez Photo",
+    "quote": "Siempre hacía mi lista de propósitos, pero no sabía cuánto podía destinar sin quedarme corta en el mes. Con este sistema entendí cómo repartir mi dinero para avanzar en mis metas sin afectar mi negocio ni mi tranquilidad.",
+    "photoSrc": "/images/testimonios/natalia_rodriguez_square.jpg",
+    "photoAlt": "Retrato de Natalia Rodríguez, fotógrafa.",
+    "platform": "instagram",
+    "link": "https://www.instagram.com/natrodriguezphoto/"
+  },
+  {
+    "name": "[[Martha Huerta]]",
+    "role": "Dueña",
+    "business": "Martha Huerta Events",
+    "quote": "Me proponía muchas cosas cada año, pero no sabía cómo hacerlas posibles. Este sistema me ayudó a poner orden: atender mis gastos, definir mi ‘sueldo’, avanzar en mis metas y hasta empezar un fondo si sobraba.",
+    "photoSrc": "/images/testimonios/martha_huerta_square.jpg",
+    "photoAlt": "Retrato de Martha Huerta.",
+    "platform": "instagram",
+    "link": "https://www.instagram.com/mhuerta.events/"
+  },
+
+//  {
+//     "name": "[[Judit Elek]]",
+//     "role": "Fundadora",
+//     "business": "Judit Elek Photography",
+//     "quote": "Tenía metas claras, pero no un método para cumplirlas. Aquí aprendí a decidir cuánto va a mí, cuánto al negocio y cuánto a mis metas. Por fin tengo un plan que puedo sostener sin sentir que me ahogo.",
+//     "photoSrc": "/images/testimonios/judit_elek_square.jpg",
+//     "photoAlt": "Retrato de Judit Elek.",
+//     "platform": "instagram",
+//     "link": "https://www.instagram.com/juditelekphotography/"
+//  }
+
+  {
+    "name": "[[Sofía García]]",
+    "role": "Socia y Directora",
+    "business": "Xenda Hybrid Training",
+    "quote": "Tenía metas claras, pero no un método para cumplirlas. Aquí aprendí a decidir cuánto va a mí, cuánto al negocio y cuánto a mis metas. Por fin tengo un plan que puedo sostener sin sentir que me ahogo.",
+    "photoSrc": "/images/testimonios/sofia_garcia_square.jpg",
+    "photoAlt": "Retrato de Sofía García.",
+    "platform": "instagram",
+    "link": "https://www.instagram.com/xenda_hybridtraining/"
+  }
+
+],
+
+    "mensajesEstado": {
+      "open": "Tu lugar está disponible. Regístrate y recibe el enlace para conectarte.",
+      "full": "La clase está llena. Puedes unirte a la lista de espera.",
+      "waitlist": "Solo hay lista de espera. Si se libera un lugar, te avisamos por correo.",
+      "closed": "Esta edición ya terminó. Déjanos tus datos y te avisamos de nuevas fechas.",
+      "proximamente": "Abriremos nuevos lugares pronto. Regístrate y te avisamos antes que al resto."
+    },
+
+    "mensajeConfianza": "Tu correo solo se usará para esta clase y recordatorios relacionados. Nunca envío spam.",
+
+    "mensajePostRegistro": "Tu lugar quedó reservado. Te llegará un correo con el enlace de acceso.",
+
+    "mensajeErrorGenerico": "Hubo un problema con tu registro. Intenta más tarde.",
+
+    "ctaVolverForm": "Volver al formulario",
+
+    "integraciones": {
+      "brevoListId": "PENDIENTE_CONFIGURAR",
+      "leadContext": "free_class",
+      "tagsBrevo": [
+        "lead_free_class",
+        "free_class_fin_freeintro"
+      ]
+    },
+
+    "seo": {
+      "title": "Clase gratuita · Mapa de claridad financiera para emprendedores",
+      "description": "Descubre el mapa completo para ordenar tus ingresos, egresos, reportes y planeación en tu negocio, sin fórmulas raras ni complicarte con Excel.",
+      "canonical": "https://lobra.net/clases-gratuitas/fin-freeintro",
+      "ogImage": "/images/webinars/fin/freeintro-v001/hub.jpg",
+      "keywords": [
+        "clase gratuita finanzas",
+        "claridad financiera emprendedores",
+        "tranquilidad financiera",
+        "LOBRÁ"
+      ]
+    }
+  }
+}

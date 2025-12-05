@@ -213,7 +213,17 @@ function buildPurchasePayload(args: {
 }): PurchaseEventPayload | null {
   const { session, orderRow, sku, fulfillment_type_raw } = args;
 
-  if (!orderRow || !orderRow.is_paid) return null;
+  // 1) Orden debe existir
+  if (!orderRow) return null;
+
+  // 2) Pago considerado "paid" si BD o Stripe lo marcan como pagado
+  const isPaidFromDb = !!orderRow.is_paid;
+  const isPaidFromStripe =
+    typeof session.payment_status === "string" &&
+    session.payment_status.toLowerCase() === "paid";
+  const isPaid = isPaidFromDb || isPaidFromStripe;
+
+  if (!isPaid) return null;
   if (!sku) return null;
 
   const content_type = mapFulfillmentToContentType(fulfillment_type_raw);

@@ -1,0 +1,741 @@
+/* app/clases-gratuitas/landing.css
+   - Contenedor base de landing
+   - Ocultar SOLO footer global
+   - Layout del HERO
+   - Estilos del formulario dentro del HERO
+   - Pantalla 2 (Qué te llevas + Tu instructor + Testimonios)
+*/
+
+/* =============================================================== */
+/* 1) CONTENEDOR BASE                                              */
+/* =============================================================== */
+
+.landing-root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg); /* #0B1D22 desde globals.css */
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main interno */
+.landing-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Ocultar solo footer global cuando existe landing-root */
+body:has(.landing-root) > footer.site-footer {
+  display: none !important;
+}
+
+/* =============================================================== */
+/* 2) HERO                                                         */
+/* =============================================================== */
+
+.landing-hero {
+  width: 100%;
+  color: var(--text-on-dark);
+  padding: var(--space-7) var(--space-4) var(--space-6);
+  box-sizing: border-box;
+}
+
+.landing-hero-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: 0 var(--space-4);
+}
+
+/* Copy del hero */
+
+.landing-hero-copy {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.landing-hero-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle-dark);
+}
+
+.landing-hero-title {
+  font-size: 32px;
+  line-height: 1.18;
+  font-weight: 700;
+  margin: 0;
+}
+
+@media (min-width: 960px) {
+  .landing-hero-title {
+    font-size: 56px;
+  }
+}
+
+.landing-hero-subtitle {
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--text-muted-dark);
+}
+
+.landing-hero-note {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--text-subtle-dark);
+}
+
+/* =============================================================== */
+/* 3) GRID IMAGEN + FORMULARIO                                    */
+/* =============================================================== */
+
+.landing-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* mobile: 1 columna */
+  gap: var(--space-6);
+  align-items: flex-start;
+  justify-items: center;
+}
+
+/* Imagen */
+
+.landing-hero-image {
+  width: 100%;
+  max-width: 500px;
+}
+
+.landing-hero-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 640px;
+  object-fit: contain;
+  border-radius: var(--radius-4);
+}
+
+@media (max-width: 640px) {
+  .landing-hero-image img {
+    max-height: 320px;   /* límite vertical en mobile */
+    object-fit: contain; /* siempre muestra la imagen completa */
+  }
+}
+
+/* Columna del formulario */
+
+.landing-hero-form-column {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Desktop → 2 columnas */
+
+@media (min-width: 960px) {
+  .landing-hero-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* =============================================================== */
+/* 4) CARD DEL FORMULARIO                                         */
+/* =============================================================== */
+
+.landing-hero-form-card {
+  background-color: var(--white);
+  color: var(--text-on-light);
+  border-radius: 20px;
+  padding: 30px 20px 20px; /* 30 / 20 / 20 */
+  min-height: 420px;
+  box-shadow: var(--shadow-1);
+  box-sizing: border-box;
+}
+
+/* Layout general del form dentro de la card */
+
+.landing-hero-form-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Pilas internas */
+
+.landing-hero-form-card .stack-1 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+/* Texto “trust” debajo del form */
+
+.landing-hero-trust {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 16px 0 0;
+  color: var(--text-muted-light);
+}
+
+/* =============================================================== */
+/* 5) CONTENIDO DEL FORM (TÍTULOS, CAMPOS, TURNSTILE, ERRORES)    */
+/* =============================================================== */
+
+/* Título y subtítulo del form */
+
+.landing-form-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  text-align: center;
+  color: var(--text-dark, #111);
+}
+
+.landing-form-subtitle {
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0 0 22px;
+  text-align: center;
+  color: #606060; /* contraste correcto en fondo blanco */
+}
+
+/* Nota / disclaimer opcional */
+
+.landing-form-note {
+  font-size: 16px;
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-muted-dark, #555);
+}
+
+/* Inputs texto/email */
+
+.landing-hero-form-card input[type="text"],
+.landing-hero-form-card input[type="email"] {
+  width: 100%;
+  max-width: 360px;
+  height: 50px; /* ~340x50 dentro de la card */
+  margin: 0 auto;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-light-2);
+  background-color: var(--white);
+  color: var(--text-on-light);
+  font-size: 16px;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+  outline: none;
+}
+
+/* Placeholder */
+
+.landing-hero-form-card input[type="text"]::placeholder,
+.landing-hero-form-card input[type="email"]::placeholder {
+  color: var(--text-subtle-light);
+  opacity: 1;
+}
+
+/* Estado disabled */
+
+.landing-hero-form-card input[type="text"]:disabled,
+.landing-hero-form-card input[type="email"]:disabled {
+  opacity: 0.7;
+}
+
+/* Checkbox + texto */
+
+.landing-hero-form-card input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.landing-hero-form-card label {
+  font-size: 14px;
+  color: var(--text-muted-light);
+}
+
+/* Turnstile */
+
+.landing-hero-form-card #freeclass-turnstile {
+  margin-top: 14px;
+  margin-bottom: 22px;
+}
+
+/* Error global */
+
+.landing-hero-form-card .u-small {
+  font-size: 14px;
+  color: #b3261e;
+  text-align: center;
+  margin: 4px 0 0;
+}
+
+/* =============================================================== */
+/* 6) BOTÓN CTA                                                    */
+/* =============================================================== */
+
+.landing-hero-form-card button[type="submit"] {
+  width: 100%;
+  max-width: 360px;
+  height: 78px; /* rango 70–85px */
+  margin: 14px auto 20px;
+  border-radius: 48px;
+  font-size: 22px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background-color: var(--accent-strong);
+  color: var(--text-on-light);
+}
+
+.landing-hero-form-card button[type="submit"]:hover {
+  background-color: var(--accent-dark);
+  color: var(--white);
+}
+
+/* =============================================================== */
+/* 7) AJUSTES MOBILE HERO (≤ 959px)                                */
+/* =============================================================== */
+
+@media (max-width: 959px) {
+  /* Evitar desbordes horizontales */
+  .landing-root {
+    overflow-x: hidden;
+  }
+
+  /* Hero: solo control vertical; padding lateral viene del layout global */
+  .landing-hero {
+    padding: var(--space-5) 0 var(--space-5);
+  }
+
+  .landing-hero-inner {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .landing-hero-copy {
+    max-width: 100%;
+  }
+
+  /* Grid 1 columna centrada */
+  .landing-hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    justify-items: center;
+    align-items: flex-start;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .landing-hero-image,
+  .landing-hero-form-column {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .landing-hero-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-4);
+  }
+
+  /* Card alineada con imagen y con más ancho útil interno
+     para que quepa el Turnstile en móviles estándar */
+  .landing-hero-form-card {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 30px 12px 20px;
+  }
+
+  /* Tipografías mobile */
+  .landing-hero-title {
+    font-size: 30px;
+  }
+
+  .landing-hero-subtitle,
+  .landing-form-subtitle,
+  .landing-form-note {
+    font-size: 16px;
+  }
+
+  .landing-form-title {
+    font-size: 18px;
+  }
+
+  /* Inputs y botón totalmente fluidos en mobile */
+  .landing-hero-form-card input[type="text"],
+  .landing-hero-form-card input[type="email"],
+  .landing-hero-form-card button[type="submit"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Turnstile fluido en mobile */
+  #freeclass-turnstile,
+  #freeclass-turnstile > div,
+  #freeclass-turnstile iframe {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* =============================================================== */
+/* 8) PANTALLA 2 · BLOQUE CONSOLIDADO (DESKTOP + MOBILE)           */
+/* =============================================================== */
+
+.landing-screen2 {
+  width: 100%;
+  padding: var(--space-7) var(--space-4) var(--space-7);
+  box-sizing: border-box;
+  color: var(--text-on-dark);
+}
+
+.landing-screen2-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* A + B · Bullets + Mini bio */
+
+.landing-screen2-top {
+  display: flex;
+  flex-direction: column; /* mobile: stack */
+  gap: var(--space-5);
+}
+
+/* Card “Qué te llevas” */
+
+.landing-screen2-bullets {
+  padding: var(--space-4);
+  border-radius: var(--radius-4);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.landing-screen2-bullets .landing-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+}
+
+.landing-screen2-bullets .landing-list {
+  margin: 0;
+  padding-left: 1.2rem; /* bullets dentro del card */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Card “Tu instructor” */
+
+.landing-screen2-bio {
+  padding: var(--space-4);
+  border-radius: var(--radius-4);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.landing-section-subtitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+}
+
+.landing-screen2-bio-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-muted-dark);
+}
+
+/* Texto general dentro de ambas tarjetas */
+
+.landing-screen2-bullets p,
+.landing-screen2-bullets li,
+.landing-screen2-bio p {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* C · Testimonios (contenedor) */
+
+.landing-screen2-testimonials {
+  width: 100%;
+}
+
+/* D · CTA final */
+
+.landing-screen2-cta {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
+.landing-screen2-cta-button {
+  width: 100%;
+  max-width: 420px;
+  height: 64px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  background-color: var(--accent-strong);
+  color: var(--text-on-light);
+}
+
+.landing-screen2-cta-button:hover {
+  background-color: var(--accent-dark);
+  color: var(--white);
+}
+
+/* Desktop (≥ 960px) · 55/45 + 3 columnas de testimonios */
+
+@media (min-width: 960px) {
+  .landing-screen2 {
+    padding-top: var(--space-7);
+    padding-bottom: var(--space-7);
+  }
+
+  .landing-screen2-top {
+    flex-direction: row;
+    align-items: stretch; /* igualar alturas */
+    gap: var(--space-6);
+  }
+
+  .landing-screen2-bullets,
+  .landing-screen2-bio {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-screen2-bullets {
+    flex-basis: 55%;
+    max-width: 55%;
+  }
+
+  .landing-screen2-bio {
+    flex-basis: 45%;
+    max-width: 45%;
+  }
+
+  /* Testimonios en 3 columnas fijas */
+  .landing-screen2-testimonials .landing-testimonials {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .landing-screen2-testimonials .landing-testimonial-card {
+    height: 100%;
+  }
+
+  .landing-screen2-testimonials .landing-testimonial-quote {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+/* =============================================================== */
+/* 9) TESTIMONIOS · CARDS + CARRUSEL                               */
+/* =============================================================== */
+
+/* UL base: sin bullets */
+.landing-testimonials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Card individual */
+
+.landing-testimonial-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-4);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Header con foto + nombre/rol */
+
+.landing-testimonial-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+/* Foto circular */
+
+.landing-testimonial-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+/* Tipografía */
+
+.landing-testimonial-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.landing-testimonial-role {
+  font-size: 14px;
+  color: var(--text-muted-dark);
+  margin: 0;
+}
+
+.landing-testimonial-quote {
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.landing-testimonial-link {
+  margin-top: var(--space-2);
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--accent-strong);
+}
+
+.landing-testimonial-link:hover {
+  text-decoration: underline;
+}
+
+/* Contenedor general del carrusel (UL + dots) */
+
+.landing-testimonials-scroller {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Barra de puntos debajo del carrusel */
+
+.landing-testimonials-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--space-3);
+}
+
+.landing-testimonials-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Carrusel mobile (≤ 959px) */
+
+@media (max-width: 959px) {
+  .landing-screen2-testimonials {
+    margin-top: var(--space-5);
+  }
+
+  .landing-testimonials {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-3);
+    overflow-x: auto;
+    padding: var(--space-3) var(--space-4);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .landing-testimonial-card {
+    flex: 0 0 80%; /* ~80% del ancho del viewport */
+    max-width: 340px;
+    min-width: 260px;
+    scroll-snap-align: start;
+  }
+
+  /* Sombras laterales para indicar scroll */
+  .landing-testimonials-scroller::before,
+  .landing-testimonials-scroller::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 32px; /* deja espacio para los puntos */
+    width: 32px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .landing-testimonials-scroller::before {
+    left: 0;
+    background: linear-gradient(
+      to right,
+      rgba(11, 29, 34, 1) 0%,
+      rgba(11, 29, 34, 0) 100%
+    );
+  }
+
+  .landing-testimonials-scroller::after {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      rgba(11, 29, 34, 1) 0%,
+      rgba(11, 29, 34, 0) 100%
+    );
+  }
+}
+
+/* =============================================================== */
+/* 10) ESTADO POST-SUBMIT FORM                                     */
+/* =============================================================== */
+
+.landing-hero-form-card .stack-2 {
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.landing-hero-form-card .stack-2 p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-on-light);
+}
