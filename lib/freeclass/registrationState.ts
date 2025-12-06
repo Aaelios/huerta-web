@@ -58,6 +58,7 @@ export interface FreeClassOperationalStateDTO {
   seatsSold: number | null;
   isFull: boolean;
   isWaitlistEnabled: boolean;
+  brevoCohortListId: number | null;
   nowIso: string; // ISO UTC del momento de cálculo (debug/QA)
 }
 
@@ -195,7 +196,7 @@ function mapWithDates(rows: LiveClassInstanceRow[]): InstanceWithDates[] {
  */
 export function resolveApplicableInstance(
   instances: LiveClassInstanceRow[],
-  now: Date
+  now: Date,
 ): LiveClassInstanceRow | null {
   if (instances.length === 0) {
     return null;
@@ -203,7 +204,7 @@ export function resolveApplicableInstance(
 
   const nowTime = now.getTime();
   const nonCanceled = instances.filter(
-    (row) => row.status !== "canceled"
+    (row) => row.status !== "canceled",
   );
   const canceled = instances.filter((row) => row.status === "canceled");
 
@@ -215,24 +216,24 @@ export function resolveApplicableInstance(
 
   const sortByStartDesc = (
     a: InstanceWithDates,
-    b: InstanceWithDates
+    b: InstanceWithDates,
   ): number => b.start.getTime() - a.start.getTime();
 
   // 1) Instancias "open" con ventana vigente (hasta end_at)
   const openCandidates = nonCanceledWithDates.filter(
     (item) =>
       item.instance.status === "open" &&
-      item.end.getTime() >= nowTime
+      item.end.getTime() >= nowTime,
   );
 
   if (openCandidates.length > 0) {
     const futureOpen = openCandidates.filter(
-      (item) => item.start.getTime() >= nowTime
+      (item) => item.start.getTime() >= nowTime,
     );
     const ongoingOpen = openCandidates.filter(
       (item) =>
         item.start.getTime() < nowTime &&
-        item.end.getTime() >= nowTime
+        item.end.getTime() >= nowTime,
     );
 
     if (futureOpen.length > 0) {
@@ -250,7 +251,7 @@ export function resolveApplicableInstance(
   const scheduledCandidates = nonCanceledWithDates.filter(
     (item) =>
       item.instance.status === "scheduled" &&
-      item.start.getTime() >= nowTime
+      item.start.getTime() >= nowTime,
   );
 
   if (scheduledCandidates.length > 0) {
@@ -260,7 +261,7 @@ export function resolveApplicableInstance(
 
   // 3) Última instancia pasada (no cancelada)
   const pastNonCanceled = nonCanceledWithDates.filter(
-    (item) => item.end.getTime() < nowTime
+    (item) => item.end.getTime() < nowTime,
   );
 
   if (pastNonCanceled.length > 0) {
@@ -295,7 +296,7 @@ export function resolveApplicableInstance(
  */
 export function computeRegistrationState(
   instance: LiveClassInstanceRow | null,
-  now: Date
+  now: Date,
 ): RegistrationState {
   if (!instance) {
     return "no_instance";
@@ -359,16 +360,16 @@ export function computeRegistrationState(
  * - Empaquetar datos mínimos para frontend/endpoint.
  */
 export function buildFreeClassOperationalState(
-  params: BuildFreeClassOperationalStateParams
+  params: BuildFreeClassOperationalStateParams,
 ): FreeClassOperationalStateDTO {
   const nowDate = normalizeNow(params.now);
   const applicableInstance = resolveApplicableInstance(
     params.instances,
-    nowDate
+    nowDate,
   );
   const registrationState = computeRegistrationState(
     applicableInstance,
-    nowDate
+    nowDate,
   );
 
   const startDate =
@@ -399,6 +400,11 @@ export function buildFreeClassOperationalState(
 
   const isWaitlistEnabled = getWaitlistEnabled(applicableInstance);
 
+  const brevoCohortListId =
+    applicableInstance !== null
+      ? applicableInstance.brevo_cohort_list_id
+      : null;
+
   return {
     sku: params.sku,
     registrationState,
@@ -410,6 +416,7 @@ export function buildFreeClassOperationalState(
     seatsSold,
     isFull,
     isWaitlistEnabled,
+    brevoCohortListId,
     nowIso: nowDate.toISOString(),
   };
 }

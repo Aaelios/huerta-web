@@ -11,10 +11,7 @@ import type {
   RegistrationState,
   LiveClassInstanceRow,
 } from "./registrationState";
-import {
-  resolveApplicableInstance,
-  computeRegistrationState,
-} from "./registrationState";
+import { buildFreeClassOperationalState } from "./registrationState";
 import { loadFreeClassPageBySku } from "./load";
 import type { FreeClassValidatedInput } from "./validateRegisterPayload";
 import { getServiceClient } from "../supabase/server";
@@ -97,13 +94,6 @@ function setTiming(
   start: number,
 ): void {
   timings[key] = Date.now() - start;
-}
-
-function mapWaitlistEnabled(instance: LiveClassInstanceRow | null): boolean {
-  if (!instance) return false;
-  const meta = instance.metadata ?? {};
-  const raw = (meta as { waitlistEnabled?: unknown }).waitlistEnabled;
-  return raw === true;
 }
 
 function resolveOutcome(
@@ -211,19 +201,15 @@ export async function handleRegistration(
           }),
         );
 
-        const now = new Date();
+        const operationalState = buildFreeClassOperationalState({
+          sku: input.sku,
+          instances,
+        });
 
-        // 3.3 Instancia aplicable + registrationState
-        const applicableInstance = resolveApplicableInstance(instances, now);
-        waitlistEnabled = mapWaitlistEnabled(applicableInstance);
-
-        if (applicableInstance) {
-          instanceSlug = applicableInstance.instance_slug;
-          brevoCohortListId = applicableInstance.brevo_cohort_list_id ?? null;
-        }
-
-        const computedState = computeRegistrationState(applicableInstance, now);
-        registrationState = computedState;
+        registrationState = operationalState.registrationState;
+        instanceSlug = operationalState.instanceSlug;
+        brevoCohortListId = operationalState.brevoCohortListId;
+        waitlistEnabled = operationalState.isWaitlistEnabled;
 
         const outcome = resolveOutcome(registrationState, waitlistEnabled);
         result = outcome.result;

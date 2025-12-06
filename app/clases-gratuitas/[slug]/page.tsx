@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 import FreeClassLandingPageClient from "@/components/clases-gratuitas/FreeClassLandingPageClient";
 import { loadFreeClassPageBySlug } from "@/lib/freeclass/load";
 import { buildMetadata } from "@/lib/seo/buildMetadata";
+import { loadFreeClassOperationalStateFromDb } from "@/lib/freeclass/instances";
 
 type PageParams = {
   slug: string;
@@ -22,7 +23,7 @@ type PageParams = {
 // Metadata SEO (Bloque 6.A · wiring final)
 // ---------------------------------------------------------------------------
 export async function generateMetadata(
-  { params }: { params: Promise<PageParams> }
+  { params }: { params: Promise<PageParams> },
 ): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadFreeClassPageBySlug(slug);
@@ -43,7 +44,7 @@ export async function generateMetadata(
 
   return buildMetadata({
     typeId: "landing",
-    pathname,                     // "/clases-gratuitas/fin-freeintro"
+    pathname, // "/clases-gratuitas/fin-freeintro"
     title: page.seo.title,
     description: page.seo.description,
     ogImageUrl: page.seo.ogImage,
@@ -55,12 +56,21 @@ export async function generateMetadata(
 // Render principal
 // ---------------------------------------------------------------------------
 export default async function Page(
-  { params }: { params: Promise<PageParams> }
+  { params }: { params: Promise<PageParams> },
 ) {
   const { slug } = await params;
   const page = await loadFreeClassPageBySlug(slug);
 
   if (!page) notFound();
 
-  return <FreeClassLandingPageClient page={page} />;
+  const operationalState = await loadFreeClassOperationalStateFromDb({
+    sku: page.sku,
+  });
+
+  return (
+    <FreeClassLandingPageClient
+      page={page}
+      operationalState={operationalState}
+    />
+  );
 }

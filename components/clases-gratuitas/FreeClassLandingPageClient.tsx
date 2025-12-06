@@ -14,26 +14,34 @@
 import type { FC } from "react";
 import Image from "next/image";
 import type { FreeClassPage } from "@/lib/freeclass/schema";
+import type { FreeClassOperationalStateDTO } from "@/lib/freeclass/registrationState";
 import { renderAccent } from "@/lib/ui/renderAccent";
 import FreeClassRegisterForm from "./FreeClassRegisterForm";
 
 type Props = {
   page: FreeClassPage;
+  operationalState: FreeClassOperationalStateDTO;
 };
 
-const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
+type RegistrationUiState =
+  | "open"
+  | "full"
+  | "waitlist"
+  | "closed"
+  | "proximamente";
+
+const FreeClassLandingPageClient: FC<Props> = ({ page, operationalState }) => {
   const {
     hero,
     queSeLlevan,
     autor,
     testimonios,
     mensajeConfianza,
+    mensajesEstado,
   } = page;
 
   const miniBio =
-    "miniBio" in autor && autor.miniBio
-      ? autor.miniBio
-      : autor.bio;
+    "miniBio" in autor && autor.miniBio ? autor.miniBio : autor.bio;
 
   const handleScrollBackToForm = () => {
     if (typeof document === "undefined") return;
@@ -42,24 +50,71 @@ const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const { registrationState, isWaitlistEnabled, startAt, timezone } =
+    operationalState;
+
+  const uiState: RegistrationUiState = (() => {
+    if (registrationState === "open") {
+      return "open";
+    }
+
+    if (registrationState === "full" && isWaitlistEnabled) {
+      return "waitlist";
+    }
+
+    if (registrationState === "full") {
+      return "full";
+    }
+
+    if (
+      registrationState === "upcoming" ||
+      registrationState === "no_instance"
+    ) {
+      return "proximamente";
+    }
+
+    return "closed";
+  })();
+
+  const estadoMensaje = (() => {
+    switch (uiState) {
+      case "open":
+        return mensajesEstado.open;
+      case "full":
+        return mensajesEstado.full;
+      case "waitlist":
+        return mensajesEstado.waitlist;
+      case "proximamente":
+        return mensajesEstado.proximamente;
+      case "closed":
+      default:
+        return mensajesEstado.closed;
+    }
+  })();
+
+  const formattedDateTime =
+    startAt !== null
+      ? new Intl.DateTimeFormat("es-MX", {
+          dateStyle: "full",
+          timeStyle: "short",
+          timeZone: timezone ?? "America/Mexico_City",
+        }).format(new Date(startAt))
+      : null;
+
+  const canRenderForm = uiState === "open" || uiState === "waitlist";
+
   return (
     <main className="landing-main">
       {/* ------------------------------------------------------------------ */}
       {/* HERO · Pantalla 1                                                  */}
       {/* ------------------------------------------------------------------ */}
-      <section
-        className="landing-hero"
-        aria-labelledby="landing-hero-title"
-      >
+      <section className="landing-hero" aria-labelledby="landing-hero-title">
         <div className="landing-hero-inner">
           {/* Bloque de texto principal */}
           <header className="landing-hero-copy">
             {/* ⛔ eyebrow y note YA NO van aquí. Los movimos al formulario. */}
 
-            <h1
-              id="landing-hero-title"
-              className="landing-hero-title"
-            >
+            <h1 id="landing-hero-title" className="landing-hero-title">
               {renderAccent(hero.title)}
             </h1>
 
@@ -86,10 +141,7 @@ const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
             {/* FORM COLUMN                                                    */}
             {/* -------------------------------------------------------------- */}
             <div className="landing-hero-form-column">
-              <div
-                id="freeclass-form"
-                className="landing-hero-form-card"
-              >
+              <div id="freeclass-form" className="landing-hero-form-card">
                 {/* ---------------------------------------------------------- */}
                 {/* Eyebrow dentro del formulario                              */}
                 {/* ---------------------------------------------------------- */}
@@ -108,17 +160,26 @@ const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
                   </p>
                 ) : null}
 
-                {/* Formulario real */}
-                <FreeClassRegisterForm page={page} />
+                {/* Formulario real (solo si es registrable) */}
+                {canRenderForm ? (
+                  <FreeClassRegisterForm
+                    page={page}
+                    operationalState={operationalState}
+                    estadoMensaje={estadoMensaje}
+                    formattedDateTime={formattedDateTime}
+                  />
+                ) : (
+                  <p className="landing-form-status-message">
+                    {renderAccent(mensajesEstado.closed)}
+                  </p>
+                )}
 
-                              {mensajeConfianza ? (
-                <p className="landing-hero-trust">
-                  {renderAccent(mensajeConfianza)}
-                </p>
-              ) : null}
-
+                {/* {mensajeConfianza ? (
+                  <p className="landing-hero-trust">
+                    {renderAccent(mensajeConfianza)}
+                  </p>
+                ) : null} */}
               </div>
-
             </div>
           </div>
         </div>
@@ -141,10 +202,7 @@ const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
                 </h2>
                 <ul className="landing-list">
                   {queSeLlevan.slice(0, 3).map((item) => (
-                    <li
-                      key={item}
-                      className="landing-list-item"
-                    >
+                    <li key={item} className="landing-list-item">
                       {renderAccent(item)}
                     </li>
                   ))}
@@ -164,71 +222,68 @@ const FreeClassLandingPageClient: FC<Props> = ({ page }) => {
           </div>
 
           {/* ---------------------------------------------------------------- */}
-          {/* C) Testimonios · Tres columnas                                   */}
+          {/* C) Testimonios · Tres columnas                                  */}
           {/* ---------------------------------------------------------------- */}
+          {testimonios && testimonios.length > 0 && (
+            <section className="landing-screen2-testimonials">
+              <h2 className="landing-section-title">Testimonios</h2>
 
-        {testimonios && testimonios.length > 0 && (
-          <section className="landing-screen2-testimonials">
-            <h2 className="landing-section-title">
-              Testimonios
-            </h2>
-
-            {/* Contenedor scrollable (mobile) + grid (desktop) */}
-            <div className="landing-testimonials-scroller">
-              <ul className="landing-testimonials">
-                {testimonios.map((t, index) => {
-                  const id = `${t.name}-${t.role}-${index}`;
-                  return (
-                    <li key={id} className="landing-testimonial-card">
-                      <div className="landing-testimonial-header">
-                        <Image
-                          src={t.photoSrc}
-                          alt={t.photoAlt ?? t.name}
-                          width={56}
-                          height={56}
-                          className="landing-testimonial-avatar"
-                        />
-                        <div>
-                          <p className="landing-testimonial-name">
-                            {renderAccent(t.name)}
-                          </p>
-                          <p className="landing-testimonial-role">
-                            {t.business
-                              ? renderAccent(`${t.role} · ${t.business}`)
-                              : renderAccent(t.role)}
-                          </p>
+              {/* Contenedor scrollable (mobile) + grid (desktop) */}
+              <div className="landing-testimonials-scroller">
+                <ul className="landing-testimonials">
+                  {testimonios.map((t, index) => {
+                    const id = `${t.name}-${t.role}-${index}`;
+                    return (
+                      <li key={id} className="landing-testimonial-card">
+                        <div className="landing-testimonial-header">
+                          <Image
+                            src={t.photoSrc}
+                            alt={t.photoAlt ?? t.name}
+                            width={56}
+                            height={56}
+                            className="landing-testimonial-avatar"
+                          />
+                          <div>
+                            <p className="landing-testimonial-name">
+                              {renderAccent(t.name)}
+                            </p>
+                            <p className="landing-testimonial-role">
+                              {t.business
+                                ? renderAccent(`${t.role} · ${t.business}`)
+                                : renderAccent(t.role)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <p className="landing-testimonial-quote">
-                        “{renderAccent(t.quote)}”
-                      </p>
-                      {t.link ? (
-                        <a
-                          href={t.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="landing-testimonial-link"
-                        >
-                          Ver perfil
-                        </a>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
+                        <p className="landing-testimonial-quote">
+                          “{renderAccent(t.quote)}”
+                        </p>
+                        {t.link ? (
+                          <a
+                            href={t.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="landing-testimonial-link"
+                          >
+                            Ver perfil
+                          </a>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
 
-              {/* Indicadores tipo puntos (estáticos por ahora) */}
-              <div className="landing-testimonials-dots">
-                {testimonios.map((_, index) => (
-                  <span
-                    key={`dot-${index}`}
-                    className="landing-testimonials-dot"
-                  />
-                ))}
+                {/* Indicadores tipo puntos (estáticos por ahora) */}
+                <div className="landing-testimonials-dots">
+                  {testimonios.map((_, index) => (
+                    <span
+                      key={`dot-${index}`}
+                      className="landing-testimonials-dot"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          )}
 
           {/* ---------------------------------------------------------------- */}
           {/* D) CTA final · Volver al formulario                              */}

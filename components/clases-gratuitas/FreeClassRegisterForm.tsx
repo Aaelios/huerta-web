@@ -5,6 +5,8 @@
 import type { FC, FormEvent } from "react";
 import { useEffect, useId, useState } from "react";
 import type { FreeClassPage } from "@/lib/freeclass/schema";
+import type { FreeClassOperationalStateDTO } from "@/lib/freeclass/registrationState";
+import { renderAccent } from "@/lib/ui/renderAccent";
 
 declare global {
   interface Window {
@@ -42,6 +44,9 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 type Props = {
   page: FreeClassPage;
+  operationalState: FreeClassOperationalStateDTO;
+  estadoMensaje?: string;
+  formattedDateTime?: string | null;
 };
 
 type UiLocal =
@@ -51,7 +56,12 @@ type UiLocal =
   | "show_waitlist"
   | "show_closed";
 
-const FreeClassRegisterForm: FC<Props> = ({ page }) => {
+const FreeClassRegisterForm: FC<Props> = ({
+  page,
+  operationalState,
+  estadoMensaje,
+  formattedDateTime,
+}) => {
   const idName = useId();
   const idEmail = useId();
   const idConsent = useId();
@@ -94,7 +104,7 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
   useEffect(() => {
     const tick = () => {
       const input = document.querySelector(
-        "#freeclass-turnstile [name='cf-turnstile-response']"
+        "#freeclass-turnstile [name='cf-turnstile-response']",
       ) as HTMLInputElement | null;
       setHasTsToken(!!input?.value?.trim());
     };
@@ -105,15 +115,17 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
 
   function getTurnstileToken(): string {
     const el = document.querySelector(
-      "#freeclass-turnstile [name='cf-turnstile-response']"
+      "#freeclass-turnstile [name='cf-turnstile-response']",
     ) as HTMLInputElement | null;
     return el?.value?.trim() ?? "";
   }
 
   function validate(token: string): string | null {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!fullName.trim()) return "Escribe tu nombre completo.";
     if (!email.trim()) return "Escribe tu correo.";
-    if (!email.includes("@")) return "Correo no válido.";
+    if (!emailRegex.test(email.trim())) return "Correo no válido.";
     if (!consent) return "Debes aceptar el consentimiento.";
     if (!token) return "Verificación requerida.";
     return null;
@@ -156,7 +168,7 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
         email: email.trim(),
         full_name: fullName.trim(),
         sku: page.sku,
-        instanceSlug: undefined,
+        instanceSlug: operationalState.instanceSlug ?? undefined,
         consent,
         utm: undefined,
         turnstile_token: token,
@@ -176,7 +188,7 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
 
       const data = (await res.json()) as FreeClassRegisterResponse;
 
-      // ---------- Analytics (6.B) ----------
+      // ---------- Analytics ----------
       if (typeof window !== "undefined" && data.leadTracking && data.result) {
         if (!window.__freeclass_lead_sent) {
           const utm = data.leadTracking.utm ?? {};
@@ -193,7 +205,7 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
           window.__freeclass_lead_sent = true;
         }
       }
-      // -------------------------------------
+      // -------------------------------
 
       setUiStateLocal(deriveUiState(data));
     } catch {
@@ -275,7 +287,7 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
         />
       </div>
 
-      {/* Consentimiento */}
+      {/* Consentimiento (oculto) */}
       <div className="stack-1" style={{ display: "none" }}>
         <label htmlFor={idConsent}>
           <input
@@ -289,6 +301,13 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
         </label>
       </div>
 
+      {/* Fecha / hora justo arriba del botón, con estilo de subtítulo */}
+      {formattedDateTime ? (
+        <p className="landing-form-subtitle">
+          {renderAccent(`Próxima sesión: [[${formattedDateTime}]]`)}
+        </p>
+      ) : null}
+
       {/* Submit */}
       <button
         type="submit"
@@ -297,6 +316,13 @@ const FreeClassRegisterForm: FC<Props> = ({ page }) => {
       >
         {submitting ? "Enviando…" : page.hero.ctaText}
       </button>
+
+      {/* Mensaje de estado con estilo de nota final */}
+      {estadoMensaje ? (
+        <p className="landing-hero-trust">
+          {renderAccent(estadoMensaje)}
+        </p>
+      ) : null}
 
       {/* Turnstile */}
       <div
