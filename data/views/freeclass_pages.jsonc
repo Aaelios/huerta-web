@@ -13,13 +13,13 @@
     "hero": {
       "eyebrow": "Regístrate a la clase gratuita",
       "title": "[[Haz que]] tus propósitos de Año Nuevo [[se cumplan]] en 2026",
-      "subtitle": "En esta clase gratuita convertirás en un plan real los propósitos que requieren dinero para lograrse. En solo 45 minutos aprenderás un sistema simple para avanzar cada mes sin afectar tu negocio ni tu estabilidad.",
+      "subtitle": "En esta clase gratuita vas a convertir los propósitos que requieren dinero en un plan mensual simple: cuánto apartar para tu meta, cuánto para el negocio y cuánto para tu vida sin perder estabilidad.",
       "image": {
         "src": "/images/webinars/fin/freeintro-v001/main.png",
         "alt": "Foto de Roberto Huerta impartiendo clase de claridad financiera."
       },
       "ctaText": "Registrarme a la clase gratuita",
-      "note": "Convierte tus propósitos que requieren dinero en un plan que sí puedes seguir sin perder estabilidad."
+      "note": "En 45 minutos vas a crear un plan mensual simple para financiar un propósito que requiere dinero"
     },
 
     "paraQuien": [
@@ -82,7 +82,7 @@
     "name": "[[Martha Huerta]]",
     "role": "Dueña",
     "business": "Martha Huerta Events",
-    "quote": "Me proponía muchas cosas cada año, pero no sabía cómo hacerlas posibles. Este sistema me ayudó a poner orden: atender mis gastos, definir mi ‘sueldo’, avanzar en mis metas y hasta empezar un fondo si sobraba.",
+    "quote": "Me proponía muchas cosas cada año, pero no sabía cómo hacerlas posibles. Este sistema me ayudó a poner orden: atender mis gastos, definir mi ‘sueldo’, avanzar en mis metas y hasta empezar un fondo cuando me sobraba.",
     "photoSrc": "/images/testimonios/martha_huerta_square.jpg",
     "photoAlt": "Retrato de Martha Huerta.",
     "platform": "instagram",
@@ -104,7 +104,7 @@
     "name": "[[Sofía García]]",
     "role": "Socia y Directora",
     "business": "Xenda Hybrid Training",
-    "quote": "Tenía metas claras, pero no un método para cumplirlas. Aquí aprendí a decidir cuánto va a mí, cuánto al negocio y cuánto a mis metas. Por fin tengo un plan que puedo sostener sin sentir que me ahogo.",
+    "quote": "Tenía metas claras, pero no un método para cumplirlas. Aquí aprendí a decidir cuánto va a mí, cuánto al negocio y cuánto a mis metas. Hoy tengo un plan que puedo sostener sin sentir que me ahogo.",
     "photoSrc": "/images/testimonios/sofia_garcia_square.jpg",
     "photoAlt": "Retrato de Sofía García.",
     "platform": "instagram",
@@ -114,7 +114,7 @@
 ],
 
     "mensajesEstado": {
-      "open": "Tu lugar está disponible. Regístrate y recibe el enlace para conectarte.",
+      "open": "Tu lugar está disponible. Regístrate y recibe el enlace para conectarte en vivo.",
       "full": "La clase está llena. Puedes unirte a la lista de espera.",
       "waitlist": "Solo hay lista de espera. Si se libera un lugar, te avisamos por correo.",
       "closed": "Esta edición ya terminó. Déjanos tus datos y te avisamos de nuevas fechas.",
