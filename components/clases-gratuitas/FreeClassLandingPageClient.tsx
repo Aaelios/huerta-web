@@ -17,6 +17,7 @@ import type { FreeClassPage } from "@/lib/freeclass/schema";
 import type { FreeClassOperationalStateDTO } from "@/lib/freeclass/registrationState";
 import { renderAccent } from "@/lib/ui/renderAccent";
 import FreeClassRegisterForm from "./FreeClassRegisterForm";
+import { ViewContentTracker } from "@/components/analytics/ViewContentTracker";
 
 type Props = {
   page: FreeClassPage;
@@ -38,6 +39,7 @@ const FreeClassLandingPageClient: FC<Props> = ({ page, operationalState }) => {
     testimonios,
     mensajeConfianza,
     mensajesEstado,
+    seo,
   } = page;
 
   const miniBio =
@@ -105,6 +107,15 @@ const FreeClassLandingPageClient: FC<Props> = ({ page, operationalState }) => {
 
   return (
     <main className="landing-main">
+      {/* ------------------------------------------------------------------ */}
+      {/* Tracker de view_content · se dispara 1 vez por carga               */}
+      {/* ------------------------------------------------------------------ */}
+      <ViewContentTracker
+        contentType="live_class"
+        contentId={page.sku}
+        title={seo?.title}
+      />
+
       {/* ------------------------------------------------------------------ */}
       {/* HERO · Pantalla 1                                                  */}
       {/* ------------------------------------------------------------------ */}
