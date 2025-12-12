@@ -1,5 +1,5 @@
 # Notificador Interno de Eventos Stripe  
-## Documento de Arquitectura  
+## Documento de Arquitectura   
 **Huerta Consulting – 2025**
 
 ---
