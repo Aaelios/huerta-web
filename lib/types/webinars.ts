@@ -40,6 +40,7 @@ export interface Shared {
   whatsAppSupport: WhatsAppSupport;
   calendar: Calendar;
   sku: string;           // para validación de entitlement
+   openAccess?: boolean;  // Si true, permite acceso sin entitlement (workaround temporal controlado por config)
   flags: {
     showReplay: boolean;
     replayUrl: string | null;

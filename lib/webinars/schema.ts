@@ -47,6 +47,10 @@ export const SharedSchema = z.object({
   whatsAppSupport: WhatsAppSupportSchema,
   calendar: CalendarSchema,
   sku: z.string(),
+
+  // Si true, permite acceso sin entitlement (workaround temporal controlado por config)
+  openAccess: z.boolean().optional(),
+
   flags: z.object({
     showReplay: z.boolean(),
     replayUrl: z.string().url().nullable(),

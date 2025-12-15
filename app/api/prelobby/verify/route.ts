@@ -10,6 +10,7 @@ import { loadWebinars } from "@/lib/webinars/loadWebinars";
  * Resp: { ok: true, hasEntitlement: boolean, __debug? }
  *
  * Prioridad:
+ * 0) Apertura por webinar (shared.openAccess === true).
  * 1) Dominio permitido (PRELOBBY_TEST_DOMAIN).
  * 2) Allowlist por email (PRELOBBY_EMAIL_ALLOWLIST).
  * 3) Apertura local (ALLOW_ALL_LOCAL && NODE_ENV!=='production').
@@ -36,6 +37,20 @@ export async function POST(req: Request) {
     if (!webinar) return j({ ok: true, hasEntitlement: false }, 404, "webinar no encontrado");
     const sku = webinar.shared.sku;
 
+    // 0) Apertura por webinar (workaround temporal controlado por config)
+    if (webinar.shared.openAccess === true) {
+      return j(
+        withDebug({ ok: true, hasEntitlement: true }, wantDebug, {
+          step: "open_access",
+          slug: normSlug,
+          sku,
+          email: normEmail,
+        }),
+        200,
+        "open_access"
+      );
+    }
+
     // 1) Dominio permitido (acepta "lobra.net", "@lobra.net" o subdominios)
     const testDomainRaw = (process.env.PRELOBBY_TEST_DOMAIN || "").toLowerCase().trim();
     const testDomain = normalizeDomain(testDomainRaw);
@@ -44,7 +59,12 @@ export async function POST(req: Request) {
       !!testDomain && (userDomain === testDomain || userDomain.endsWith(`.${testDomain}`));
     if (domainOk)
       return j(
-        withDebug({ ok: true, hasEntitlement: true }, wantDebug, { step: "domain", slug: normSlug, sku, email: normEmail }),
+        withDebug({ ok: true, hasEntitlement: true }, wantDebug, {
+          step: "domain",
+          slug: normSlug,
+          sku,
+          email: normEmail,
+        }),
         200,
         "domain bypass"
       );
@@ -57,7 +77,12 @@ export async function POST(req: Request) {
       .filter(Boolean);
     if (allowList.includes(normEmail))
       return j(
-        withDebug({ ok: true, hasEntitlement: true }, wantDebug, { step: "allowlist", slug: normSlug, sku, email: normEmail }),
+        withDebug({ ok: true, hasEntitlement: true }, wantDebug, {
+          step: "allowlist",
+          slug: normSlug,
+          sku,
+          email: normEmail,
+        }),
         200,
         "allowlist"
       );
@@ -67,7 +92,12 @@ export async function POST(req: Request) {
       process.env.ALLOW_ALL_LOCAL === "true" && process.env.NODE_ENV !== "production";
     if (allowAllLocal)
       return j(
-        withDebug({ ok: true, hasEntitlement: true }, wantDebug, { step: "local", slug: normSlug, sku, email: normEmail }),
+        withDebug({ ok: true, hasEntitlement: true }, wantDebug, {
+          step: "local",
+          slug: normSlug,
+          sku,
+          email: normEmail,
+        }),
         200,
         "allow_all_local"
       );

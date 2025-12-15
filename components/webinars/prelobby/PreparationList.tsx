@@ -22,7 +22,7 @@ export default function PreparationList() {
         <li>Abre Excel para seguir el taller.</li>
         <li>Asegúrate de tener buena iluminación frontal.</li>
         <li>Usa una conexión de internet estable, evita descargas.</li>
-        <li>Busca un espacio sin distracciones durante 90 min.</li>
+        <li>Busca un espacio adecuado sin distracciones.</li>
       </ul>
     </section>
   );

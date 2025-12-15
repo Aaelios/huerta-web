@@ -543,5 +543,97 @@
       ],
       "refundLine": "Garantía LOBRÁ de 7 días: si no te sirve, te devolvemos tu dinero."
     }
+  },
+
+"w-fin-freeintro": {
+    "shared": {
+      "slug": "w-fin-freeintro",
+      "title": "Cumple tus metas 2026",
+      "startAt": "2025-12-15T11:30:00-06:00",
+      "durationMin": 45,
+      "zoomJoinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_YmRkNGEyNTEtYWFjMS00ZWFmLWI3N2UtYjhmZGZmY2I2N2Uw%40thread.v2/0?context=%7b%22Tid%22%3a%22296c1fd8-f77c-4f0d-bbbb-77924e90c814%22%2c%22Oid%22%3a%2235db82ce-98a9-49eb-9e71-770bc59ef49d%22%7d",
+      "supportEmail": "soporte@lobra.net",
+      "template": { "mode": "email" },
+      "whatsAppSupport": { "enabled": true },
+      "calendar": { "mode": "generated" },
+      "sku": "liveclass-lobra-rhd-fin-freeintro-v001",
+	  "openAccess": true,
+      "flags": {
+        "showReplay": false,
+        "replayUrl": null,
+        "featuredHome": false
+      },
+      "pricing": {
+        "sku": "liveclass-lobra-rhd-fin-freeintro-v001",
+        "amountCents": 0,
+        "currency": "MXN",
+        "interval": "one_time"
+      }
+    },
+
+    "sales": {
+      "seo": {
+        "title": "Comunicación que vende con IA · Webinar práctico para emprendedoras",
+        "description": "Aprende a responder mensajes que convierten en 90 minutos. Sal con tu mensaje corregido, plantillas y prompts listos para usar.",
+        "canonical": "https://lobra.net/webinars/w-fin-freeintro"
+      },
+
+      "hero": {
+        "eyebrow": "Webinar práctico en vivo",
+        "title": "Comunica para vender [[sin complicarte]]",
+        "subtitle": "Responde mejor, convierte más y deja de perder clientes por mensajes flojos o confusos.",
+        "note": "Cero teoría. Todo aplicado a tu negocio.",
+        "ctaText": "Quiero vender mejor hoy",
+        "heroImageSrc": "/images/webinars/fin/freeintro-v001/hero.jpg",
+        "heroImageAlt": "Webinar tu proposito 2026"
+      },
+
+      "clasePractica": {
+        "eyebrow": "Sesión aplicada a tu negocio",
+        "title": "Sales con tu [[mensaje corregido]] y listo para enviar",
+        "intro": "En 90 minutos mejoras un mensaje real que tengas atorado. Practicamos juntas. Recibes frases, plantillas y un prompt que podrás usar diario en WhatsApp.",
+        "leftTitle": "¿Te suena familiar?",
+        "bullets": [
+          "Solo dices: “Hola. Sí, cuéntame.”",
+          "Cuando te preguntan precios respondes: “Están en mi página.”",
+          "Tus mensajes son largos, confusos o sin estructura.",
+          "Sientes que sí te hablan, pero no te compran.",
+          "Te da miedo sonar insistente o poco profesional."
+        ],
+        "deliverableTitle": "Te llevas",
+        "deliverableBullets": [
+          "Tu mensaje estancado [[corregido]] listo para copiar y pegar.",
+          "Un prompt de WhatsApp hecho para tu negocio.",
+          "3 plantillas directas: primera respuesta, manejo de precios, seguimiento.",
+          "Mini-guía para estructurar mensajes que convierten.",
+          "Claridad para hablar en WhatsApp sin sentir presión."
+        ],
+        "priceLine": "$790.00 MXN",
+        "guarantee": "Si no te sirve, te regresamos tu dinero. Sin complicarlo.",
+        "ctaText": "Apartar mi lugar"
+      }
+    },
+
+    "prelobby": {
+      "labels": {
+        "tooEarly": "Aún no abrimos la sala.",
+        "early": "Faltan pocos minutos.",
+        "open": "Prelobby disponible.",
+        "live": "Clase en vivo.",
+        "ended": "Sesión finalizada."
+      }
+    },
+
+    "checkout": {
+      "bullets": [
+        "Corrige un [[mensaje real]] en la clase.",
+        "Aprende respuestas que venden sin sonar insistente.",
+        "[[Plantillas listas]] para WhatsApp.",
+        "Prompts [[prácticos]] para seguir mejorando tus mensajes."
+      ],
+      "refundLine": "Garantía LOBRÁ de 7 días: si no te sirve, te devolvemos tu dinero."
+    }
   }
 }
+
+
