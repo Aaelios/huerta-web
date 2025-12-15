@@ -3,11 +3,7 @@
 import { NextResponse } from "next/server";
 import { loadWebinars } from "@/lib/webinars/loadWebinars";
 
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ slug: string }> }
-) {
-  //const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const CANON = process.env.CANONICAL_BASE_URL ?? "https://lobra.net";
   const HOST = new URL(CANON).host;
   const TZ = process.env.SITE_TZ ?? "America/Mexico_City";
@@ -28,7 +24,6 @@ export async function GET(
   const dtStamp = toICSUtc(new Date());
 
   const prelobbyUrl = `${CANON}/webinars/${shared.slug}/prelobby`;
-  const joinUrl = shared.zoomJoinUrl || prelobbyUrl;
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -42,7 +37,7 @@ export async function GET(
     `DTEND;TZID=${TZ}:${dtEnd}`,
     `SUMMARY:${escapeICS(shared.title)}`,
     `DESCRIPTION:Accede al prelobby: ${prelobbyUrl}`,
-    `URL:${joinUrl}`,
+    `URL:${prelobbyUrl}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
@@ -59,7 +54,6 @@ export async function GET(
 // ---- Helpers
 
 function toICSLocal(d: Date, timeZone: string): string {
-  // YYYYMMDDTHHMMSS en la zona indicada
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-CA", {
       timeZone,
@@ -79,7 +73,6 @@ function toICSLocal(d: Date, timeZone: string): string {
 }
 
 function toICSUtc(d: Date): string {
-  // YYYYMMDDTHHMMSSZ en UTC
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
