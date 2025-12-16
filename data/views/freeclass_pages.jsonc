@@ -11,15 +11,15 @@
     "prelobbyRoute": null,
 
     "hero": {
-      "eyebrow": "Regístrate a la clase gratuita",
-      "title": "[[Haz que]] tus propósitos de Año Nuevo [[se cumplan]] en 2026",
-      "subtitle": "En esta clase gratuita vas a convertir los propósitos que requieren dinero en un plan mensual simple: cuánto apartar para tu meta, cuánto para el negocio y cuánto para tu vida sin perder estabilidad.",
+      "eyebrow": "Regístrate hoy a la clase gratuita",
+      "title": "[[Haz que]] tus propósitos de Año Nuevo [[se cumplan]] desde hoy",
+      "subtitle": "En esta clase gratuita [[HOY]] vas a convertir los propósitos que requieren dinero en un plan mensual simple: cuánto apartar para tu meta, cuánto para el negocio y cuánto para tu vida sin perder estabilidad.",
       "image": {
         "src": "/images/webinars/fin/freeintro-v001/main.png",
         "alt": "Foto de Roberto Huerta impartiendo clase de claridad financiera."
       },
       "ctaText": "Registrarme a la clase gratuita",
-      "note": "En 45 minutos vas a crear un plan mensual simple para financiar un propósito que requiere dinero"
+      "note": "Hoy, en 45 minutos vas a crear un plan mensual simple para financiar un propósito que requiere dinero"
     },
 
     "paraQuien": [
