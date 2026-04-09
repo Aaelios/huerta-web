@@ -1,11 +1,19 @@
 // app/webinars/[slug]/prelobby/page.tsx
-// Prelobby de webinar (no index) — Metadata centralizada vía buildMetadata
+// Ruta: app/webinars/[slug]/prelobby/page.tsx
+// Descripción del programa:
+// Página de prelobby de webinar (no index). Resuelve el webinar por slug
+// y entrega el view model a los componentes de shell y cliente.
+//
+// Cambio actual — 2026-04-08:
+// - se elimina resolución local desde JSON vía loadWebinars
+// - se sustituye por getWebinar(slug) como punto único de resolución
+// - se mantiene zoomJoinUrl como dato editorial temporal fuera de alcance
 
 import { notFound } from "next/navigation";
 import { buildMetadata } from "@/lib/seo/buildMetadata";
 import PrelobbyShell from "@/components/webinars/prelobby/PrelobbyShell";
 import PrelobbyClient from "@/components/webinars/prelobby/PrelobbyClient";
-import { loadWebinars } from "@/lib/webinars/loadWebinars";
+import { getWebinar } from "@/lib/webinars/load";
 
 type PrelobbyPageParams = {
   params: Promise<{ slug: string }>;
@@ -26,16 +34,17 @@ export async function generateMetadata({ params }: PrelobbyPageParams) {
 export default async function PrelobbyPage({ params }: PrelobbyPageParams) {
   const { slug } = await params;
 
-  const webinars = await loadWebinars();
-  const webinar = webinars[slug];
+  // Resolución única del webinar vía helper aprobado en CT-03.
+  // No se hace lookup directo sobre JSON en esta ruta.
+  try {
+    const webinar = await getWebinar(slug);
 
-  if (!webinar) {
-    notFound();
+    return (
+      <PrelobbyShell webinar={webinar}>
+        <PrelobbyClient webinar={webinar} />
+      </PrelobbyShell>
+    );
+  } catch {
+    return notFound();
   }
-
-  return (
-    <PrelobbyShell webinar={webinar}>
-      <PrelobbyClient webinar={webinar} />
-    </PrelobbyShell>
-  );
 }

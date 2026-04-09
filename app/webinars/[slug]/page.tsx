@@ -38,7 +38,13 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     loadModulesIndex(),
   ]);
 
-  const webinarSlugs = Object.keys(webinarsMap);
+// Excepción operativa controlada:
+// w-fin-freeintro se usa solo para prelobby / ics y no debe prerenderizarse
+// como página pública de venta dentro de /webinars.
+//const webinarSlugs = Object.keys(webinarsMap);
+  const webinarSlugs = Object.keys(webinarsMap).filter(
+  (slug) => slug !== "w-fin-freeintro"
+);
 
   const moduleSlugs = modulesIndex
     .map((item) => item.pageSlug)

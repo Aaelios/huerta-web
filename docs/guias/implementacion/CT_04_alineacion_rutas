@@ -1,0 +1,52 @@
+# CT-04 — Alineación de Rutas
+
+## Objetivo
+Alinear rutas críticas para consumir la nueva capa de helpers sin depender operativamente de JSON.
+
+## Rutas revisadas
+- /webinars/[slug]
+- /checkout/[slug]
+- /webinars/[slug]/prelobby
+
+## Hallazgos Fase 1
+### /webinars/[slug]
+- correcto en runtime usando getWebinar
+- residual no bloqueante en generateStaticParams usando JSON
+
+### /checkout/[slug]
+- dependencia operativa residual en JSON
+- lookup local por slug
+- alineación requerida
+
+### /webinars/[slug]/prelobby
+- dependencia operativa residual en JSON
+- lookup directo por slug
+- alineación requerida
+
+## Archivos modificados
+- app/checkout/[slug]/page.tsx
+- app/webinars/[slug]/prelobby/page.tsx
+
+## Ajustes realizados
+### checkout
+- se eliminó loadWebinars
+- se eliminó búsqueda local por slug
+- se sustituyó por getWebinar(slug)
+
+### prelobby
+- se eliminó loadWebinars
+- se eliminó acceso directo webinars[slug]
+- se sustituyó por getWebinar(slug)
+
+## Riesgos
+- posibles diferencias puntuales de copy o mapeo visual por cambio de origen de datos
+- sin ruptura funcional detectada
+
+## Residuales fuera de alcance
+- generateStaticParams en /webinars/[slug]
+- zoomJoinUrl como dato editorial temporal en JSON
+
+## QA mínimo ejecutado
+- checkout funcional
+- prelobby funcional
+- cambio de origen de datos observable y esperado
